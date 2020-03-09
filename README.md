@@ -5,6 +5,11 @@ It's aim is to make writing web frontends in Rust attractive by providing a way 
 
 Please be aware that this project is still under heavy development and that future changes might break your code. I'm still not sure about the overall design but I needed something like this and I'm sure some other people do as well.
 
+If you'd like to be kept up to date or you'd like to support my work:
+
+- [Twitter](https://twitter.com/lukidoescode)
+- [Patreon](https://www.patreon.com/lukaswagner)
+
 # Syntax
 
 Currently there is only support for a very basic set of syntax. Even though the syntax is very similar to CSS there are a few particularities in CSSinRust which are inspired by SASS and styled-components in JS.
