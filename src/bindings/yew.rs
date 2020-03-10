@@ -12,3 +12,12 @@ impl From<Style> for Classes {
         classes
     }
 }
+
+// mod tests {
+//     use super::super::super::style::Style;
+//     use wasm_bindgen_test::*;
+//     #[wasm_bindgen_test]
+//     fn useStyleWithYew() {
+//         yew::start_app::<app::App>();
+//     }
+// }

@@ -1,33 +1,42 @@
 // Copyright © 2020 Lukas Wagner
 
-/// A scope is pretty much a media query or everything not in a media query.
+/// A scope represents a media query or all content not in a media query
+/// As an example:
+/// ```css
+/// /* BEGIN Scope */
+/// .wrapper {
+///     width: 100vw;
+/// }
+/// /* END Scope */
+/// /* BEGIN Scope */
+/// @media only screen and (min-width: 1000px) {
+///     .wrapper {
+///         width: 1000px;
+///     }
+/// }
+/// /* END Scope */
+/// ```
 #[derive(Debug, Clone)]
 pub(crate) struct Scope {
     pub(crate) condition: Option<String>,
     pub(crate) stylesets: Vec<ScopeContent>,
 }
 
-impl Scope {
-    pub(crate) fn to_css(&self, class_name: String) -> String {
+impl ToCss for Scope {
+    fn to_css(&self, class_name: String) -> String {
         let stylesets = self.stylesets.clone();
         let stylesets_css = stylesets
             .into_iter()
             .map(|styleset| match styleset {
                 ScopeContent::Block(block) => block.to_css(class_name.clone()),
-                ScopeContent::Rule(rule) => rule.to_css(),
+                ScopeContent::Rule(rule) => rule.to_css(class_name.clone()),
             })
             .fold(String::new(), |acc, css_part| {
-                format!("{}\n{}", acc, css_part)
+                format!("{}{}\n", acc, css_part)
             });
         match &self.condition {
-            Some(condition) => {
-                println!("scope some");
-                format!("{} {{\n{}\n}}", condition, stylesets_css)
-            }
-            None => {
-                println!("scope none");
-                stylesets_css
-            }
+            Some(condition) => format!("{} {{\n{}}}", condition, stylesets_css),
+            None => stylesets_css.trim().to_string(),
         }
     }
 }
@@ -47,7 +56,7 @@ pub(crate) struct Block {
     pub(crate) style_attributes: Vec<StyleAttribute>,
 }
 
-impl Block {
+impl ToCss for Block {
     fn to_css(&self, class_name: String) -> String {
         let condition = match &self.condition {
             Some(condition) => format!(" {}", condition),
@@ -57,11 +66,11 @@ impl Block {
             .style_attributes
             .clone()
             .into_iter()
-            .map(|style_property| style_property.to_css())
+            .map(|style_property| style_property.to_css(class_name.clone()))
             .fold(String::new(), |acc, css_part| {
                 format!("{}\n{}", acc, css_part)
             });
-        format!(".{}{}{{{}\n}}", class_name, condition, style_property_css)
+        format!(".{}{} {{{}\n}}", class_name, condition, style_property_css)
     }
 }
 
@@ -73,9 +82,9 @@ pub(crate) struct StyleAttribute {
     pub(crate) value: String,
 }
 
-impl StyleAttribute {
-    fn to_css(&self) -> String {
-        format!("{}:{};", self.key, self.value)
+impl ToCss for StyleAttribute {
+    fn to_css(&self, _: String) -> String {
+        format!("{}: {};", self.key, self.value)
     }
 }
 
@@ -87,8 +96,124 @@ pub(crate) struct Rule {
     content: String,
 }
 
-impl Rule {
-    fn to_css(&self) -> String {
+impl ToCss for Rule {
+    fn to_css(&self, _: String) -> String {
         format!("{} {{\n{}\n}}", self.condition, self.content)
+    }
+}
+
+/// Structs implementing this trait should be able to turn into
+/// a part of a CSS style sheet.
+pub trait ToCss {
+    fn to_css(&self, class_name: String) -> String;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Block, Rule, Scope, ScopeContent, StyleAttribute, ToCss};
+    use wasm_bindgen_test::*;
+
+    #[wasm_bindgen_test]
+    fn test_scope_building_without_condition() {
+        let test_block = Scope {
+            condition: None,
+            stylesets: vec![
+                ScopeContent::Block(Block {
+                    condition: None,
+                    style_attributes: vec![StyleAttribute {
+                        key: String::from("width"),
+                        value: String::from("100vw"),
+                    }],
+                }),
+                ScopeContent::Block(Block {
+                    condition: Some(String::from(".inner")),
+                    style_attributes: vec![StyleAttribute {
+                        key: String::from("background-color"),
+                        value: String::from("red"),
+                    }],
+                }),
+                ScopeContent::Rule(Rule {
+                    condition: String::from("@keyframes move"),
+                    content: String::from(
+                        r#"from {
+width: 100px;
+}
+to {
+width: 200px;
+}"#,
+                    ),
+                }),
+            ],
+        };
+        assert_eq!(
+            test_block.to_css(String::from("test")),
+            r#".test {
+width: 100vw;
+}
+.test .inner {
+background-color: red;
+}
+@keyframes move {
+from {
+width: 100px;
+}
+to {
+width: 200px;
+}
+}"#
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn test_scope_building_with_condition() {
+        let test_block = Scope {
+            condition: Some(String::from("@media only screen and (min-width: 1000px)")),
+            stylesets: vec![
+                ScopeContent::Block(Block {
+                    condition: None,
+                    style_attributes: vec![StyleAttribute {
+                        key: String::from("width"),
+                        value: String::from("100vw"),
+                    }],
+                }),
+                ScopeContent::Block(Block {
+                    condition: Some(String::from(".inner")),
+                    style_attributes: vec![StyleAttribute {
+                        key: String::from("background-color"),
+                        value: String::from("red"),
+                    }],
+                }),
+                ScopeContent::Rule(Rule {
+                    condition: String::from("@keyframes move"),
+                    content: String::from(
+                        r#"from {
+width: 100px;
+}
+to {
+width: 200px;
+}"#,
+                    ),
+                }),
+            ],
+        };
+        assert_eq!(
+            test_block.to_css(String::from("test")),
+            r#"@media only screen and (min-width: 1000px) {
+.test {
+width: 100vw;
+}
+.test .inner {
+background-color: red;
+}
+@keyframes move {
+from {
+width: 100px;
+}
+to {
+width: 200px;
+}
+}
+}"#
+        );
     }
 }

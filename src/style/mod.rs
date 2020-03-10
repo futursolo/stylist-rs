@@ -6,7 +6,7 @@ extern crate web_sys;
 pub mod ast;
 
 use super::parser::Parser;
-use ast::Scope;
+use ast::{Scope, ToCss};
 use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
