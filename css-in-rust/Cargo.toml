@@ -4,6 +4,18 @@ version = "0.0.1"
 license = "MIT"
 authors = ["Lukas Wagner <appdev.lukaswagner@gmail.com>"]
 edition = "2018"
+description = "A package for use with WASM applications providing a component level CSS styling experience."
+keywords = [
+    "CSS in Rust",
+    "CSS",
+    "web",
+    "styling",
+    "CSSinRust",
+    "yew",
+    "yew CSS",
+    "web application"
+]
+categories = ["wasm", "web-programming"]
 
 [lib]
 crate-type = ["cdylib", "rlib"]
