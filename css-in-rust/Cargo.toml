@@ -2,20 +2,20 @@
 name = "css-in-rust"
 version = "0.0.1"
 license = "MIT"
+repository = "https://github.com/lukidoescode/css-in-rust"
 authors = ["Lukas Wagner <appdev.lukaswagner@gmail.com>"]
 edition = "2018"
 description = "A package for use with WASM applications providing a component level CSS styling experience."
 keywords = [
-    "CSS in Rust",
     "CSS",
     "web",
-    "styling",
     "CSSinRust",
-    "yew",
-    "yew CSS",
-    "web application"
+    "yew"
 ]
 categories = ["wasm", "web-programming"]
+readme = "README.md"
+homepage = "https://crates.io/crates/css-in-rust"
+
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -23,11 +23,13 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 wasm-bindgen = "^0.2.59"
 nom = "^5.1.1"
-rand = { version = "^0.7", features = ["wasm-bindgen", "small_rng"] }
-yew = { version = "^0.13", features = ["web_sys"] }
+rand = { version = "^0.7", features = ["wasm-bindgen", "small_rng"]}
 lazy_static = "^1.4.0"
 
-[dependencies.web-sys]
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+yew = { version = "^0.13", features = ["web_sys"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies.web-sys]
 version = "^0.3"
 features = [
     "Window",
