@@ -108,7 +108,7 @@ pub trait ToCss {
     fn to_css(&self, class_name: String) -> String;
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_arch = "wasm32"))]
 mod tests {
     use super::{Block, Rule, Scope, ScopeContent, StyleAttribute, ToCss};
     use wasm_bindgen_test::*;

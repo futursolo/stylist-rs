@@ -5,7 +5,7 @@ It's aim is to make writing web frontends in Rust attractive by providing a way 
 
 Please be aware that this project is still under heavy development and that future changes might break your code. I'm still not sure about the overall design but I needed something like this and I'm sure some other people do as well.
 
-If you'd like to be kept up to date or you'd like to support my work:
+If you'd like to be kept up to date or you'd like to support my work please visit me on those platforms:
 
 - [Twitter](https://twitter.com/lukidoescode)
 - [Patreon](https://www.patreon.com/lukaswagner)
@@ -72,7 +72,7 @@ Finally CSSinRust will be able to support CSS rules like that:
 
 ## Yew
 
-In order to use a created style in yew just insert it into the class attribute like that:
+In order to enable all yew integration use the feature `yew_integration` for CSSinRust in your `Cargo.toml`. Then create a style and use it with yew like this:
 
 ```rust
 impl Component for HelloComponent {
