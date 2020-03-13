@@ -79,7 +79,8 @@ pub struct Style {
 #[cfg(target_arch = "wasm32")]
 impl Style {
     /// Creates a new style and, stores it into the registry and returns the
-    pub fn create(class_name: String, css: String) -> Style {
+    pub fn create<I1: Into<String>, I2: Into<String>>(class_name: I1, css: I2) -> Style {
+        let (class_name, css) = (class_name.into(), css.into());
         let small_rng = SmallRng::from_entropy();
         let mut new_style = Self {
             class_name: format!(
@@ -194,7 +195,8 @@ impl Style {
 #[cfg(not(target_arch = "wasm32"))]
 impl Style {
     /// Creates a new style and, stores it into the registry and returns the
-    pub fn create(class_name: String, css: String) -> Style {
+    pub fn create<I1: Into<String>, I2: Into<String>>(class_name: I1, css: I2) -> Style {
+        let (class_name, css) = (class_name.into(), css.into());
         let small_rng = SmallRng::from_entropy();
         let new_style = Self {
             class_name: format!(
