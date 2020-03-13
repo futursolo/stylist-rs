@@ -860,3 +860,13 @@ dependencies = [
  "wee_alloc",
  "yew",
 ]
+
+[[package]]
+name = "yew_integration"
+version = "0.0.1"
+dependencies = [
+ "css-in-rust",
+ "log",
+ "web_logger",
+ "yew",
+]

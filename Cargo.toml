@@ -3,4 +3,5 @@
 members = [
     "css-in-rust",
     "yew-testbed",
+    "css-in-rust/examples/yew-integration",
 ]
