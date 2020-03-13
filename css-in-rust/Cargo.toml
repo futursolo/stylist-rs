@@ -55,5 +55,7 @@ std_web = ["stdweb", "rand/stdweb", "yew/std_web"]
 web_sys = ["web-sys", "rand/wasm-bindgen", "yew/web_sys"]
 
 [package.metadata.docs.rs]
-features = ["web_sys", "std_web", "yew_integration"]
+all-features = true
+features = ["web_sys", "yew_integration"]
+
 
