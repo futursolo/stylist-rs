@@ -28,7 +28,7 @@ impl Component for CustomComponent {
                 "#,
             ),
         );
-        App { style }
+        CustomComponent { style }
     }
 
     fn update(&mut self, _: Self::Message) -> ShouldRender {
@@ -36,7 +36,6 @@ impl Component for CustomComponent {
     }
 
     fn view(&self) -> Html {
-        info!("rendered!");
         html! {<div class=self.style.clone()>
             {"The quick brown fox jumps over the lazy dog"}
             <div class="on-da-inside">{"The quick brown fox jumps over the lazy dog"}</div>
