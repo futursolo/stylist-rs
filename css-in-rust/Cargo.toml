@@ -1,6 +1,6 @@
 [package]
 name = "css-in-rust"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 repository = "https://github.com/lukidoescode/css-in-rust"
 authors = ["Lukas Wagner <appdev.lukaswagner@gmail.com>"]
