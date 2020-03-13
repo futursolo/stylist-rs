@@ -1,23 +1,34 @@
 // Copyright © 2020 Lukas Wagner
 
 extern crate rand;
+#[cfg(all(target_arch = "wasm32", feature = "std_web"))]
+extern crate stdweb;
+#[cfg(all(target_arch = "wasm32", feature = "web_sys"))]
 extern crate web_sys;
 
 pub mod ast;
 
 use super::parser::Parser;
-use ast::{Scope, ToCss};
+use ast::Scope;
+#[cfg(target_arch = "wasm32")]
+use ast::ToCss;
 use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+#[cfg(all(target_arch = "wasm32", feature = "std_web"))]
+use stdweb::web::{document, INode, IParentNode, Node};
+#[cfg(all(target_arch = "wasm32", feature = "web_sys"))]
 use web_sys::Element;
 
+#[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
 lazy_static! {
     static ref STYLE_REGISTRY: Arc<Mutex<StyleRegistry>> = Arc::new(Mutex::default());
 }
 
+/// The style registry is just a global struct that makes sure no style gets lost.
+/// Every style automatically registers with the style registry.
 #[derive(Debug, Clone)]
 struct StyleRegistry {
     styles: HashMap<String, Style>,
@@ -34,18 +45,40 @@ impl Default for StyleRegistry {
 unsafe impl Send for StyleRegistry {}
 unsafe impl Sync for StyleRegistry {}
 
+#[cfg(all(target_arch = "wasm32", feature = "web_sys"))]
 #[derive(Debug, Clone)]
 pub struct Style {
     /// The designated class name of this style
     pub class_name: String,
     /// The abstract syntax tree of the css
     ast: Option<Vec<Scope>>,
-    /// Style node the data in this struct is turned into.
+    /// Style DOM node the data in this struct is turned into.
     node: Option<Element>,
 }
 
+#[cfg(all(target_arch = "wasm32", feature = "std_web"))]
+#[derive(Debug, Clone)]
+pub struct Style {
+    /// The designated class name of this style
+    pub class_name: String,
+    /// The abstract syntax tree of the css
+    ast: Option<Vec<Scope>>,
+    /// Style DOM node the data in this struct is turned into.
+    node: Option<Node>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Debug, Clone)]
+pub struct Style {
+    /// The designated class name of this style
+    class_name: String,
+    /// The abstract syntax tree of the css
+    ast: Option<Vec<Scope>>,
+}
+
+#[cfg(target_arch = "wasm32")]
 impl Style {
-    // Creates a new style and, stores it into the registry and returns the
+    /// Creates a new style and, stores it into the registry and returns the
     pub fn create(class_name: String, css: String) -> Style {
         let small_rng = SmallRng::from_entropy();
         let mut new_style = Self {
@@ -73,6 +106,8 @@ impl Style {
         new_style
     }
 
+    /// Mounts the styles to the document head web-sys style
+    #[cfg(feature = "web_sys")]
     fn mount(&mut self) -> Self {
         let mut style = self.unmount();
         style.node = self.generate_element().ok();
@@ -85,6 +120,23 @@ impl Style {
         self.clone()
     }
 
+    /// Mounts the styles to the document head stdweb style
+    #[cfg(feature = "std_web")]
+    fn mount(&mut self) -> Self {
+        let mut style = self.unmount();
+        style.node = Node::from_html(self.print().as_ref()).ok();
+        if let Some(node) = style.node {
+            document()
+                .query_selector("head")
+                .unwrap()
+                .unwrap()
+                .append_child(&node);
+        }
+        self.clone()
+    }
+
+    /// Unmounts the style from the HTML head web-sys style
+    #[cfg(feature = "web_sys")]
     fn unmount(&mut self) -> Self {
         if let Some(node) = &self.node {
             let window = web_sys::window().expect("no global `window` exists");
@@ -95,6 +147,21 @@ impl Style {
         self.clone()
     }
 
+    /// Unmounts the style from the HTML head stdweb style
+    #[cfg(feature = "std_web")]
+    fn unmount(&mut self) -> Self {
+        if let Some(node) = &self.node {
+            document()
+                .query_selector("head")
+                .unwrap()
+                .unwrap()
+                .remove_child(node)
+                .ok();
+        }
+        self.clone()
+    }
+
+    /// Takes all Scopes and lets them translate themselves into CSS.
     fn generate_css(&self) -> String {
         match &self.ast {
             Some(ast) => ast
@@ -108,6 +175,9 @@ impl Style {
         }
     }
 
+    /// Generates the `<style/>` tag web-sys style for inserting into the head of the
+    /// HTML document.
+    #[cfg(feature = "web_sys")]
     fn generate_element(&self) -> Result<Element, JsValue> {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
@@ -120,16 +190,39 @@ impl Style {
     }
 }
 
-impl ToString for Style {
-    fn to_string(&self) -> String {
-        self.class_name.clone()
+/// The style represents all the CSS belonging to a single component.
+#[cfg(not(target_arch = "wasm32"))]
+impl Style {
+    /// Creates a new style and, stores it into the registry and returns the
+    pub fn create(class_name: String, css: String) -> Style {
+        let small_rng = SmallRng::from_entropy();
+        let new_style = Self {
+            class_name: format!(
+                "{}-{}",
+                class_name,
+                small_rng
+                    .sample_iter(Alphanumeric)
+                    .take(30)
+                    .collect::<String>()
+            ),
+            // TODO log out an error
+            ast: Parser::parse(css).ok(),
+        };
+        let style_registry_mutex = Arc::clone(&STYLE_REGISTRY);
+        let mut style_registry = match style_registry_mutex.lock() {
+            Ok(guard) => guard,
+            Err(poisoned) => poisoned.into_inner(),
+        };
+        (*style_registry)
+            .styles
+            .insert(new_style.class_name.clone(), new_style.clone());
+        new_style
     }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
+impl ToString for Style {
+    /// Just returns the classname
+    fn to_string(&self) -> String {
+        self.class_name.clone()
     }
 }

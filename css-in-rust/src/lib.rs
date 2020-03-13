@@ -2,13 +2,11 @@
 
 #[macro_use]
 extern crate lazy_static;
+#[cfg(target_arch = "wasm32")]
 extern crate wasm_bindgen;
-#[cfg(test)]
+#[cfg(all(test, target_arch = "wasm32"))]
 extern crate wasm_bindgen_test;
 
-#[cfg(target_arch = "wasm32")]
 pub mod bindings;
-#[cfg(target_arch = "wasm32")]
 mod parser;
-#[cfg(target_arch = "wasm32")]
 pub mod style;

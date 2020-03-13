@@ -1,23 +1,23 @@
-// Copyright © 2020 Lukas Wagner
-
 extern crate css_in_rust;
+extern crate log;
+extern crate yew;
 
 use css_in_rust::style::Style;
+use log::trace;
+use yew::App;
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
-const KEY: &str = "css-in-rust/yew-testbed";
-
-pub struct App {
+pub struct CustomComponent {
     style: Style,
 }
 
-impl Component for App {
+impl Component for CustomComponent {
     type Message = ();
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
         let style = Style::create(
-            String::from("App"),
+            String::from("CustomComponent"),
             String::from(
                 r#"
                 background-color: red;
@@ -36,9 +36,14 @@ impl Component for App {
     }
 
     fn view(&self) -> Html {
+        info!("rendered!");
         html! {<div class=self.style.clone()>
             {"The quick brown fox jumps over the lazy dog"}
             <div class="on-da-inside">{"The quick brown fox jumps over the lazy dog"}</div>
         </div>}
     }
+}
+fn main() {
+    web_logger::init();
+    yew::start_app::<CustomComponent>();
 }

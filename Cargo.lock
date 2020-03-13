@@ -96,6 +96,7 @@ dependencies = [
  "lazy_static",
  "nom",
  "rand",
+ "stdweb",
  "wasm-bindgen",
  "wasm-bindgen-test",
  "web-sys",
@@ -213,6 +214,7 @@ checksum = "7abc8dd8451921606d809ba32e95b6111925cd2906060d2dcc29c070220503eb"
 dependencies = [
  "cfg-if",
  "libc",
+ "stdweb",
  "wasi",
  "wasm-bindgen",
 ]
@@ -821,6 +823,7 @@ dependencies = [
  "serde",
  "serde_json",
  "slab",
+ "stdweb",
  "thiserror",
  "wasm-bindgen",
  "wasm-bindgen-futures",
