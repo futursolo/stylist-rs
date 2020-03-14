@@ -1,5 +1,6 @@
 # Rust
 /target
+/examples/*/target
 Cargo.lock
 
 # VSCode
