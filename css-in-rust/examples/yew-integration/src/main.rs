@@ -17,16 +17,14 @@ impl Component for CustomComponent {
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
         let style = Style::create(
-            String::from("CustomComponent"),
-            String::from(
-                r#"
-                background-color: red;
-                .on-da-inside {
-                    background-color: blue;
-                    width: 100px
-                }
-                "#,
-            ),
+            "CustomComponent",
+            r#"
+            background-color: red;
+            .on-da-inside {
+                background-color: blue;
+                width: 100px
+            }
+            "#,
         );
         CustomComponent { style }
     }
