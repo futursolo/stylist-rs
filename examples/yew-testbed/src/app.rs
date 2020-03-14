@@ -5,8 +5,6 @@ extern crate css_in_rust;
 use css_in_rust::style::Style;
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
-const KEY: &str = "css-in-rust/yew-testbed";
-
 pub struct App {
     style: Style,
 }
