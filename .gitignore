@@ -1,8 +1,9 @@
 # Rust
 /target
+Cargo.lock
 
 # VSCode
-css-in-rust.code-workspace
+*.code-workspace
 
 # MacOS
 ## General
@@ -31,4 +32,3 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
-

@@ -19,7 +19,7 @@ wasm-bindgen = "0.2.59"
 web_logger = "0.2"
 yew = { version = "^0.13", features = ["web_sys"] }
 
-css-in-rust = { path = "../css-in-rust", features = ["web_sys", "yew_integration"]}
+css-in-rust = { path = "../..", features = ["web_sys", "yew_integration"]}
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
