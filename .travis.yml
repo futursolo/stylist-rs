@@ -1,0 +1,37 @@
+language: rust
+dist: bionic
+sudo: false
+#addons:
+#  firefox: latest
+
+cache: cargo
+before_cache:
+  - ./ci/clear_cache.sh
+
+rust:
+  - 1.39.0 # min supported (because of yew)
+  - stable
+  - beta
+
+matrix:
+  allow_failures:
+    - rust: beta
+  fast_finish: true
+
+install:
+  - rustup component add rustfmt
+  - rustup component add clippy
+  - rustup target add wasm32-unknown-unknown
+  - cargo install cargo-update || true
+  - cargo install-update-config --version =0.2.59 wasm-bindgen-cli
+  - cargo install-update --allow-no-update wasm-bindgen-cli
+  - curl  --retry 5 https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+#  - curl --retry 5 -LO https://github.com/mozilla/geckodriver/releases/download/v0.26.0/geckodriver-v0.26.0-linux64.tar.gz
+#  - tar -xzf geckodriver-v0.26.0-linux64.tar.gz
+
+script:
+  - ./ci/run_checks.sh
+  - wasm-pack test --feature std_web --node
+  - cargo doc --features std_web,yew_integration
+
+
