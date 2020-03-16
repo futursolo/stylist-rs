@@ -19,9 +19,12 @@ impl Component for App {
             String::from(
                 r#"
                 background-color: red;
+                padding: 5px;
                 .on-da-inside {
                     background-color: blue;
-                    width: 100px
+                    width: 100px;
+                    color: #ddd;
+                    padding: 5px;
                 }
                 "#,
             ),

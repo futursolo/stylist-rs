@@ -31,7 +31,6 @@ install:
 
 script:
   - ./ci/run_checks.sh
-  - wasm-pack test --feature std_web --node
-  - cargo doc --features std_web,yew_integration
-
-
+  - ./ci/run_tests.sh
+  - ./ci/run_build_docs.sh
+  - ./ci/run_build.sh
