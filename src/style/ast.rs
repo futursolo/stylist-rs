@@ -70,7 +70,15 @@ impl ToCss for Block {
             .fold(String::new(), |acc, css_part| {
                 format!("{}\n{}", acc, css_part)
             });
-        format!(".{}{} {{{}\n}}", class_name, condition, style_property_css)
+        if condition.contains("&") {
+            format!(
+                "{} {{{}\n}}",
+                condition.replace("&", format!(".{}", class_name).as_str()),
+                style_property_css
+            )
+        } else {
+            format!(".{}{} {{{}\n}}", class_name, condition, style_property_css)
+        }
     }
 }
 
@@ -92,13 +100,44 @@ impl ToCss for StyleAttribute {
 /// An example would be `@keyframes`
 #[derive(Debug, Clone)]
 pub(crate) struct Rule {
-    condition: String,
-    content: String,
+    pub(crate) condition: String,
+    pub(crate) content: Vec<RuleContent>,
 }
 
 impl ToCss for Rule {
-    fn to_css(&self, _: String) -> String {
-        format!("{} {{\n{}\n}}", self.condition, self.content)
+    fn to_css(&self, class_name: String) -> String {
+        format!(
+            "{} {{\n{}\n}}",
+            self.condition,
+            self.content
+                .iter()
+                .map(|rc| rc.to_css(class_name.clone()))
+                .collect::<Vec<String>>()
+                .concat()
+        )
+    }
+}
+
+/// Everything that can be inside a rule.
+#[derive(Debug, Clone)]
+pub(crate) enum RuleContent {
+    String(String),
+    CurlyBraces(Vec<RuleContent>),
+}
+
+impl ToCss for RuleContent {
+    fn to_css(&self, class_name: String) -> String {
+        match self {
+            RuleContent::String(s) => s.to_string(),
+            RuleContent::CurlyBraces(content) => format!(
+                "{{{}}}",
+                content
+                    .iter()
+                    .map(|rc| rc.to_css(class_name.clone()))
+                    .collect::<Vec<String>>()
+                    .concat()
+            ),
+        }
     }
 }
 

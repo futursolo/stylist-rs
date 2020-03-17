@@ -1,3 +1,5 @@
 #!/bin/bash
 
-wasm-pack test --features std_web --node
+# This is blocked by https://github.com/rustwasm/wasm-pack/issues/698
+#wasm-pack test --node -- --features std_web
+cargo test --features std_web

@@ -18,13 +18,28 @@ impl Component for App {
             String::from("App"),
             String::from(
                 r#"
-                background-color: red;
+                background-color: darkred;
                 padding: 5px;
+                &:hover {
+                    background-color: red;
+                }
+
                 .on-da-inside {
                     background-color: blue;
                     width: 100px;
                     color: #ddd;
                     padding: 5px;
+                    animation: move 2s infinite;
+                    animation-timing-function: linear;
+                    animation-direction: alternate;
+                }
+                @keyframes move {
+                    from {
+                        width: 100px;
+                    }
+                    to {
+                        width: 200px;
+                    }
                 }
                 "#,
             ),

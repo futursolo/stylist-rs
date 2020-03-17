@@ -1,6 +1,6 @@
 // Copyright © 2020 Lukas Wagner
 
-use super::style::ast::{Block, Scope, ScopeContent, StyleAttribute};
+use super::style::ast::{Block, Rule, RuleContent, Scope, ScopeContent, StyleAttribute};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while},
@@ -112,6 +112,73 @@ impl Parser {
         )(i)
     }
 
+    fn rule<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, ScopeContent, E> {
+        if i.is_empty() {
+            return Err(nom::Err::Error(ParseError::from_error_kind(
+                i,
+                ErrorKind::LengthValue,
+            )));
+        }
+        context(
+            "Rule",
+            preceded(
+                Parser::sp,
+                map(
+                    separated_pair(
+                        preceded(tag("@"), is_not("{")),
+                        tag("{"),
+                        terminated(
+                            terminated(
+                                many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
+                                Parser::sp,
+                            ),
+                            tag("}"),
+                        ),
+                    ),
+                    |p: (&str, Vec<RuleContent>)| -> ScopeContent {
+                        ScopeContent::Rule(Rule {
+                            condition: format!("{}{}", "@", p.0),
+                            content: p.1,
+                        })
+                    },
+                ),
+            ),
+        )(i)
+    }
+
+    /// Parse everything that is not curly braces
+    fn rule_string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, RuleContent, E> {
+        if i.is_empty() {
+            return Err(nom::Err::Error(ParseError::from_error_kind(
+                i,
+                ErrorKind::LengthValue,
+            )));
+        }
+        map(is_not("{}"), |p| RuleContent::String(String::from(p)))(i)
+    }
+
+    /// Parse values within curly braces. This is basically just a helper for rules since
+    /// they may contain braced content. This function is for parsing it all and not
+    /// returning an incomplete rule at the first appearance of a closed curly brace
+    fn rule_curly_braces<'a, E: ParseError<&'a str>>(
+        i: &'a str,
+    ) -> IResult<&'a str, RuleContent, E> {
+        if i.is_empty() {
+            return Err(nom::Err::Error(ParseError::from_error_kind(
+                i,
+                ErrorKind::LengthValue,
+            )));
+        }
+        map(
+            delimited(
+                tag("{"),
+                many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
+                tag("}"),
+            ),
+            |p| RuleContent::CurlyBraces(p),
+        )(i)
+    }
+
     /// Parse a style attribute such as "width: 10px"
     fn dangling_attribute<'a, E: ParseError<&'a str>>(
         i: &'a str,
@@ -175,10 +242,13 @@ impl Parser {
     ) -> IResult<&'a str, Vec<ScopeContent>, E> {
         context(
             "StyleScope",
-            map(many0(alt((Parser::dangling_block, Parser::block))), |p| {
-                println!("scope_contents: {:?}", p);
-                p
-            }),
+            map(
+                many0(alt((Parser::dangling_block, Parser::rule, Parser::block))),
+                |p| {
+                    println!("scope_contents: {:?}", p);
+                    p
+                },
+            ),
         )(i)
     }
 }

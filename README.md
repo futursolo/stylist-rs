@@ -34,17 +34,28 @@ So everything that is not in a conditioned block will be applied to the Componen
 
 The Style you put in will get parsed and converted to actual CSS and automatically appended to the head of your HTML document.
 
-## Planned Syntactic Features
-
-Things described here will happen earlier rather than later as soon as I find the time. However, pull requests are very welcome.
-
-There are plans to add the `&` identifier so that things like these will be made possible:
+You may also use the `&` identifier in order to use CSS selectors or pseudo classes on the styled element:
 
 ```css
 &:hover {
     background-color: #D0D0D9;
 }
 ```
+
+You can also use other CSS rules, e.g. keyframes:
+
+```css
+@keyframes mymove {
+    from {top: 0px;}
+    to {top: 200px;}
+}
+```
+
+Please be aware that right now, CSSinRust will not parse the name of the animation in order to make it unique. If you need that feature please upvote the issue or open a new one if there is none already.
+
+## Planned Syntactic Features
+
+Things described here will happen earlier rather than later as soon as I find the time. However, pull requests are very welcome.
 
 There are also plans to add in media query support like that:
 
@@ -55,15 +66,6 @@ There are also plans to add in media query support like that:
     .nested {
         background-color: lightblue;
     }
-}
-```
-
-Finally CSSinRust will be able to support CSS rules like that:
-
-```css
-@keyframes mymove {
-    from {top: 0px;}
-    to {top: 200px;}
 }
 ```
 
