@@ -1,3 +1,3 @@
 #!/bin/bash
 
-NON_CONFLICTING_FEATURES="yew_integration"
+export NON_CONFLICTING_FEATURES="yew_integration"

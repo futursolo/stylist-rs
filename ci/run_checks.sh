@@ -6,7 +6,8 @@ if [ "$?" != "0" ]; then
   exit 0
 fi
 
-. ./features.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+. "$DIR/features.sh"
 
 set -euxo pipefail
 cargo fmt --all -- --check

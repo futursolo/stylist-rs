@@ -1,6 +1,8 @@
 #!/bin/bash
 
-. ./features.sh
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-wasm-pack build --features "std_web,$NON_CONFLICTING_FEATURES"
-wasm-pack build --features "web_sys,$NON_CONFLICTING_FEATURES"
+. "$DIR/features.sh"
+
+wasm-pack build -- --features "std_web,$NON_CONFLICTING_FEATURES"
+wasm-pack build -- --features "web_sys,$NON_CONFLICTING_FEATURES"
