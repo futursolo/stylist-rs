@@ -175,7 +175,7 @@ impl Parser {
                 many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
                 tag("}"),
             ),
-            |p| RuleContent::CurlyBraces(p),
+            RuleContent::CurlyBraces,
         )(i)
     }
 

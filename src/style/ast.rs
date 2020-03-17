@@ -70,7 +70,7 @@ impl ToCss for Block {
             .fold(String::new(), |acc, css_part| {
                 format!("{}\n{}", acc, css_part)
             });
-        if condition.contains("&") {
+        if condition.contains('&') {
             format!(
                 "{} {{{}\n}}",
                 condition.replace("&", format!(".{}", class_name).as_str()),
