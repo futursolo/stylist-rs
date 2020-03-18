@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/lukidoescode/css-in-rust.svg?branch=master)](https://travis-ci.com/lukidoescode/css-in-rust)
+
 # CSSinRust
 
 CSSinRust delivers a new way of implementing CSS styling in web-sys applications.
