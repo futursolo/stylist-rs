@@ -18,10 +18,11 @@ impl Component for App {
             String::from("App"),
             String::from(
                 r#"
-                background-color: darkred;
+                background-color: #303040;
+                color: #DDDDDD;
                 padding: 5px;
                 &:hover {
-                    background-color: red;
+                    background-color: #606072;
                 }
 
                 .on-da-inside {

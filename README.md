@@ -60,11 +60,7 @@ You can also use other CSS rules, e.g. keyframes:
 
 Please be aware that right now, CSSinRust will not parse the name of the animation in order to make it unique. If you need that feature please upvote the issue or open a new one if there is none already.
 
-## Planned Syntactic Features
-
-Things described here will happen earlier rather than later as soon as I find the time. However, pull requests are very welcome.
-
-There are also plans to add in media query support like that:
+There is also media query support now!
 
 ```css
 @media only screen and (max-width: 600px) {
@@ -72,6 +68,10 @@ There are also plans to add in media query support like that:
 
     .nested {
         background-color: lightblue;
+    }
+
+    &:hover {
+        background-color: #606072;
     }
 }
 ```
