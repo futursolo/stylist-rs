@@ -19,7 +19,7 @@ Currently there is only support for a very basic set of syntax. Even though the 
 Here is how a basic style would get defined.
 
 ```rust
-let style = css_in_rust::style::Style::create(
+let style = match css_in_rust::style::Style::create(
     "Component", // The class prefix
     // The actual css
     r#"
@@ -29,7 +29,12 @@ let style = css_in_rust::style::Style::create(
         background-color: blue;
         width: 100px
     }"#,
-)
+) {
+    Ok(style) => style,
+    Err(error) => {
+        panic!("An error occured while creating the style: {}", error);
+    }
+};
 ```
 
 So everything that is not in a conditioned block will be applied to the Component the class of this style is applied to. How that happens depends on the framework to use. Below there are examples for the supported frameworks.
@@ -83,10 +88,15 @@ impl Component for HelloComponent {
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        let style = css_in_rust::style::Style::create(
+        let style = match css_in_rust::style::Style::create(
             "Component",
             "background-color: #505050;",
-        );
+        ) {
+            Ok(style) => style,
+            Err(error) => {
+                panic!("An error occured while creating the style: {}", error);
+            }
+        };
         HelloComponent {
             style,
         }

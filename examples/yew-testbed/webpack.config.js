@@ -17,13 +17,20 @@ module.exports = (env, argv) => {
       webassemblyModuleFilename: 'yew-testbed.wasm'
     },
     plugins: [
+      argv.mode !== 'production' ? function(compiler) {
+        // This plugin enables recompilation whenever stuff in rust has changed
+        compiler.hooks.afterCompile.tap('CSSinRust', (compilation) => {
+          compilation.contextDependencies.add(path.resolve(__dirname, '../../src'));
+          return true;
+        });
+      } : undefined,
       new CopyWebpackPlugin([
         { from: './static', to: distPath }
       ]),
       new WasmPackPlugin({
         crateDirectory: '.',
         extraArgs: '--no-typescript',
-      })
+      }),
     ],
     watch: argv.mode !== 'production',
   };

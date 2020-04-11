@@ -5,7 +5,7 @@ use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while},
     character::complete::one_of,
-    combinator::{map, opt},
+    combinator::{map, map_res, opt},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
     multi::{many0, many1, separated_list},
     sequence::{delimited, preceded, separated_pair, terminated},
@@ -16,7 +16,7 @@ pub(super) struct Parser {}
 
 impl Parser {
     pub(super) fn parse(css: String) -> Result<Vec<Scope>, String> {
-        match Parser::scope_contents::<VerboseError<&str>>(css.as_str()) {
+        match Parser::scopes::<VerboseError<&str>>(css.as_str()) {
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
                 // here we use the `convert_error` function, to transform a `VerboseError<&str>`
                 // into a printable trace.
@@ -30,25 +30,38 @@ impl Parser {
                 println!("CSS parsing incomplete:\n{:?}", e);
                 Err(format!("{:?}", e))
             }
-            Ok((_, res)) => Ok(vec![Scope {
-                condition: None,
-                stylesets: res,
-            }]),
+            Ok((_, res)) => Ok(res),
         }
     }
 
     /// Parse whitespace
     fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+        if i.is_empty() {
+            return Err(nom::Err::Error(ParseError::from_error_kind(
+                i,
+                ErrorKind::LengthValue,
+            )));
+        }
         let chars = " \t\r\n";
         take_while(move |c| chars.contains(c))(i)
     }
 
     /// Parse a comment
     fn cmt<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
-        delimited(
-            preceded(opt(Parser::sp), tag("/*")),
-            is_not("*/"),
-            terminated(tag("*/"), opt(Parser::sp)),
+        context(
+            "StyleComment",
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    delimited(
+                        preceded(opt(Parser::sp), tag("/*")),
+                        // not(tag("*/")), // TODO check for the string
+                        is_not("*"),
+                        terminated(tag("*/"), opt(Parser::sp)),
+                    ),
+                ),
+                opt(Parser::sp),
+            ),
         )(i)
     }
 
@@ -56,18 +69,27 @@ impl Parser {
     fn attribute<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, StyleAttribute, E> {
         context(
             "StyleAttribute",
-            map(
-                separated_pair(
-                    preceded(opt(Parser::cmt), preceded(Parser::sp, is_not(" \t\r\n:{"))),
-                    preceded(opt(Parser::cmt), preceded(Parser::sp, tag(":"))),
-                    preceded(opt(Parser::cmt), preceded(Parser::sp, is_not(";{}"))),
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(
+                        separated_pair(
+                            preceded(
+                                opt(Parser::cmt),
+                                preceded(opt(Parser::sp), is_not(" \t\r\n:{")),
+                            ),
+                            preceded(opt(Parser::cmt), preceded(opt(Parser::sp), tag(":"))),
+                            preceded(opt(Parser::cmt), preceded(opt(Parser::sp), is_not(";{}"))),
+                        ),
+                        move |p: (&str, &str)| -> StyleAttribute {
+                            StyleAttribute {
+                                key: String::from(p.0.trim()),
+                                value: String::from(p.1.trim()),
+                            }
+                        },
+                    ),
                 ),
-                move |p: (&str, &str)| -> StyleAttribute {
-                    StyleAttribute {
-                        key: String::from(p.0.trim()),
-                        value: String::from(p.1.trim()),
-                    }
-                },
+                opt(Parser::sp),
             ),
         )(i)
     }
@@ -78,8 +100,14 @@ impl Parser {
         context(
             "StyleAttributes",
             terminated(
-                separated_list(preceded(Parser::sp, one_of(";")), Parser::attribute),
-                preceded(Parser::sp, opt(tag(";"))),
+                preceded(
+                    opt(Parser::sp),
+                    terminated(
+                        separated_list(preceded(opt(Parser::sp), one_of(";")), Parser::attribute),
+                        preceded(opt(Parser::sp), opt(tag(";"))),
+                    ),
+                ),
+                opt(Parser::sp),
             ),
         )(i)
     }
@@ -93,21 +121,24 @@ impl Parser {
         }
         context(
             "StyleBlock",
-            preceded(
-                Parser::sp,
-                map(
-                    separated_pair(
-                        is_not("{"),
-                        tag("{"),
-                        terminated(terminated(Parser::attributes, Parser::sp), tag("}")),
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(
+                        separated_pair(
+                            is_not("@{"),
+                            tag("{"),
+                            terminated(terminated(Parser::attributes, opt(Parser::sp)), tag("}")),
+                        ),
+                        |p: (&str, Vec<StyleAttribute>)| -> ScopeContent {
+                            ScopeContent::Block(Block {
+                                condition: Some(String::from(p.0)),
+                                style_attributes: p.1,
+                            })
+                        },
                     ),
-                    |p: (&str, Vec<StyleAttribute>)| -> ScopeContent {
-                        ScopeContent::Block(Block {
-                            condition: Some(String::from(p.0)),
-                            style_attributes: p.1,
-                        })
-                    },
                 ),
+                opt(Parser::sp),
             ),
         )(i)
     }
@@ -121,27 +152,33 @@ impl Parser {
         }
         context(
             "Rule",
-            preceded(
-                Parser::sp,
-                map(
-                    separated_pair(
-                        preceded(tag("@"), is_not("{")),
-                        tag("{"),
-                        terminated(
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map_res(
+                        separated_pair(
+                            preceded(tag("@"), is_not("{")),
+                            tag("{"),
                             terminated(
-                                many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
-                                Parser::sp,
+                                terminated(
+                                    many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
+                                    opt(Parser::sp),
+                                ),
+                                tag("}"),
                             ),
-                            tag("}"),
                         ),
+                        |p: (&str, Vec<RuleContent>)| -> Result<ScopeContent, String> {
+                            if p.0.starts_with("media") {
+                                return Err(String::from("Not a media query"));
+                            }
+                            Ok(ScopeContent::Rule(Rule {
+                                condition: format!("{}{}", "@", p.0),
+                                content: p.1,
+                            }))
+                        },
                     ),
-                    |p: (&str, Vec<RuleContent>)| -> ScopeContent {
-                        ScopeContent::Rule(Rule {
-                            condition: format!("{}{}", "@", p.0),
-                            content: p.1,
-                        })
-                    },
                 ),
+                opt(Parser::sp),
             ),
         )(i)
     }
@@ -154,7 +191,16 @@ impl Parser {
                 ErrorKind::LengthValue,
             )));
         }
-        map(is_not("{}"), |p| RuleContent::String(String::from(p)))(i)
+        context(
+            "StyleRuleString",
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(is_not("{}"), |p| RuleContent::String(String::from(p))),
+                ),
+                opt(Parser::sp),
+            ),
+        )(i)
     }
 
     /// Parse values within curly braces. This is basically just a helper for rules since
@@ -169,13 +215,22 @@ impl Parser {
                 ErrorKind::LengthValue,
             )));
         }
-        map(
-            delimited(
-                tag("{"),
-                many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
-                tag("}"),
+        context(
+            "StyleRuleCurlyBraces",
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(
+                        delimited(
+                            tag("{"),
+                            many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
+                            tag("}"),
+                        ),
+                        RuleContent::CurlyBraces,
+                    ),
+                ),
+                opt(Parser::sp),
             ),
-            RuleContent::CurlyBraces,
         )(i)
     }
 
@@ -191,21 +246,30 @@ impl Parser {
         }
         context(
             "StyleAttribute",
-            map(
-                separated_pair(
-                    preceded(opt(Parser::cmt), preceded(Parser::sp, is_not(" \t\r\n:{"))),
-                    preceded(opt(Parser::cmt), preceded(Parser::sp, tag(":"))),
-                    preceded(
-                        opt(Parser::cmt),
-                        preceded(Parser::sp, terminated(is_not(";{}"), tag(";"))),
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(
+                        separated_pair(
+                            preceded(
+                                opt(Parser::cmt),
+                                preceded(opt(Parser::sp), is_not(" \t\r\n:{")),
+                            ),
+                            preceded(opt(Parser::cmt), preceded(opt(Parser::sp), tag(":"))),
+                            preceded(
+                                opt(Parser::cmt),
+                                preceded(opt(Parser::sp), terminated(is_not(";{}"), tag(";"))),
+                            ),
+                        ),
+                        move |p: (&str, &str)| -> StyleAttribute {
+                            StyleAttribute {
+                                key: String::from(p.0.trim()),
+                                value: String::from(p.1.trim()),
+                            }
+                        },
                     ),
                 ),
-                move |p: (&str, &str)| -> StyleAttribute {
-                    StyleAttribute {
-                        key: String::from(p.0.trim()),
-                        value: String::from(p.1.trim()),
-                    }
-                },
+                opt(Parser::sp),
             ),
         )(i)
     }
@@ -219,7 +283,13 @@ impl Parser {
                 ErrorKind::LengthValue,
             )));
         }
-        context("StyleAttributes", many1(Parser::dangling_attribute))(i)
+        context(
+            "StyleAttributes",
+            terminated(
+                preceded(opt(Parser::sp), many1(Parser::dangling_attribute)),
+                opt(Parser::sp),
+            ),
+        )(i)
     }
 
     fn dangling_block<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, ScopeContent, E> {
@@ -229,25 +299,121 @@ impl Parser {
                 ErrorKind::LengthValue,
             )));
         }
-        map(Parser::dangling_attributes, |attr: Vec<StyleAttribute>| {
-            ScopeContent::Block(Block {
-                condition: None,
-                style_attributes: attr,
-            })
-        })(i)
+        context(
+            "StyleDanglingBlock",
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(Parser::dangling_attributes, |attr: Vec<StyleAttribute>| {
+                        ScopeContent::Block(Block {
+                            condition: None,
+                            style_attributes: attr,
+                        })
+                    }),
+                ),
+                opt(Parser::sp),
+            ),
+        )(i)
     }
 
     fn scope_contents<'a, E: ParseError<&'a str>>(
         i: &'a str,
     ) -> IResult<&'a str, Vec<ScopeContent>, E> {
+        if i.is_empty() {
+            return Err(nom::Err::Error(ParseError::from_error_kind(
+                i,
+                ErrorKind::LengthValue,
+            )));
+        }
+        context(
+            "ScopeContents",
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(
+                        many0(alt((Parser::dangling_block, Parser::rule, Parser::block))),
+                        |p| {
+                            println!("scope_contents: {:?}", p);
+                            p
+                        },
+                    ),
+                ),
+                opt(Parser::sp),
+            ),
+        )(i)
+    }
+
+    fn scope<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Scope, E> {
+        if i.is_empty() {
+            return Err(nom::Err::Error(ParseError::from_error_kind(
+                i,
+                ErrorKind::LengthValue,
+            )));
+        }
         context(
             "StyleScope",
-            map(
-                many0(alt((Parser::dangling_block, Parser::rule, Parser::block))),
-                |p| {
-                    println!("scope_contents: {:?}", p);
-                    p
-                },
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(Parser::scope_contents, |sc| Scope {
+                        condition: None,
+                        stylesets: sc,
+                    }),
+                ),
+                opt(Parser::sp),
+            ),
+        )(i)
+    }
+
+    fn media_rule<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Scope, E> {
+        if i.is_empty() {
+            return Err(nom::Err::Error(ParseError::from_error_kind(
+                i,
+                ErrorKind::LengthValue,
+            )));
+        }
+        context(
+            "MediaRule",
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    map(
+                        separated_pair(
+                            preceded(tag("@media "), is_not("{")),
+                            tag("{"),
+                            terminated(
+                                terminated(Parser::scope_contents, opt(Parser::sp)),
+                                tag("}"),
+                            ),
+                        ),
+                        |p: (&str, Vec<ScopeContent>)| -> Scope {
+                            Scope {
+                                condition: Some(format!("{}{}", "@media ", p.0)),
+                                stylesets: p.1,
+                            }
+                        },
+                    ),
+                ),
+                opt(Parser::sp),
+            ),
+        )(i)
+    }
+
+    fn scopes<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<Scope>, E> {
+        if i.is_empty() {
+            return Err(nom::Err::Error(ParseError::from_error_kind(
+                i,
+                ErrorKind::LengthValue,
+            )));
+        }
+        context(
+            "StyleScopes",
+            terminated(
+                preceded(
+                    opt(Parser::sp),
+                    many0(alt((Parser::media_rule, Parser::scope))),
+                ),
+                opt(Parser::sp),
             ),
         )(i)
     }

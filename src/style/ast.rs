@@ -1,6 +1,7 @@
 // Copyright © 2020 Lukas Wagner
 
-/// A scope represents a media query or all content not in a media query
+/// A scope represents a media query or all content not in a media query.
+///
 /// As an example:
 /// ```css
 /// /* BEGIN Scope */
@@ -30,6 +31,7 @@ impl ToCss for Scope {
             .map(|styleset| match styleset {
                 ScopeContent::Block(block) => block.to_css(class_name.clone()),
                 ScopeContent::Rule(rule) => rule.to_css(class_name.clone()),
+                // ScopeContent::Scope(scope) => scope.to_css(class_name.clone()),
             })
             .fold(String::new(), |acc, css_part| {
                 format!("{}{}\n", acc, css_part)
@@ -41,15 +43,24 @@ impl ToCss for Scope {
     }
 }
 
-/// Everything that can be inside a scope.
+/// Everything that can reside inside a scope.
 #[derive(Debug, Clone)]
 pub(crate) enum ScopeContent {
     Block(Block),
     Rule(Rule),
+    // e.g. media rules nested in support rules and vice versa
+    // Scope(Scope),
 }
 
 /// A block is a set of css properties that apply to elements that
 /// match the condition.
+///
+/// E.g.:
+/// ```css
+/// .inner {
+///     color: red;
+/// }
+/// ```
 #[derive(Debug, Clone)]
 pub(crate) struct Block {
     pub(crate) condition: Option<String>,
@@ -83,6 +94,7 @@ impl ToCss for Block {
 }
 
 /// A simple CSS proprerty in the form of a key value pair.
+///
 /// E.g.: `color: red`
 #[derive(Debug, Clone)]
 pub(crate) struct StyleAttribute {
@@ -97,6 +109,7 @@ impl ToCss for StyleAttribute {
 }
 
 /// A rule is everything that does not contain any properties.
+///
 /// An example would be `@keyframes`
 #[derive(Debug, Clone)]
 pub(crate) struct Rule {
