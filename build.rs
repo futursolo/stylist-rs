@@ -6,6 +6,7 @@ pub fn main() {
     let using_web_sys = cfg!(feature = "web_sys");
     let using_std_web = cfg!(feature = "std_web");
     let docs = cfg!(docs);
+
     if !docs {
         if using_web_sys && using_std_web {
             panic!("CSSinRust does not allow the `web_sys` and `std_web` cargo features to be used simultaneously");
