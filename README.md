@@ -78,6 +78,56 @@ There is also media query support now!
 
 # Integrations
 
+## Seed
+
+In order to enable all yew integration use the feature `seed_integration` for CSSinRust in your `Cargo.toml`. Then create a style and use it with yew like this:
+
+```rust
+pub(crate) struct Model {
+    pub style: css_in_rust::Style,
+}
+
+impl Default for Model {
+    fn default() -> Self {
+        let style = match css_in_rust::Style::create(
+            String::from("Component"),
+            String::from(
+                r#"
+                background-color: #303040;
+                color: #DDDDDD;
+                padding: 5px;
+                &:hover {
+                    background-color: #606072;
+                }
+                "#,
+            ),
+        ) {
+            Ok(style) => style,
+            Err(error) => {
+                panic!("An error occured while creating the style: {}", error);
+            }
+        };
+        Self {
+            style: style,
+        }
+    }
+}
+
+#[derive(Clone)]
+pub(crate) enum Msg {
+}
+
+pub(crate) fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
+}
+
+pub(crate) fn view(model: &Model) -> impl View<Msg> {
+    div![
+        model.style.clone(),
+        "Hello, World"
+    ]
+}
+```
+
 ## Yew
 
 In order to enable all yew integration use the feature `yew_integration` for CSSinRust in your `Cargo.toml`. Then create a style and use it with yew like this:
