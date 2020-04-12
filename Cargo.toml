@@ -1,9 +1,11 @@
 [package]
 name = "css-in-rust"
-version = "0.2.0"
+version = "0.2.1"
 license = "MIT"
 repository = "https://github.com/lukidoescode/css-in-rust"
-authors = ["Lukas Wagner <appdev.lukaswagner@gmail.com>"]
+authors = [
+    "Lukas Wagner <appdev.lukaswagner@gmail.com>",
+]
 edition = "2018"
 description = "CSSinRust is a package for use with WASM applications providing a component level CSS styling experience."
 keywords = [
