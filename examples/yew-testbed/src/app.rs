@@ -2,7 +2,7 @@
 
 extern crate css_in_rust;
 
-use css_in_rust::style::Style;
+use css_in_rust::Style;
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
 pub struct App {

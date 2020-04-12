@@ -19,7 +19,7 @@ Currently there is only support for a very basic set of syntax. Even though the 
 Here is how a basic style would get defined.
 
 ```rust
-let style = match css_in_rust::style::Style::create(
+let style = match css_in_rust::Style::create(
     "Component", // The class prefix
     // The actual css
     r#"
@@ -88,7 +88,7 @@ impl Component for HelloComponent {
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        let style = match css_in_rust::style::Style::create(
+        let style = match css_in_rust::Style::create(
             "Component",
             "background-color: #505050;",
         ) {
