@@ -10,3 +10,5 @@ extern crate wasm_bindgen_test;
 pub mod bindings;
 mod parser;
 pub mod style;
+
+pub use style::Style;
