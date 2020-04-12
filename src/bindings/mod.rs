@@ -2,3 +2,6 @@
 
 #[cfg(feature = "yew")]
 pub mod yew;
+
+#[cfg(feature = "seed")]
+pub mod seed;
