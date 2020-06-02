@@ -1,9 +1,5 @@
 // Copyright © 2020 Lukas Wagner
 
-extern crate rand;
-#[cfg(all(target_arch = "wasm32"))]
-extern crate web_sys;
-
 pub mod ast;
 
 use super::parser::Parser;
@@ -13,6 +9,7 @@ use ast::ToCss;
 use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+#[cfg(target_arch = "wasm32")]
 use web_sys::Element;
 
 #[cfg(target_arch = "wasm32")]
@@ -98,7 +95,6 @@ impl Style {
     }
 
     /// Mounts the styles to the document head web-sys style
-    #[cfg(feature = "web_sys")]
     fn mount(&mut self) -> Self {
         let mut style = self.unmount();
         style.node = self.generate_element().ok();
@@ -111,43 +107,13 @@ impl Style {
         self.clone()
     }
 
-    /// Mounts the styles to the document head stdweb style
-    #[cfg(feature = "std_web")]
-    fn mount(&mut self) -> Self {
-        let mut style = self.unmount();
-        style.node = Node::from_html(self.print().as_ref()).ok();
-        if let Some(node) = style.node {
-            document()
-                .query_selector("head")
-                .unwrap()
-                .unwrap()
-                .append_child(&node);
-        }
-        self.clone()
-    }
-
     /// Unmounts the style from the HTML head web-sys style
-    #[cfg(feature = "web_sys")]
     fn unmount(&mut self) -> Self {
         if let Some(node) = &self.node {
             let window = web_sys::window().expect("no global `window` exists");
             let document = window.document().expect("should have a document on window");
             let head = document.head().expect("should have a head in document");
             head.remove_child(node).ok();
-        }
-        self.clone()
-    }
-
-    /// Unmounts the style from the HTML head stdweb style
-    #[cfg(feature = "std_web")]
-    fn unmount(&mut self) -> Self {
-        if let Some(node) = &self.node {
-            document()
-                .query_selector("head")
-                .unwrap()
-                .unwrap()
-                .remove_child(node)
-                .ok();
         }
         self.clone()
     }
@@ -168,7 +134,6 @@ impl Style {
 
     /// Generates the `<style/>` tag web-sys style for inserting into the head of the
     /// HTML document.
-    #[cfg(feature = "web_sys")]
     fn generate_element(&self) -> Result<Element, JsValue> {
         let window = web_sys::window().expect("no global `window` exists");
         let document = window.document().expect("should have a document on window");
