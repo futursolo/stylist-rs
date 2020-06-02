@@ -9,7 +9,7 @@ before_cache:
   - ./ci/clear_cache.sh
 
 rust:
-  - 1.39.0 # min supported (because of yew)
+  - 1.42.0 # min supported (because of yew)
   - stable
   - beta
 
