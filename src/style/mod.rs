@@ -1,9 +1,7 @@
 // Copyright © 2020 Lukas Wagner
 
 extern crate rand;
-#[cfg(all(target_arch = "wasm32", feature = "std_web"))]
-extern crate stdweb;
-#[cfg(all(target_arch = "wasm32", feature = "web_sys"))]
+#[cfg(all(target_arch = "wasm32"))]
 extern crate web_sys;
 
 pub mod ast;
@@ -15,9 +13,6 @@ use ast::ToCss;
 use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-#[cfg(all(target_arch = "wasm32", feature = "std_web"))]
-use stdweb::web::{document, INode, IParentNode, Node};
-#[cfg(all(target_arch = "wasm32", feature = "web_sys"))]
 use web_sys::Element;
 
 #[cfg(target_arch = "wasm32")]
@@ -45,7 +40,7 @@ impl Default for StyleRegistry {
 unsafe impl Send for StyleRegistry {}
 unsafe impl Sync for StyleRegistry {}
 
-#[cfg(all(target_arch = "wasm32", feature = "web_sys"))]
+#[cfg(all(target_arch = "wasm32"))]
 #[derive(Debug, Clone)]
 pub struct Style {
     /// The designated class name of this style
@@ -54,17 +49,6 @@ pub struct Style {
     ast: Option<Vec<Scope>>,
     /// Style DOM node the data in this struct is turned into.
     node: Option<Element>,
-}
-
-#[cfg(all(target_arch = "wasm32", feature = "std_web"))]
-#[derive(Debug, Clone)]
-pub struct Style {
-    /// The designated class name of this style
-    pub class_name: String,
-    /// The abstract syntax tree of the css
-    ast: Option<Vec<Scope>>,
-    /// Style DOM node the data in this struct is turned into.
-    node: Option<Node>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]

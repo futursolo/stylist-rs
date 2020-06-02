@@ -11,5 +11,4 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 set -euxo pipefail
 cargo fmt --all -- --check
-cargo clippy --features "std_web,$NON_CONFLICTING_FEATURES" -- --deny=warnings
-cargo clippy --features "web_sys,$NON_CONFLICTING_FEATURES" -- --deny=warnings
+cargo clippy --features "$NON_CONFLICTING_FEATURES" -- --deny=warnings

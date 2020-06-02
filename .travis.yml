@@ -1,6 +1,6 @@
 language: rust
+os: linux
 dist: bionic
-sudo: false
 #addons:
 #  firefox: latest
 
@@ -13,7 +13,7 @@ rust:
   - stable
   - beta
 
-matrix:
+jobs:
   allow_failures:
     - rust: beta
   fast_finish: true
