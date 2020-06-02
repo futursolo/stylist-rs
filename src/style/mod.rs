@@ -6,7 +6,8 @@ use super::parser::Parser;
 use ast::Scope;
 #[cfg(target_arch = "wasm32")]
 use ast::ToCss;
-// use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
+#[cfg(not(target_arch = "wasm32"))]
+use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 #[cfg(target_arch = "wasm32")]

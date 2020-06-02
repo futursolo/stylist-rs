@@ -24,7 +24,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 nom = "^5.1.1"
-# rand = { version = "^0.7.0", features = ["small_rng"]}
 lazy_static = "^1.4.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -41,6 +40,9 @@ features = [
     "HtmlHeadElement",
     "HtmlStyleElement",
 ]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+rand = { version = "^0.7.0", features = ["small_rng"]}
 
 # Changes here must be reflected in `build.rs`
 [target.'cfg(all(target_arch = "wasm32", not(target_os="wasi"), not(cargo_web)))'.dependencies]
