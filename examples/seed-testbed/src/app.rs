@@ -12,7 +12,7 @@ pub(crate) struct Model {
 
 impl Default for Model {
     fn default() -> Self {
-        let style = match Style::create(
+        let style: Style = match Style::create(
             String::from("App"),
             String::from(
                 r#"
@@ -25,10 +25,8 @@ impl Default for Model {
                 "#,
             ),
         ) {
-            Ok(style) => style,
-            Err(error) => {
-                panic!("An error occured while creating the style: {}", error);
-            }
+            Ok(wrapped) => wrapped,
+            Err(error) => Style {},
         };
         Self {
             val: 0,

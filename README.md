@@ -45,7 +45,7 @@ You may also use the `&` identifier in order to use CSS selectors or pseudo clas
 
 ```css
 &:hover {
-    background-color: #D0D0D9;
+  background-color: #d0d0d9;
 }
 ```
 
@@ -53,8 +53,12 @@ You can also use other CSS rules, e.g. keyframes:
 
 ```css
 @keyframes mymove {
-    from {top: 0px;}
-    to {top: 200px;}
+  from {
+    top: 0px;
+  }
+  to {
+    top: 200px;
+  }
 }
 ```
 
@@ -64,15 +68,15 @@ There is also media query support now!
 
 ```css
 @media only screen and (max-width: 600px) {
-    background-color: #303040;
+  background-color: #303040;
 
-    .nested {
-        background-color: lightblue;
-    }
+  .nested {
+    background-color: lightblue;
+  }
 
-    &:hover {
-        background-color: #606072;
-    }
+  &:hover {
+    background-color: #606072;
+  }
 }
 ```
 
@@ -161,3 +165,10 @@ impl Component for HelloComponent {
     }
 }
 ```
+
+### CSSinRust Versions and Corresponding Yew Versions
+
+| Yew Version | CSSinRust Version |
+| ----------- | ----------------- |
+| 0.14.x      | 0.2.2             |
+| 0.15.x      | 0.3.x             |

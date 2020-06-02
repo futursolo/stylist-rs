@@ -14,52 +14,7 @@ impl Component for App {
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        let style = match Style::create(
-            String::from("App"),
-            String::from(
-                r#"
-                background-color: #303040;
-                color: #DDDDDD;
-                padding: 5px;
-                &:hover {
-                    background-color: #606072;
-                }
-
-                .on-da-inside {
-                    background-color: blue;
-                    width: 100px;
-                    color: #ddd;
-                    padding: 5px;
-                    animation: move 2s infinite;
-                    animation-timing-function: linear;
-                    animation-direction: alternate;
-                }
-
-                @keyframes move {
-                    from {
-                        width: 100px;
-                    }
-                    to {
-                        width: 200px;
-                    }
-                }
-
-                @media only screen and (min-width: 626px) {
-                    width: 600px;
-                    margin: auto;
-
-                    @keyframes move {
-                        from {
-                            width: 100px;
-                        }
-                        to {
-                            width: 590px;
-                        }
-                    }
-                }
-                "#,
-            ),
-        ) {
+        let style = match Style::create("App", include_str!("app.scss")) {
             Ok(style) => style,
             Err(error) => {
                 panic!("An error occured while creating the style: {}", error);
@@ -70,6 +25,10 @@ impl Component for App {
 
     fn update(&mut self, _: Self::Message) -> ShouldRender {
         true
+    }
+
+    fn change(&mut self, _: <Self as yew::html::Component>::Properties) -> bool {
+        false
     }
 
     fn view(&self) -> Html {

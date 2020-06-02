@@ -33,6 +33,10 @@ impl Component for CustomComponent {
         true
     }
 
+    fn change(&mut self, _: <Self as yew::html::Component>::Properties) -> bool {
+        false
+    }
+
     fn view(&self) -> Html {
         html! {<div class=self.style.clone()>
             {"The quick brown fox jumps over the lazy dog"}
