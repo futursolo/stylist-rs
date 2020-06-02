@@ -24,11 +24,11 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 nom = "^5.1.1"
-rand = { version = "^0.7", features = ["small_rng"]}
+# rand = { version = "^0.7.0", features = ["small_rng"]}
 lazy_static = "^1.4.0"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-yew = {version = "^0.15.0", features=["web_sys"], optional = true}
+yew = {version = "^0.16.0", features=["web_sys"], optional = true}
 seed = {version = "^0.6.0", optional = true}
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.web-sys]

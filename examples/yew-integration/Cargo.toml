@@ -7,5 +7,5 @@ edition = "2018"
 [dependencies]
 log = "0.4"
 web_logger = "0.2"
-yew = {version = "0.15.0", features=["web_sys"]}
+yew = {version = "0.16.0", features=["web_sys"]}
 css-in-rust = { path = "../..", features = ["yew_integration"]}

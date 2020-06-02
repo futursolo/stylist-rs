@@ -6,7 +6,7 @@ use super::parser::Parser;
 use ast::Scope;
 #[cfg(target_arch = "wasm32")]
 use ast::ToCss;
-use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
+// use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 #[cfg(target_arch = "wasm32")]
@@ -17,6 +17,13 @@ use wasm_bindgen::prelude::*;
 
 lazy_static! {
     static ref STYLE_REGISTRY: Arc<Mutex<StyleRegistry>> = Arc::new(Mutex::default());
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = Math)]
+    fn random() -> f64;
 }
 
 /// The style registry is just a global struct that makes sure no style gets lost.
@@ -68,17 +75,9 @@ impl Style {
         css: I2,
     ) -> Result<Style, String> {
         let (class_name, css) = (class_name.into(), css.into());
-        let small_rng = SmallRng::from_entropy();
         let ast = Parser::parse(css)?;
         let mut new_style = Self {
-            class_name: format!(
-                "{}-{}",
-                class_name,
-                small_rng
-                    .sample_iter(Alphanumeric)
-                    .take(30)
-                    .collect::<String>()
-            ),
+            class_name: format!("{}-{}", class_name, random().to_bits()),
             ast: Some(ast),
             node: None,
         };
