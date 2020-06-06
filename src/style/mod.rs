@@ -153,7 +153,10 @@ impl Style {
     /// newly created style.
     ///
     /// This function will already mount the style to the HTML head for the browser to use.
-    pub fn create<I1: Into<String>, I2: Into<String>>(class_name: I1, css: I2) -> Style {
+    pub fn create<I1: Into<String>, I2: Into<String>>(
+        class_name: I1,
+        css: I2,
+    ) -> Result<Style, String> {
         let (class_name, css) = (class_name.into(), css.into());
         let small_rng = SmallRng::from_entropy();
         let new_style = Self {
@@ -176,7 +179,7 @@ impl Style {
         (*style_registry)
             .styles
             .insert(new_style.class_name.clone(), new_style.clone());
-        new_style
+        Ok(new_style)
     }
 }
 

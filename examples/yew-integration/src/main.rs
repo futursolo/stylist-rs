@@ -25,7 +25,8 @@ impl Component for CustomComponent {
                 width: 100px
             }
             "#,
-        );
+        )
+        .unwrap();
         CustomComponent { style }
     }
 

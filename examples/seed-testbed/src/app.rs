@@ -24,10 +24,7 @@ impl Default for Model {
                 }
                 "#,
             ),
-        ) {
-            Ok(wrapped) => wrapped,
-            Err(error) => Style {},
-        };
+        ).unwrap();
         Self {
             val: 0,
             style: style,
