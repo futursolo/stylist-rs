@@ -185,6 +185,10 @@ impl Style {
             .insert(new_style.class_name.clone(), new_style.clone());
         Ok(new_style)
     }
+
+    pub fn get_class_name(self) -> String {
+        self.class_name
+    }
 }
 
 impl ToString for Style {
