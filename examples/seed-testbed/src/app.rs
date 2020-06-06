@@ -12,7 +12,7 @@ pub(crate) struct Model {
 
 impl Default for Model {
     fn default() -> Self {
-        let style: Style = match Style::create(
+        let style: Style = Style::create(
             String::from("App"),
             String::from(
                 r#"
@@ -24,7 +24,8 @@ impl Default for Model {
                 }
                 "#,
             ),
-        ).unwrap();
+        )
+        .unwrap();
         Self {
             val: 0,
             style: style,
