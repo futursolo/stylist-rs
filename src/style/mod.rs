@@ -49,7 +49,7 @@ unsafe impl Sync for StyleRegistry {}
 #[derive(Debug, Clone)]
 pub struct Style {
     /// The designated class name of this style
-    pub class_name: String,
+    class_name: String,
     /// The abstract syntax tree of the css
     ast: Option<Vec<Scope>>,
     /// Style DOM node the data in this struct is turned into.
@@ -92,6 +92,10 @@ impl Style {
             .styles
             .insert(new_style.class_name.clone(), new_style.clone());
         Ok(new_style)
+    }
+
+    pub fn get_class_name(self) -> String {
+        self.class_name
     }
 
     /// Mounts the styles to the document head web-sys style

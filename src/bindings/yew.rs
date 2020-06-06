@@ -12,7 +12,7 @@ use yew::virtual_dom::Classes;
 impl From<Style> for Classes {
     fn from(style: Style) -> Self {
         let mut classes = Self::new();
-        classes.push(style.class_name.as_str());
+        classes.push(style.get_class_name().as_str());
         classes
     }
 }
