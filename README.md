@@ -173,3 +173,4 @@ impl Component for HelloComponent {
 | 0.14.x      | 0.2.2             |
 | 0.15.x      | 0.3.x             |
 | 0.16.x      | 0.4.x             |
+| 0.17.x      | 0.5.x             |
