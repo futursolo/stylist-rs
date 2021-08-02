@@ -1,31 +1,22 @@
-// Copyright © 2020 Lukas Wagner
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+use once_cell::sync::Lazy;
 
 pub mod ast;
+use crate::utils::get_rand_str;
 
 use super::parser::Parser;
 use ast::Scope;
 #[cfg(target_arch = "wasm32")]
 use ast::ToCss;
-#[cfg(not(target_arch = "wasm32"))]
-use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 #[cfg(target_arch = "wasm32")]
 use web_sys::Element;
 
 #[cfg(target_arch = "wasm32")]
 use wasm_bindgen::prelude::*;
 
-lazy_static! {
-    static ref STYLE_REGISTRY: Arc<Mutex<StyleRegistry>> = Arc::new(Mutex::default());
-}
-
-#[cfg(target_arch = "wasm32")]
-#[wasm_bindgen]
-extern "C" {
-    #[wasm_bindgen(js_namespace = Math)]
-    fn random() -> f64;
-}
+static STYLE_REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
 
 /// The style registry is just a global struct that makes sure no style gets lost.
 /// Every style automatically registers with the style registry.
@@ -45,24 +36,18 @@ impl Default for StyleRegistry {
 unsafe impl Send for StyleRegistry {}
 unsafe impl Sync for StyleRegistry {}
 
-#[cfg(all(target_arch = "wasm32"))]
 #[derive(Debug, Clone)]
 pub struct Style {
     /// The designated class name of this style
     class_name: String,
-    /// The abstract syntax tree of the css
-    ast: Option<Vec<Scope>>,
-    /// Style DOM node the data in this struct is turned into.
-    node: Option<Element>,
-}
 
-#[cfg(not(target_arch = "wasm32"))]
-#[derive(Debug, Clone)]
-pub struct Style {
-    /// The designated class name of this style
-    class_name: String,
     /// The abstract syntax tree of the css
     ast: Option<Vec<Scope>>,
+
+    /// Style DOM node the data in this struct is turned into.
+
+    #[cfg(all(target_arch = "wasm32"))]
+    node: Option<Element>,
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -78,7 +63,7 @@ impl Style {
         let (class_name, css) = (class_name.into(), css.into());
         let ast = Parser::parse(css)?;
         let mut new_style = Self {
-            class_name: format!("{}-{}", class_name, random().to_bits()),
+            class_name: format!("{}-{}", class_name, get_rand_str()),
             ast: Some(ast),
             node: None,
         };
@@ -162,16 +147,8 @@ impl Style {
         css: I2,
     ) -> Result<Style, String> {
         let (class_name, css) = (class_name.into(), css.into());
-        let small_rng = SmallRng::from_entropy();
         let new_style = Self {
-            class_name: format!(
-                "{}-{}",
-                class_name,
-                small_rng
-                    .sample_iter(Alphanumeric)
-                    .take(30)
-                    .collect::<String>()
-            ),
+            class_name: format!("{}-{}", class_name, get_rand_str()),
             // TODO log out an error
             ast: Parser::parse(css).ok(),
         };

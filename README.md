@@ -1,26 +1,20 @@
-[![Build Status](https://travis-ci.com/lukidoescode/css-in-rust.svg?branch=master)](https://travis-ci.com/lukidoescode/css-in-rust)
+# Stylist
 
-# CSSinRust
+Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
 
-CSSinRust delivers a new way of implementing CSS styling in web-sys applications.
-It's aim is to make writing web frontends in Rust attractive by providing a way to style on a component level. The library is implemented so that it could in theory work with any framework. However, right now there is only an implementation for yew. Pull requests are very welcome, whether for improving code quality, integration solutions or functionality.
+This is a fork of [css-in-rust](https://github.com/lukidoescode/css-in-rust).
 
-Please be aware that this project is still under heavy development and that future changes might break your code. I'm still not sure about the overall design but I needed something like this and I'm sure some other people do as well.
+## Usage
 
-If you'd like to be kept up to date or you'd like to support my work please visit me on those platforms:
-
-- [Twitter](https://twitter.com/lukidoescode)
-- [Patreon](https://www.patreon.com/lukaswagner)
-
-# Syntax
-
-Currently there is only support for a very basic set of syntax. Even though the syntax is very similar to CSS there are a few particularities in CSSinRust which are inspired by SASS and styled-components in JS.
-
-Here is how a basic style would get defined.
+To create a stylesheet, use `Style::create`:
 
 ```rust
-let style = match css_in_rust::Style::create(
-    "Component", // The class prefix
+use stylist::Style;
+
+let style = Style::create(
+    // The class prefix
+    "Component",
+
     // The actual css
     r#"
     background-color: red;
@@ -29,19 +23,18 @@ let style = match css_in_rust::Style::create(
         background-color: blue;
         width: 100px
     }"#,
-) {
-    Ok(style) => style,
-    Err(error) => {
-        panic!("An error occured while creating the style: {}", error);
-    }
-};
+).expect("Failed to create style");
 ```
 
-So everything that is not in a conditioned block will be applied to the Component the class of this style is applied to. How that happens depends on the framework to use. Below there are examples for the supported frameworks.
+Everything that is not in a conditioned block will be applied to the Component
+the class of this style is applied to. How that happens depends on the framework to use.
+Below there are examples for the supported frameworks.
 
-The Style you put in will get parsed and converted to actual CSS and automatically appended to the head of your HTML document.
+The Style you put in will get parsed and converted to actual CSS and automatically appended
+to the head of your HTML document.
 
-You may also use the `&` identifier in order to use CSS selectors or pseudo classes on the styled element:
+You may also use the `&` identifier in order to use CSS selectors or pseudo
+classes on the styled element:
 
 ```css
 &:hover {
@@ -62,10 +55,6 @@ You can also use other CSS rules, e.g. keyframes:
 }
 ```
 
-Please be aware that right now, CSSinRust will not parse the name of the animation in order to make it unique. If you need that feature please upvote the issue or open a new one if there is none already.
-
-There is also media query support now!
-
 ```css
 @media only screen and (max-width: 600px) {
   background-color: #303040;
@@ -80,84 +69,35 @@ There is also media query support now!
 }
 ```
 
-# Integrations
+## Yew Integration
 
-## Seed
+To enable yew integration.
 
-In order to enable all yew integration use the feature `seed_integration` for CSSinRust in your `Cargo.toml`. Then create a style and use it with yew like this:
-
-```rust
-pub(crate) struct Model {
-    pub style: css_in_rust::Style,
-}
-
-impl Default for Model {
-    fn default() -> Self {
-        let style = match css_in_rust::Style::create(
-            String::from("Component"),
-            String::from(
-                r#"
-                background-color: #303040;
-                color: #DDDDDD;
-                padding: 5px;
-                &:hover {
-                    background-color: #606072;
-                }
-                "#,
-            ),
-        ) {
-            Ok(style) => style,
-            Err(error) => {
-                panic!("An error occured while creating the style: {}", error);
-            }
-        };
-        Self {
-            style: style,
-        }
-    }
-}
-
-#[derive(Clone)]
-pub(crate) enum Msg {
-}
-
-pub(crate) fn update(msg: Msg, model: &mut Model, _: &mut impl Orders<Msg>) {
-}
-
-pub(crate) fn view(model: &Model) -> impl View<Msg> {
-    div![
-        model.style.clone(),
-        "Hello, World"
-    ]
-}
-```
-
-## Yew
-
-In order to enable all yew integration use the feature `yew_integration` for CSSinRust in your `Cargo.toml`. Then create a style and use it with yew like this:
+Then create a style and use it with yew like this:
 
 ```rust
-impl Component for HelloComponent {
+use stylist::Style;
+
+struct MyStyledComponent {
+  style: Style,
+}
+
+impl Component for MyStyledComponent {
     type Message = ();
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        let style = match css_in_rust::Style::create(
-            "Component",
+        let style = match Style::create(
+            "styled-component",
             "background-color: #505050;",
-        ) {
-            Ok(style) => style,
-            Err(error) => {
-                panic!("An error occured while creating the style: {}", error);
-            }
-        };
-        HelloComponent {
+        ).unwrap();
+        Self {
             style,
         }
     }
 
     fn update(&mut self, _: Self::Message) -> ShouldRender {
-        true
+        false
     }
 
     fn view(&self) -> Html {
@@ -165,12 +105,3 @@ impl Component for HelloComponent {
     }
 }
 ```
-
-### CSSinRust Versions and Corresponding Yew Versions
-
-| Yew Version | CSSinRust Version |
-| ----------- | ----------------- |
-| 0.14.x      | 0.2.2             |
-| 0.15.x      | 0.3.x             |
-| 0.16.x      | 0.4.x             |
-| 0.17.x      | 0.5.x             |

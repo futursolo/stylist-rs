@@ -7,7 +7,7 @@ use nom::{
     character::complete::one_of,
     combinator::{map, map_res, opt},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
-    multi::{many0, many1, separated_list},
+    multi::{many0, many1, separated_list0},
     sequence::{delimited, preceded, separated_pair, terminated},
     IResult,
 };
@@ -16,9 +16,9 @@ pub(super) struct Parser {}
 
 impl Parser {
     pub(super) fn parse(css: String) -> Result<Vec<Scope>, String> {
-        match Parser::scopes::<VerboseError<&str>>(css.as_str()) {
+        match Parser::scopes(css.as_str()) {
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
-                // here we use the `convert_error` function, to transform a `VerboseError<&str>`
+                // here we use the `convert_error` function, to transform a `VerboseVerboseError<&str>`
                 // into a printable trace.
                 println!(
                     "CSS parsing error:\n{}",
@@ -35,7 +35,7 @@ impl Parser {
     }
 
     /// Parse whitespace
-    fn sp<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+    fn sp(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -47,7 +47,7 @@ impl Parser {
     }
 
     /// Parse a comment
-    fn cmt<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, &'a str, E> {
+    fn cmt(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         context(
             "StyleComment",
             terminated(
@@ -66,7 +66,7 @@ impl Parser {
     }
 
     /// Parse a style attribute such as "width: 10px"
-    fn attribute<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, StyleAttribute, E> {
+    fn attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
         context(
             "StyleAttribute",
             terminated(
@@ -94,16 +94,14 @@ impl Parser {
         )(i)
     }
 
-    fn attributes<'a, E: ParseError<&'a str>>(
-        i: &'a str,
-    ) -> IResult<&'a str, Vec<StyleAttribute>, E> {
+    fn attributes(i: &str) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
         context(
             "StyleAttributes",
             terminated(
                 preceded(
                     opt(Parser::sp),
                     terminated(
-                        separated_list(preceded(opt(Parser::sp), one_of(";")), Parser::attribute),
+                        separated_list0(preceded(opt(Parser::sp), one_of(";")), Parser::attribute),
                         preceded(opt(Parser::sp), opt(tag(";"))),
                     ),
                 ),
@@ -112,7 +110,7 @@ impl Parser {
         )(i)
     }
 
-    fn block<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, ScopeContent, E> {
+    fn block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -143,7 +141,7 @@ impl Parser {
         )(i)
     }
 
-    fn rule<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, ScopeContent, E> {
+    fn rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -184,7 +182,7 @@ impl Parser {
     }
 
     /// Parse everything that is not curly braces
-    fn rule_string<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, RuleContent, E> {
+    fn rule_string(i: &str) -> IResult<&str, RuleContent, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -206,9 +204,7 @@ impl Parser {
     /// Parse values within curly braces. This is basically just a helper for rules since
     /// they may contain braced content. This function is for parsing it all and not
     /// returning an incomplete rule at the first appearance of a closed curly brace
-    fn rule_curly_braces<'a, E: ParseError<&'a str>>(
-        i: &'a str,
-    ) -> IResult<&'a str, RuleContent, E> {
+    fn rule_curly_braces(i: &str) -> IResult<&str, RuleContent, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -235,9 +231,7 @@ impl Parser {
     }
 
     /// Parse a style attribute such as "width: 10px"
-    fn dangling_attribute<'a, E: ParseError<&'a str>>(
-        i: &'a str,
-    ) -> IResult<&'a str, StyleAttribute, E> {
+    fn dangling_attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -274,9 +268,7 @@ impl Parser {
         )(i)
     }
 
-    fn dangling_attributes<'a, E: ParseError<&'a str>>(
-        i: &'a str,
-    ) -> IResult<&'a str, Vec<StyleAttribute>, E> {
+    fn dangling_attributes(i: &str) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -292,7 +284,7 @@ impl Parser {
         )(i)
     }
 
-    fn dangling_block<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, ScopeContent, E> {
+    fn dangling_block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -316,9 +308,7 @@ impl Parser {
         )(i)
     }
 
-    fn scope_contents<'a, E: ParseError<&'a str>>(
-        i: &'a str,
-    ) -> IResult<&'a str, Vec<ScopeContent>, E> {
+    fn scope_contents(i: &str) -> IResult<&str, Vec<ScopeContent>, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -343,7 +333,7 @@ impl Parser {
         )(i)
     }
 
-    fn scope<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Scope, E> {
+    fn scope(i: &str) -> IResult<&str, Scope, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -365,7 +355,7 @@ impl Parser {
         )(i)
     }
 
-    fn media_rule<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Scope, E> {
+    fn media_rule(i: &str) -> IResult<&str, Scope, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,
@@ -399,7 +389,7 @@ impl Parser {
         )(i)
     }
 
-    fn scopes<'a, E: ParseError<&'a str>>(i: &'a str) -> IResult<&'a str, Vec<Scope>, E> {
+    fn scopes(i: &str) -> IResult<&str, Vec<Scope>, VerboseError<&str>> {
         if i.is_empty() {
             return Err(nom::Err::Error(ParseError::from_error_kind(
                 i,

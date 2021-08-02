@@ -1,5 +1,3 @@
-// Copyright © 2020 Lukas Wagner
-
 /// A scope represents a media query or all content not in a media query.
 ///
 /// As an example:
@@ -26,6 +24,7 @@ pub(crate) struct Scope {
 impl ToCss for Scope {
     fn to_css(&self, class_name: String) -> String {
         let stylesets = self.stylesets.clone();
+
         let stylesets_css = stylesets
             .into_iter()
             .map(|styleset| match styleset {
@@ -36,6 +35,7 @@ impl ToCss for Scope {
             .fold(String::new(), |acc, css_part| {
                 format!("{}{}\n", acc, css_part)
             });
+
         match &self.condition {
             Some(condition) => format!("{} {{\n{}}}", condition, stylesets_css),
             None => stylesets_css.trim().to_string(),
@@ -154,6 +154,12 @@ impl ToCss for RuleContent {
     }
 }
 
+impl From<String> for RuleContent {
+    fn from(s: String) -> Self {
+        Self::String(s)
+    }
+}
+
 /// Structs implementing this trait should be able to turn into
 /// a part of a CSS style sheet.
 pub trait ToCss {
@@ -186,14 +192,15 @@ mod tests {
                 }),
                 ScopeContent::Rule(Rule {
                     condition: String::from("@keyframes move"),
-                    content: String::from(
+                    content: vec![String::from(
                         r#"from {
 width: 100px;
 }
 to {
 width: 200px;
 }"#,
-                    ),
+                    )
+                    .into()],
                 }),
             ],
         };
@@ -237,14 +244,15 @@ width: 200px;
                 }),
                 ScopeContent::Rule(Rule {
                     condition: String::from("@keyframes move"),
-                    content: String::from(
+                    content: vec![String::from(
                         r#"from {
 width: 100px;
 }
 to {
 width: 200px;
 }"#,
-                    ),
+                    )
+                    .into()],
                 }),
             ],
         };
