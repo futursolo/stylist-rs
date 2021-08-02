@@ -3,6 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 
+#[doc(hidden)]
 pub mod ast;
 use crate::utils::get_rand_str;
 
@@ -40,11 +41,12 @@ impl Style {
         Self::create("stylist", css)
     }
 
+    /// Returns the class name for current style
     pub fn get_class_name(&self) -> &str {
         &self.class_name
     }
 
-    /// Creates a new style with class prefix
+    /// Creates a new style with custom class prefix
     pub fn create<I1: Into<String>, I2: Into<String>>(
         class_name: I1,
         css: I2,
