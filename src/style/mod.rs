@@ -136,3 +136,31 @@ impl ToString for Style {
         self.class_name.clone()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simple() {
+        Style::new("background-color: black;").expect("Failed to create Style.");
+    }
+
+    #[test]
+    fn test_complex() {
+        Style::new(
+            r#"
+                background-color: black;
+
+                .with-class {
+                    color: red;
+                }
+
+                @media screen and (max-width: 600px) {
+                    color: yellow;
+                }
+            "#,
+        )
+        .expect("Failed to create Style.");
+    }
+}
