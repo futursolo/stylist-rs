@@ -1,11 +1,11 @@
 [package]
 name = "yew_integration"
 version = "0.0.1"
-authors = ["Lukas Wagner <appdev.lukaswagner@gmail.com>"]
+authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2018"
 
 [dependencies]
 log = "0.4"
 web_logger = "0.2"
-yew = {version = "0.16.0", features=["web_sys"]}
-css-in-rust = { path = "../..", features = ["yew_integration"]}
+yew = {version = "0.18.0"}
+stylist = { path = "../..", features = ["yew"] }

@@ -42,8 +42,7 @@ let style = Style::create(
 ```
 
 Everything that is not in a conditioned block will be applied to the Component
-the class of this style is applied to. How that happens depends on the framework to use.
-Below there are examples for the supported frameworks.
+the class of this style is applied to.
 
 The Style you put in will get parsed and converted to actual CSS and automatically appended
 to the head of your HTML document.
@@ -102,8 +101,7 @@ impl Component for MyStyledComponent {
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        let style = match Style::create(
-            "styled-component",
+        let style = match Style::new(
             "background-color: #505050;",
         ).unwrap();
         Self {

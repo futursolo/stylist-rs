@@ -12,3 +12,5 @@
 - Replaced `lazy_static` with `once_cell`.
 - Updated nom to `v6.2.1`.
 - Update Yew to `v0.18`.
+- Removed Unnecessary Clones
+- Optimised for Performance
