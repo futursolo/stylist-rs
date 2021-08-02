@@ -170,12 +170,11 @@ pub trait ToCss {
     fn to_css(&self, class_name: String) -> String;
 }
 
-#[cfg(all(test, target_arch = "wasm32"))]
+#[cfg(test)]
 mod tests {
-    use super::{Block, Rule, Scope, ScopeContent, StyleAttribute, ToCss};
-    use wasm_bindgen_test::*;
+    use super::*;
 
-    #[wasm_bindgen_test]
+    #[test]
     fn test_scope_building_without_condition() {
         let test_block = Scope {
             condition: None,
@@ -227,7 +226,7 @@ width: 200px;
         );
     }
 
-    #[wasm_bindgen_test]
+    #[test]
     fn test_scope_building_with_condition() {
         let test_block = Scope {
             condition: Some(String::from("@media only screen and (min-width: 1000px)")),
