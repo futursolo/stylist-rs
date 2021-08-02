@@ -11,7 +11,7 @@ pub(crate) fn get_rand_str() -> String {
 
     (&mut *rng)
         .sample_iter(Alphanumeric)
-        .take(12)
+        .take(8)
         .map(char::from)
         .collect()
 }
