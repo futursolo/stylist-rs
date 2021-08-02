@@ -6,16 +6,31 @@ This is a fork of [css-in-rust](https://github.com/lukidoescode/css-in-rust).
 
 ## Usage
 
-To create a stylesheet, use `Style::create`:
+To create a stylesheet, use `Style::new`:
+
+```rust
+use stylist::Style;
+
+let style = Style::new(
+    // The actual css
+    r#"
+    background-color: red;
+
+    .nested {
+        background-color: blue;
+        width: 100px
+    }"#,
+).expect("Failed to create style");
+```
+
+If you want to use a custom prefix for your class name,
+you can use `Style::create`.
 
 ```rust
 use stylist::Style;
 
 let style = Style::create(
-    // The class prefix
-    "Component",
-
-    // The actual css
+    "MyComponent",
     r#"
     background-color: red;
 
@@ -71,7 +86,7 @@ You can also use other CSS rules, e.g. keyframes:
 
 ## Yew Integration
 
-To enable yew integration.
+To enable yew integration. Enable feature `yew` in Cargo.toml.
 
 Then create a style and use it with yew like this:
 

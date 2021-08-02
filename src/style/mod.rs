@@ -50,17 +50,26 @@ pub struct Style {
     node: Option<Element>,
 }
 
+impl Style {
+    /// Creates a new style
+    pub fn new<S: Into<String>>(css: S) -> Result<Self, String> {
+        Self::create("stylist", css)
+    }
+
+    pub fn get_class_name(&self) -> &str {
+        &self.class_name
+    }
+}
+
 #[cfg(target_arch = "wasm32")]
 impl Style {
-    /// Creates a new style and, stores it into the registry and returns the
-    /// newly created style.
-    ///
-    /// This function will already mount the style to the HTML head for the browser to use.
+    /// Creates a new style with class prefix
     pub fn create<I1: Into<String>, I2: Into<String>>(
         class_name: I1,
         css: I2,
     ) -> Result<Style, String> {
         let (class_name, css) = (class_name.into(), css.into());
+
         let ast = Parser::parse(css)?;
         let mut new_style = Self {
             class_name: format!("{}-{}", class_name, get_rand_str()),
@@ -68,6 +77,7 @@ impl Style {
             node: None,
         };
         new_style = new_style.mount();
+
         let style_registry_mutex = Arc::clone(&STYLE_REGISTRY);
         let mut style_registry = match style_registry_mutex.lock() {
             Ok(guard) => guard,
@@ -76,11 +86,8 @@ impl Style {
         (*style_registry)
             .styles
             .insert(new_style.class_name.clone(), new_style.clone());
-        Ok(new_style)
-    }
 
-    pub fn get_class_name(self) -> String {
-        self.class_name
+        Ok(new_style)
     }
 
     /// Mounts the styles to the document head web-sys style
@@ -161,10 +168,6 @@ impl Style {
             .styles
             .insert(new_style.class_name.clone(), new_style.clone());
         Ok(new_style)
-    }
-
-    pub fn get_class_name(self) -> String {
-        self.class_name
     }
 }
 
