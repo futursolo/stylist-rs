@@ -1,4 +1,4 @@
-// Copyright © 2020 Lukas Wagner
+#![deny(clippy::all)]
 
 pub mod bindings;
 mod parser;

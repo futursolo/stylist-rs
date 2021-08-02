@@ -32,8 +32,10 @@ impl ToCss for Scope {
                 ScopeContent::Rule(rule) => rule.to_css(class_name.clone()),
                 // ScopeContent::Scope(scope) => scope.to_css(class_name.clone()),
             })
-            .fold(String::new(), |acc, css_part| {
-                format!("{}{}\n", acc, css_part)
+            .fold(String::new(), |mut acc, css_part| {
+                acc.push_str(&css_part);
+                acc.push('\n');
+                acc
             });
 
         match &self.condition {
@@ -78,8 +80,10 @@ impl ToCss for Block {
             .clone()
             .into_iter()
             .map(|style_property| style_property.to_css(class_name.clone()))
-            .fold(String::new(), |acc, css_part| {
-                format!("{}\n{}", acc, css_part)
+            .fold(String::new(), |mut acc, css_part| {
+                acc.push('\n');
+                acc.push_str(&css_part);
+                acc
             });
         if condition.contains('&') {
             format!(

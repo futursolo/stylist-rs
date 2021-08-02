@@ -20,17 +20,9 @@ static STYLE_REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(M
 
 /// The style registry is just a global struct that makes sure no style gets lost.
 /// Every style automatically registers with the style registry.
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 struct StyleRegistry {
     styles: HashMap<String, Style>,
-}
-
-impl Default for StyleRegistry {
-    fn default() -> Self {
-        Self {
-            styles: HashMap::new(),
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -39,7 +31,7 @@ pub struct Style {
     class_name: String,
 
     /// The abstract syntax tree of the css
-    ast: Option<Vec<Scope>>,
+    ast: Arc<Vec<Scope>>,
 }
 
 impl Style {
@@ -51,10 +43,7 @@ impl Style {
     pub fn get_class_name(&self) -> &str {
         &self.class_name
     }
-}
 
-#[cfg(target_arch = "wasm32")]
-impl Style {
     /// Creates a new style with class prefix
     pub fn create<I1: Into<String>, I2: Into<String>>(
         class_name: I1,
@@ -63,10 +52,12 @@ impl Style {
         let (class_name, css) = (class_name.into(), css.into());
 
         let ast = Parser::parse(css)?;
-        let mut new_style = Self {
+        let new_style = Self {
             class_name: format!("{}-{}", class_name, get_rand_str()),
-            ast: Some(ast),
+            ast: Arc::new(ast),
         };
+
+        #[cfg(target_arch = "wasm32")]
         new_style.mount();
 
         let style_registry_mutex = Arc::clone(&STYLE_REGISTRY);
@@ -80,16 +71,18 @@ impl Style {
 
         Ok(new_style)
     }
+}
 
+#[cfg(target_arch = "wasm32")]
+impl Style {
     /// Mounts the styles to the document head web-sys style
-    fn mount(&mut self) -> Self {
+    fn mount(&self) {
         if let Ok(node) = self.generate_element() {
             let window = web_sys::window().expect("no global `window` exists");
             let document = window.document().expect("should have a document on window");
             let head = document.head().expect("should have a head in document");
             head.append_child(&node).ok();
         }
-        self.clone()
     }
 
     // Unmounts the style from the HTML head web-sys style
@@ -111,16 +104,14 @@ impl Style {
 
     /// Takes all Scopes and lets them translate themselves into CSS.
     fn generate_css(&self) -> String {
-        match &self.ast {
-            Some(ast) => ast
-                .clone()
-                .into_iter()
-                .map(|scope| scope.to_css(self.class_name.clone()))
-                .fold(String::new(), |acc, css_part| {
-                    format!("{}\n{}", acc, css_part)
-                }),
-            None => String::new(),
-        }
+        self.ast
+            .iter()
+            .map(|scope| scope.to_css(self.class_name.clone()))
+            .fold(String::new(), |mut acc, css_part| {
+                acc.push('\n');
+                acc.push_str(&css_part);
+                acc
+            })
     }
 
     /// Generates the `<style/>` tag web-sys style for inserting into the head of the
@@ -134,35 +125,6 @@ impl Style {
             .ok();
         style_element.set_text_content(Some(self.generate_css().as_str()));
         Ok(style_element)
-    }
-}
-
-/// The style represents all the CSS belonging to a single component.
-#[cfg(not(target_arch = "wasm32"))]
-impl Style {
-    /// Creates a new style and, stores it into the registry and returns the
-    /// newly created style.
-    ///
-    /// This function will already mount the style to the HTML head for the browser to use.
-    pub fn create<I1: Into<String>, I2: Into<String>>(
-        class_name: I1,
-        css: I2,
-    ) -> Result<Style, String> {
-        let (class_name, css) = (class_name.into(), css.into());
-        let new_style = Self {
-            class_name: format!("{}-{}", class_name, get_rand_str()),
-            // TODO log out an error
-            ast: Parser::parse(css).ok(),
-        };
-        let style_registry_mutex = Arc::clone(&STYLE_REGISTRY);
-        let mut style_registry = match style_registry_mutex.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        (*style_registry)
-            .styles
-            .insert(new_style.class_name.clone(), new_style.clone());
-        Ok(new_style)
     }
 }
 
