@@ -33,9 +33,6 @@ impl Default for StyleRegistry {
     }
 }
 
-unsafe impl Send for StyleRegistry {}
-unsafe impl Sync for StyleRegistry {}
-
 #[derive(Debug, Clone)]
 pub struct Style {
     /// The designated class name of this style
@@ -43,11 +40,6 @@ pub struct Style {
 
     /// The abstract syntax tree of the css
     ast: Option<Vec<Scope>>,
-
-    /// Style DOM node the data in this struct is turned into.
-
-    #[cfg(all(target_arch = "wasm32"))]
-    node: Option<Element>,
 }
 
 impl Style {
@@ -74,9 +66,8 @@ impl Style {
         let mut new_style = Self {
             class_name: format!("{}-{}", class_name, get_rand_str()),
             ast: Some(ast),
-            node: None,
         };
-        new_style = new_style.mount();
+        new_style.mount();
 
         let style_registry_mutex = Arc::clone(&STYLE_REGISTRY);
         let mut style_registry = match style_registry_mutex.lock() {
@@ -92,9 +83,7 @@ impl Style {
 
     /// Mounts the styles to the document head web-sys style
     fn mount(&mut self) -> Self {
-        let mut style = self.unmount();
-        style.node = self.generate_element().ok();
-        if let Some(node) = style.node {
+        if let Ok(node) = self.generate_element() {
             let window = web_sys::window().expect("no global `window` exists");
             let document = window.document().expect("should have a document on window");
             let head = document.head().expect("should have a head in document");
@@ -103,16 +92,22 @@ impl Style {
         self.clone()
     }
 
-    /// Unmounts the style from the HTML head web-sys style
-    fn unmount(&mut self) -> Self {
-        if let Some(node) = &self.node {
-            let window = web_sys::window().expect("no global `window` exists");
-            let document = window.document().expect("should have a document on window");
-            let head = document.head().expect("should have a head in document");
-            head.remove_child(node).ok();
-        }
-        self.clone()
-    }
+    // Unmounts the style from the HTML head web-sys style
+    // fn unmount(&mut self) -> Self {
+    //    let window = web_sys::window().expect("no global `window` exists");
+    //    let document = window.document().expect("should have a document on window");
+    //
+    //   if let Some(m) = document
+    //       .query_selector(&format!("style[data-style={}]", self.class_name))
+    //       .ok()
+    //       .and_then(|m| m)
+    //   {
+    //       if let Some(parent) = m.parent_element() {
+    //           let _result = parent.remove_child(&m);
+    //       }
+    //   }
+    //   self.clone()
+    //}
 
     /// Takes all Scopes and lets them translate themselves into CSS.
     fn generate_css(&self) -> String {
