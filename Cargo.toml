@@ -1,6 +1,6 @@
 [package]
 name = "stylist"
-version = "0.6.0"
+version = "0.7.0"
 license = "MIT"
 repository = "https://github.com/futursolo/stylist-rs"
 authors = [
