@@ -4,11 +4,15 @@
 
 ### Breaking Changes:
 - `Style::new()` now takes an `Into<Cow<'static, str>` instead of
-  `Into<String>`
+  `Into<String>` and returns `stylist::Error` instead of `String` when
+  encountering an error.
 - `Style::create()` now takes `AsRef<str>` for class prefix and
-  `Into<Cow<'static, str>>` for css string.
+  `Into<Cow<'static, str>>` for css string and returns `stylist::Error`
+  instead of `String` when encountering an error.
 
 ### Other Changes:
+- Fixed a Bug where `.a-class-name` is after `@media` would cause parser
+  to return an error.
 - Removed Unnecessary Clones.
 - Optimised for Performance.
 

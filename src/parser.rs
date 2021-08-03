@@ -1,4 +1,5 @@
 use crate::ast::{Block, Rule, RuleContent, Scope, ScopeContent, StyleAttribute};
+use crate::{Error, Result};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while},
@@ -90,11 +91,9 @@ impl Parser {
                     preceded(opt(Parser::cmt), preceded(opt(Parser::sp), tag(":"))),
                     preceded(opt(Parser::cmt), preceded(opt(Parser::sp), is_not(";{}"))),
                 ),
-                move |p: (&str, &str)| -> StyleAttribute {
-                    StyleAttribute {
-                        key: String::from(p.0.trim()),
-                        value: String::from(p.1.trim()),
-                    }
+                move |p: (&str, &str)| StyleAttribute {
+                    key: String::from(p.0.trim()),
+                    value: String::from(p.1.trim()),
                 },
             )),
         )(i);
@@ -137,7 +136,7 @@ impl Parser {
                     tag("{"),
                     terminated(terminated(Parser::attributes, opt(Parser::sp)), tag("}")),
                 ),
-                |p: (&str, Vec<StyleAttribute>)| -> ScopeContent {
+                |p: (&str, Vec<StyleAttribute>)| {
                     ScopeContent::Block(Block {
                         condition: Some(p.0.trim().to_string()),
                         style_attributes: p.1,
@@ -172,7 +171,7 @@ impl Parser {
                         tag("}"),
                     ),
                 ),
-                |p: (&str, Vec<RuleContent>)| -> Result<ScopeContent, String> {
+                |p: (&str, Vec<RuleContent>)| {
                     if p.0.starts_with("media") {
                         return Err(String::from("Not a media query"));
                     }
@@ -423,11 +422,13 @@ impl Parser {
         result
     }
 
-    /// The parse the style and returns a `Result<Vec<Scope>, String>`.
-    pub(crate) fn parse(css: &str) -> Result<Vec<Scope>, String> {
+    /// The parse the style and returns a `Result<Vec<Scope>>`.
+    pub(crate) fn parse(css: &str) -> Result<Vec<Scope>> {
         match Self::scopes(css) {
-            Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => Err(convert_error(css, e)),
-            Err(nom::Err::Incomplete(e)) => Err(format!("{:#?}", e)),
+            Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
+                Err(Error::Parse(convert_error(css, e)))
+            }
+            Err(nom::Err::Incomplete(e)) => Err(Error::Parse(format!("{:#?}", e))),
             Ok((_, res)) => Ok(res),
         }
     }
@@ -452,7 +453,7 @@ mod tests {
     }
 
     #[test]
-    fn test_multiple_media_queries() -> Result<(), String> {
+    fn test_multiple_media_queries() -> Result<()> {
         init();
 
         let test_str = r#"
@@ -496,7 +497,7 @@ mod tests {
     }
 
     #[test]
-    fn test_media_query_then_normal_class() -> Result<(), String> {
+    fn test_media_query_then_normal_class() -> Result<()> {
         init();
 
         let test_str = r#"

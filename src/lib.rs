@@ -5,8 +5,10 @@
 mod ast;
 #[doc(hidden)]
 pub mod bindings;
+mod error;
 mod parser;
 pub mod style;
 mod utils;
 
+pub use error::{Error, Result};
 pub use style::Style;
