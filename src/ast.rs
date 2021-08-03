@@ -17,8 +17,32 @@
 /// ```
 /// Structs implementing this trait should be able to turn into
 /// a part of a CSS style sheet.
+use std::fmt;
+
 pub(crate) trait ToCss {
-    fn to_css(&self, class_name: &str) -> String;
+    fn to_css(&self, class_name: &str) -> String {
+        let mut s = String::new();
+
+        self.write_css(&mut s, class_name).unwrap();
+
+        s
+    }
+    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result;
+}
+
+/// The top node of a style string.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct Scopes(Vec<Scope>);
+
+impl ToCss for Scopes {
+    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+        for scope in self.0.iter() {
+            scope.write_css(w, class_name)?;
+            writeln!(w)?;
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -28,26 +52,26 @@ pub(crate) struct Scope {
 }
 
 impl ToCss for Scope {
-    fn to_css(&self, class_name: &str) -> String {
-        let stylesets = self.stylesets.clone();
-
-        let stylesets_css = stylesets
-            .into_iter()
-            .map(|styleset| match styleset {
-                ScopeContent::Block(block) => block.to_css(class_name),
-                ScopeContent::Rule(rule) => rule.to_css(class_name),
-                // ScopeContent::Scope(scope) => scope.to_css(class_name.clone()),
-            })
-            .fold(String::new(), |mut acc, css_part| {
-                acc.push_str(&css_part);
-                acc.push('\n');
-                acc
-            });
-
-        match &self.condition {
-            Some(condition) => format!("{} {{\n{}}}", condition, stylesets_css),
-            None => stylesets_css.trim().to_string(),
+    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+        if let Some(ref m) = self.condition {
+            writeln!(w, "{} {{", m)?;
         }
+
+        for set in self.stylesets.iter() {
+            match set {
+                ScopeContent::Block(ref block) => block.write_css(w, class_name)?,
+                ScopeContent::Rule(ref rule) => rule.write_css(w, class_name)?,
+                // ScopeContent::Scope(scope) => scope.write_css(w, class_name)?,
+            }
+
+            writeln!(w)?;
+        }
+
+        if self.condition.is_some() {
+            write!(w, "}}")?;
+        }
+
+        Ok(())
     }
 }
 
@@ -101,6 +125,26 @@ impl ToCss for Block {
             format!(".{}{} {{{}\n}}", class_name, condition, style_property_css)
         }
     }
+
+    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+        if let Some(ref condition) = self.condition {
+            if condition.contains('&') {
+                let scoped_class = format!(".{}", class_name);
+                writeln!(w, "{} {{", condition.replace("&", scoped_class.as_str()))?;
+            } else {
+                writeln!(w, ".{} {} {{", class_name, condition)?;
+            }
+        } else {
+            writeln!(w, ".{} {{", class_name)?;
+        }
+
+        for attr in self.style_attributes.iter() {
+            attr.write_css(w, class_name)?;
+            writeln!(w)?;
+        }
+
+        write!(w, "}}")
+    }
 }
 
 /// A simple CSS proprerty in the form of a key value pair.
@@ -113,8 +157,8 @@ pub(crate) struct StyleAttribute {
 }
 
 impl ToCss for StyleAttribute {
-    fn to_css(&self, _: &str) -> String {
-        format!("{}: {};", self.key, self.value)
+    fn write_css<W: fmt::Write>(&self, w: &mut W, _class_name: &str) -> fmt::Result {
+        write!(w, "{}: {};", self.key, self.value)
     }
 }
 
@@ -128,16 +172,14 @@ pub(crate) struct Rule {
 }
 
 impl ToCss for Rule {
-    fn to_css(&self, class_name: &str) -> String {
-        format!(
-            "{} {{\n{}\n}}",
-            self.condition,
-            self.content
-                .iter()
-                .map(|rc| rc.to_css(class_name))
-                .collect::<Vec<String>>()
-                .concat()
-        )
+    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+        writeln!(w, "{} {{", self.condition)?;
+
+        for i in self.content.iter() {
+            i.write_css(w, class_name)?
+        }
+
+        write!(w, "}}")
     }
 }
 
@@ -149,17 +191,19 @@ pub(crate) enum RuleContent {
 }
 
 impl ToCss for RuleContent {
-    fn to_css(&self, class_name: &str) -> String {
+    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         match self {
-            RuleContent::String(s) => s.to_string(),
-            RuleContent::CurlyBraces(content) => format!(
-                "{{{}}}",
-                content
-                    .iter()
-                    .map(|rc| rc.to_css(class_name))
-                    .collect::<Vec<String>>()
-                    .concat()
-            ),
+            RuleContent::String(ref s) => writeln!(w, "{}", s),
+            RuleContent::CurlyBraces(ref content) => {
+                writeln!(w, "{{")?;
+
+                for i in content.iter() {
+                    i.write_css(w, class_name)?;
+                    writeln!(w)?;
+                }
+
+                write!(w, "}}")
+            }
         }
     }
 }
@@ -222,7 +266,8 @@ width: 100px;
 to {
 width: 200px;
 }
-}"#
+}
+"#
         );
     }
 

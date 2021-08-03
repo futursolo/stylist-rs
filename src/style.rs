@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_complex() {
-        Style::new(
+        let style = Style::new(
             r#"
                 background-color: black;
 
@@ -171,5 +171,25 @@ mod tests {
             "#,
         )
         .expect("Failed to create Style.");
+
+        assert_eq!(
+            style.get_style_str(),
+            format!(
+                r#"
+.{style_name} {{
+background-color: black;
+}}
+.{style_name} .with-class {{
+color: red;
+}}
+
+@media screen and (max-width: 600px) {{
+.{style_name} {{
+color: yellow;
+}}
+}}"#,
+                style_name = style.get_class_name()
+            )
+        )
     }
 }
