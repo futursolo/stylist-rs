@@ -1,5 +1,6 @@
 #![deny(clippy::all)]
 
+mod ast;
 #[doc(hidden)]
 pub mod bindings;
 mod parser;

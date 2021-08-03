@@ -15,6 +15,12 @@
 /// }
 /// /* END Scope */
 /// ```
+/// Structs implementing this trait should be able to turn into
+/// a part of a CSS style sheet.
+pub(crate) trait ToCss {
+    fn to_css(&self, class_name: &str) -> String;
+}
+
 #[derive(Debug, Clone)]
 pub(crate) struct Scope {
     pub(crate) condition: Option<String>,
@@ -22,14 +28,14 @@ pub(crate) struct Scope {
 }
 
 impl ToCss for Scope {
-    fn to_css(&self, class_name: String) -> String {
+    fn to_css(&self, class_name: &str) -> String {
         let stylesets = self.stylesets.clone();
 
         let stylesets_css = stylesets
             .into_iter()
             .map(|styleset| match styleset {
-                ScopeContent::Block(block) => block.to_css(class_name.clone()),
-                ScopeContent::Rule(rule) => rule.to_css(class_name.clone()),
+                ScopeContent::Block(block) => block.to_css(class_name),
+                ScopeContent::Rule(rule) => rule.to_css(class_name),
                 // ScopeContent::Scope(scope) => scope.to_css(class_name.clone()),
             })
             .fold(String::new(), |mut acc, css_part| {
@@ -70,7 +76,7 @@ pub(crate) struct Block {
 }
 
 impl ToCss for Block {
-    fn to_css(&self, class_name: String) -> String {
+    fn to_css(&self, class_name: &str) -> String {
         let condition = match &self.condition {
             Some(condition) => format!(" {}", condition),
             None => String::new(),
@@ -79,7 +85,7 @@ impl ToCss for Block {
             .style_attributes
             .clone()
             .into_iter()
-            .map(|style_property| style_property.to_css(class_name.clone()))
+            .map(|style_property| style_property.to_css(class_name))
             .fold(String::new(), |mut acc, css_part| {
                 acc.push('\n');
                 acc.push_str(&css_part);
@@ -107,7 +113,7 @@ pub(crate) struct StyleAttribute {
 }
 
 impl ToCss for StyleAttribute {
-    fn to_css(&self, _: String) -> String {
+    fn to_css(&self, _: &str) -> String {
         format!("{}: {};", self.key, self.value)
     }
 }
@@ -122,13 +128,13 @@ pub(crate) struct Rule {
 }
 
 impl ToCss for Rule {
-    fn to_css(&self, class_name: String) -> String {
+    fn to_css(&self, class_name: &str) -> String {
         format!(
             "{} {{\n{}\n}}",
             self.condition,
             self.content
                 .iter()
-                .map(|rc| rc.to_css(class_name.clone()))
+                .map(|rc| rc.to_css(class_name))
                 .collect::<Vec<String>>()
                 .concat()
         )
@@ -143,14 +149,14 @@ pub(crate) enum RuleContent {
 }
 
 impl ToCss for RuleContent {
-    fn to_css(&self, class_name: String) -> String {
+    fn to_css(&self, class_name: &str) -> String {
         match self {
             RuleContent::String(s) => s.to_string(),
             RuleContent::CurlyBraces(content) => format!(
                 "{{{}}}",
                 content
                     .iter()
-                    .map(|rc| rc.to_css(class_name.clone()))
+                    .map(|rc| rc.to_css(class_name))
                     .collect::<Vec<String>>()
                     .concat()
             ),
@@ -162,12 +168,6 @@ impl From<String> for RuleContent {
     fn from(s: String) -> Self {
         Self::String(s)
     }
-}
-
-/// Structs implementing this trait should be able to turn into
-/// a part of a CSS style sheet.
-pub trait ToCss {
-    fn to_css(&self, class_name: String) -> String;
 }
 
 #[cfg(test)]
@@ -208,7 +208,7 @@ width: 200px;
             ],
         };
         assert_eq!(
-            test_block.to_css(String::from("test")),
+            test_block.to_css("test"),
             r#".test {
 width: 100vw;
 }
@@ -260,7 +260,7 @@ width: 200px;
             ],
         };
         assert_eq!(
-            test_block.to_css(String::from("test")),
+            test_block.to_css("test"),
             r#"@media only screen and (min-width: 1000px) {
 .test {
 width: 100vw;

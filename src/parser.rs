@@ -1,6 +1,4 @@
-// Copyright © 2020 Lukas Wagner
-
-use super::style::ast::{Block, Rule, RuleContent, Scope, ScopeContent, StyleAttribute};
+use crate::ast::{Block, Rule, RuleContent, Scope, ScopeContent, StyleAttribute};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while},
@@ -15,16 +13,13 @@ use nom::{
 pub(super) struct Parser {}
 
 impl Parser {
-    pub(super) fn parse(css: String) -> Result<Vec<Scope>, String> {
-        match Parser::scopes(css.as_str()) {
+    pub(super) fn parse(css: &str) -> Result<Vec<Scope>, String> {
+        match Parser::scopes(&css) {
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
                 // here we use the `convert_error` function, to transform a `VerboseVerboseError<&str>`
                 // into a printable trace.
-                println!(
-                    "CSS parsing error:\n{}",
-                    convert_error(css.as_str(), e.clone())
-                );
-                Err(convert_error(css.as_str(), e))
+                println!("CSS parsing error:\n{}", convert_error(css, e.clone()));
+                Err(convert_error(css, e))
             }
             Err(nom::Err::Incomplete(e)) => {
                 println!("CSS parsing incomplete:\n{:?}", e);
