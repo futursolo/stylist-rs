@@ -1,4 +1,6 @@
 #![deny(clippy::all)]
+#![deny(unsafe_code)]
+#![deny(non_snake_case)]
 
 mod ast;
 #[doc(hidden)]
