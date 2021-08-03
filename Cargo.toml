@@ -12,7 +12,6 @@ keywords = [
     "CSS",
     "web",
     "css-in-rust",
-    "seed",
     "yew"
 ]
 categories = ["wasm", "web-programming"]
