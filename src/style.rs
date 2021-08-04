@@ -105,7 +105,9 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// let style = Style::new("color:red").expect("Failed to create style.");
+    /// use stylist::Style;
+    ///
+    /// let style = Style::new("color:red;").expect("Failed to create style.");
     /// ```
     pub fn new<S: Into<Cow<'static, str>>>(css: S) -> Result<Self> {
         Self::create("stylist", css)
@@ -118,7 +120,9 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// let style = Style::new("color:red").expect("Failed to create style.");
+    /// use stylist::Style;
+    ///
+    /// let style = Style::new("color:red;").expect("Failed to create style.");
     ///
     /// // Example Output: stylist-uSu9NZZu
     /// println!("{}", style.get_class_name());
@@ -149,7 +153,9 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// let style = Style::create("my-component", "color:red").expect("Failed to create style.");
+    /// use stylist::Style;
+    ///
+    /// let style = Style::create("my-component", "color:red;").expect("Failed to create style.");
     /// ```
     pub fn create<I1: Into<String>, I2: Into<Cow<'static, str>>>(
         class_prefix: I1,
@@ -159,14 +165,17 @@ impl Style {
 
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey(class_prefix, css.clone());
-        if let Some(m) = StyleRegistry::get(&key) {
+        let reg = StyleRegistry::get_ref();
+        let mut reg = reg.lock().unwrap();
+
+        if let Some(m) = reg.get(&key) {
             return Ok(m);
         }
 
         let new_style = Self::create_impl(key)?;
 
         // Register the created Style.
-        StyleRegistry::register(new_style.clone());
+        reg.register(new_style.clone());
 
         Ok(new_style)
     }
@@ -178,7 +187,9 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// let style = Style::create("my-component", "color:red").expect("Failed to create style.");
+    /// use stylist::Style;
+    ///
+    /// let style = Style::create("my-component", "color:red;").expect("Failed to create style.");
     ///
     /// // Example Output:
     /// // .stylist-uSu9NZZu {
@@ -199,7 +210,9 @@ impl Style {
     ///
     /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
     pub fn unregister(&self) {
-        StyleRegistry::unregister(&*self.key());
+        let reg = StyleRegistry::get_ref();
+        let mut reg = reg.lock().unwrap();
+        reg.unregister(&*self.key());
     }
 }
 

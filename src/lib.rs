@@ -89,18 +89,18 @@
 //!
 //! ```rust
 //! use std::borrow::Cow;
-//! use stylist::Style;
+//! use stylist::YieldStyle;
 //!
 //! pub struct Component;
 //!
-//! impl YieldStyle {
+//! impl YieldStyle for Component {
 //!     fn style_str(&self) -> Cow<'static, str> {
 //!         "color: red;".into()
 //!     }
 //! }
 //!
 //! impl Component {
-//!     fn new() -> Self {
+//!     fn print_style(&self) -> Self {
 //!         println!("{}", self.style().get_class_name());
 //!
 //!         unimplemented!();
@@ -116,6 +116,9 @@
 //! Then create a style and use it with yew like this:
 //!
 //! ```rust
+//! use std::borrow::Cow;
+//!
+//! use yew::prelude::*;
 //! use stylist::YieldStyle;
 //!
 //! struct MyStyledComponent {}
@@ -141,7 +144,7 @@
 //!     }
 //! }
 //!
-//! impl YieldStyle {
+//! impl YieldStyle for MyStyledComponent {
 //!     fn style_str(&self) -> Cow<'static, str> {
 //!         "color: red;".into()
 //!     }

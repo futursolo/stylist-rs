@@ -25,27 +25,22 @@ pub(crate) struct StyleRegistry {
 }
 
 impl StyleRegistry {
-    pub fn register(style: Style) {
-        let reg = REGISTRY.clone();
-        let mut reg = reg.lock().unwrap();
+    pub fn get_ref() -> Arc<Mutex<StyleRegistry>> {
+        REGISTRY.clone()
+    }
 
-        if reg.styles.insert(style.key(), style).is_some() {
+    pub fn register(&mut self, style: Style) {
+        if self.styles.insert(style.key(), style).is_some() {
             panic!("A Style with this StyleKey has already been created.");
         }
     }
 
-    pub fn unregister(key: &StyleKey) {
-        let reg = REGISTRY.clone();
-        let mut reg = reg.lock().unwrap();
-
-        reg.styles.remove(key);
+    pub fn unregister(&mut self, key: &StyleKey) {
+        self.styles.remove(key);
     }
 
-    pub fn get(key: &StyleKey) -> Option<Style> {
-        let reg = REGISTRY.clone();
-        let reg = reg.lock().unwrap();
-
-        reg.styles.get(key).cloned()
+    pub fn get(&self, key: &StyleKey) -> Option<Style> {
+        self.styles.get(key).cloned()
     }
 }
 
@@ -54,10 +49,23 @@ mod tests {
     use super::*;
     use crate::Result;
 
+    fn init() {
+        let _ = env_logger::builder().is_test(true).try_init();
+    }
+
     #[test]
     fn test_duplicate_style() -> Result<()> {
+        init();
+
         let style_a = Style::new(r#"color: red;"#)?;
         let style_b = Style::new(r#"color: red;"#)?;
+
+        {
+            let reg = StyleRegistry::get_ref();
+            let reg = reg.lock().unwrap();
+
+            log::debug!("{:?}", reg);
+        }
 
         assert_eq!(style_a.get_style_str(), style_b.get_style_str());
         Ok(())
@@ -65,6 +73,8 @@ mod tests {
 
     #[test]
     fn test_duplicate_style_different_prefix() -> Result<()> {
+        init();
+
         let style_a = Style::create("element-a", r#"color: red;"#)?;
         let style_b = Style::create("element-b", r#"color: red;"#)?;
 
@@ -74,6 +84,8 @@ mod tests {
 
     #[test]
     fn test_unregister() -> Result<()> {
+        init();
+
         let style = Style::new(r#"color: red;"#)?;
 
         {

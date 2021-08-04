@@ -14,6 +14,9 @@ use crate::{Result, Style};
 /// # Example:
 ///
 /// ```rust
+/// use std::borrow::Cow;
+///
+/// use yew::prelude::*;
 /// use stylist::YieldStyle;
 ///
 /// struct MyStyledComponent {}
@@ -39,7 +42,7 @@ use crate::{Result, Style};
 ///     }
 /// }
 ///
-/// impl YieldStyle {
+/// impl YieldStyle for MyStyledComponent {
 ///     fn style_str(&self) -> Cow<'static, str> {
 ///         "color: red;".into()
 ///     }
