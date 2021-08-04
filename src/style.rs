@@ -1,12 +1,10 @@
 use once_cell::sync::OnceCell;
 use std::borrow::Cow;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-
-use once_cell::sync::Lazy;
+use std::sync::Arc;
 
 use crate::ast::{Scope, ToCss};
 use crate::parser::Parser;
+use crate::registry::{StyleKey, StyleRegistry};
 use crate::utils::get_rand_str;
 #[cfg(target_arch = "wasm32")]
 use crate::utils::{doc_head, document};
@@ -14,17 +12,10 @@ use crate::utils::{doc_head, document};
 use crate::Error;
 use crate::Result;
 
-static STYLE_REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
-
-/// The style registry is just a global struct that makes sure no style gets lost.
-/// Every style automatically registers with the style registry.
-#[derive(Debug, Default)]
-struct StyleRegistry {
-    styles: HashMap<String, Style>,
-}
-
 #[derive(Debug)]
 struct StyleContent {
+    key: Arc<StyleKey>,
+
     /// The designated class name of this style
     class_name: String,
 
@@ -88,6 +79,10 @@ impl StyleContent {
 
         Ok(())
     }
+
+    fn key(&self) -> Arc<StyleKey> {
+        self.key.clone()
+    }
 }
 
 #[cfg(target_arch = "wasm32")]
@@ -114,33 +109,40 @@ impl Style {
         self.inner.get_class_name()
     }
 
-    /// Creates a new style with custom class prefix
-    pub fn create<I1: AsRef<str>, I2: Into<Cow<'static, str>>>(
-        class_prefix: I1,
-        css: I2,
-    ) -> Result<Style> {
-        let (class_prefix, css) = (class_prefix.as_ref(), css.into());
-
-        let ast = Parser::parse(&*css)?;
+    fn create_impl(key: StyleKey) -> Result<Self> {
+        let ast = Parser::parse(&*key.1)?;
         let new_style = Self {
             inner: Arc::new(StyleContent {
-                class_name: format!("{}-{}", class_prefix, get_rand_str()),
+                class_name: format!("{}-{}", key.0, get_rand_str()),
                 ast: Arc::new(ast),
                 style_str: OnceCell::new(),
+                key: Arc::new(key),
             }),
         };
 
         #[cfg(target_arch = "wasm32")]
         new_style.inner.mount()?;
 
-        let style_registry_mutex = Arc::clone(&STYLE_REGISTRY);
-        let mut style_registry = match style_registry_mutex.lock() {
-            Ok(guard) => guard,
-            Err(poisoned) => poisoned.into_inner(),
-        };
-        (*style_registry)
-            .styles
-            .insert(new_style.get_class_name().to_string(), new_style.clone());
+        Ok(new_style)
+    }
+
+    /// Creates a new style with custom class prefix
+    pub fn create<I1: AsRef<str>, I2: Into<Cow<'static, str>>>(
+        class_prefix: I1,
+        css: I2,
+    ) -> Result<Self> {
+        let (class_prefix, css) = (class_prefix.as_ref(), css.into());
+
+        // Creates the StyleKey, return from registry if already cached.
+        let key = StyleKey(class_prefix.to_string(), css.clone());
+        if let Some(m) = StyleRegistry::get(&key) {
+            return Ok(m);
+        }
+
+        let new_style = Self::create_impl(key)?;
+
+        // Register the created Style.
+        StyleRegistry::register(new_style.clone());
 
         Ok(new_style)
     }
@@ -148,6 +150,16 @@ impl Style {
     /// Get the parsed and generated style in `&str`.
     pub fn get_style_str(&self) -> &str {
         self.inner.get_style_str()
+    }
+
+    /// Return a reference of style key.
+    pub(crate) fn key(&self) -> Arc<StyleKey> {
+        self.inner.key()
+    }
+
+    /// Unregister current style from style registry
+    pub fn unregister(&self) {
+        StyleRegistry::unregister(&*self.key());
     }
 }
 

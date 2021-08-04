@@ -7,6 +7,7 @@ mod ast;
 pub mod bindings;
 mod error;
 mod parser;
+mod registry;
 pub mod style;
 mod utils;
 
