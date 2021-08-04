@@ -35,7 +35,7 @@ use crate::{Result, Style};
 ///     }
 ///
 ///     fn view(&self) -> Html {
-///         html/ {<div class=self.style()>{"Hello World!"}</div>}
+///         html! {<div class=self.style()>{"Hello World!"}</div>}
 ///     }
 /// }
 ///
