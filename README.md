@@ -1,5 +1,9 @@
 # Stylist
 
+[![Run Tests & Publishing](https://github.com/futursolo/stylist-rs/actions/workflows/everything.yml/badge.svg)](https://github.com/futursolo/stylist-rs/actions/workflows/everything.yml)
+
+[![Crates.io](https://img.shields.io/crates/v/stylist)](https://crates.io/crates/stylist)
+
 Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
 
 This is a fork of [css-in-rust](https://github.com/lukidoescode/css-in-rust).
