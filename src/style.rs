@@ -127,14 +127,14 @@ impl Style {
     }
 
     /// Creates a new style with custom class prefix
-    pub fn create<I1: AsRef<str>, I2: Into<Cow<'static, str>>>(
+    pub fn create<I1: Into<String>, I2: Into<Cow<'static, str>>>(
         class_prefix: I1,
         css: I2,
     ) -> Result<Self> {
-        let (class_prefix, css) = (class_prefix.as_ref(), css.into());
+        let (class_prefix, css) = (class_prefix.into(), css.into());
 
         // Creates the StyleKey, return from registry if already cached.
-        let key = StyleKey(class_prefix.to_string(), css.clone());
+        let key = StyleKey(class_prefix, css.clone());
         if let Some(m) = StyleRegistry::get(&key) {
             return Ok(m);
         }

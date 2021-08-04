@@ -1,11 +1,13 @@
 [package]
-name = "yew-integration"
+name = "yew-theme-agent"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2018"
 
 [dependencies]
-log = "0.4"
+log = "0.4.14"
 console_log = { version = "0.2.0", features = ["color"] }
-yew = {version = "0.18.0"}
+yew = "0.18.0"
+yewtil = "0.4.0"
 stylist = { path = "../..", features = ["yew"] }
+yewdux = "0.6.2"

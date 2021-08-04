@@ -4,7 +4,17 @@ Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
 
 This is a fork of [css-in-rust](https://github.com/lukidoescode/css-in-rust).
 
+## Install
+
+Add the following to your `Cargo.toml`:
+
+```toml
+stylist = "0.6"
+```
+
 ## Usage
+
+### Style API
 
 To create a stylesheet, use `Style::new`:
 
@@ -83,30 +93,54 @@ You can also use other CSS rules, e.g. keyframes:
 }
 ```
 
+### YieldStyle API
+
+Alternatively, any struct that implements `YieldStyle` trait can call
+`self.style()` to get a `Style` instance.
+
+```rust
+use std::borrow::Cow;
+use stylist::Style;
+
+pub struct Component;
+
+impl YieldStyle {
+    fn style_str(&self) -> Cow<'static, str> {
+        "color: red;".into()
+    }
+}
+
+impl Component {
+    fn new() -> Self{
+        println!("{}", self.style().get_class_name());
+
+        unimplemented!();
+    }
+}
+
+```
+
 ## Yew Integration
 
-To enable yew integration. Enable feature `yew` in Cargo.toml.
+To enable yew integration. Enable feature `yew` in `Cargo.toml`.
 
 Then create a style and use it with yew like this:
 
 ```rust
 use stylist::Style;
 
-struct MyStyledComponent {
-  style: Style,
-}
+struct MyStyledComponent {}
 
 impl Component for MyStyledComponent {
     type Message = ();
     type Properties = ();
 
     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        let style = match Style::new(
-            "background-color: #505050;",
-        ).unwrap();
-        Self {
-            style,
-        }
+        Self {}
+    }
+
+    fn change(&mut self, _: Self::Properties) -> ShouldRender {
+        false
     }
 
     fn update(&mut self, _: Self::Message) -> ShouldRender {
@@ -114,7 +148,19 @@ impl Component for MyStyledComponent {
     }
 
     fn view(&self) -> Html {
-        html! {<div class=self.style.clone()>{"Hello World!"}</div>}
+        html! {<div class=self.style()>{"Hello World!"}</div>}
+    }
+}
+
+impl YieldStyle {
+    fn style_str(&self) -> Cow<'static, str> {
+        "color: red;".into()
     }
 }
 ```
+
+### Theming
+
+There're theming examples using
+[Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
+and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).

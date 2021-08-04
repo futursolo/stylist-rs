@@ -3,14 +3,16 @@
 ## v0.7
 
 ### Breaking Changes:
-- `Style::new()` now takes an `Into<Cow<'static, str>` instead of
+- `Style::new()` now takes an `Into<Cow<'static, str>>` instead of
   `Into<String>` and returns `stylist::Error` instead of `String` when
   encountering an error.
-- `Style::create()` now takes `AsRef<str>` for class prefix and
-  `Into<Cow<'static, str>>` for css string and returns `stylist::Error`
-  instead of `String` when encountering an error.
+- `Style::create()` now takes `Into<Cow<'static, str>>` for css string
+  and returns `stylist::Error`instead of `String` when encountering an error.
 
 ### Other Changes:
+- Added a new API `YieldStyle`.
+- Added theming examples.
+- Styles are now cached by default.
 - Fixed a Bug where `.a-class-name` is after `@media` would cause parser
   to return an error.
 - Removed Unnecessary Clones.
