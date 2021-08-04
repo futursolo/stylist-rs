@@ -93,6 +93,7 @@ impl Drop for StyleContent {
     }
 }
 
+/// A struct that represents a scoped Style.
 #[derive(Debug, Clone)]
 pub struct Style {
     inner: Arc<StyleContent>,
@@ -100,11 +101,28 @@ pub struct Style {
 
 impl Style {
     /// Creates a new style
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let style = Style::new("color:red").expect("Failed to create style.");
+    /// ```
     pub fn new<S: Into<Cow<'static, str>>>(css: S) -> Result<Self> {
         Self::create("stylist", css)
     }
 
     /// Returns the class name for current style
+    ///
+    /// You can add this class name to the element to apply the style.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let style = Style::new("color:red").expect("Failed to create style.");
+    ///
+    /// // Example Output: stylist-uSu9NZZu
+    /// println!("{}", style.get_class_name());
+    /// ```
     pub fn get_class_name(&self) -> &str {
         self.inner.get_class_name()
     }
@@ -127,6 +145,12 @@ impl Style {
     }
 
     /// Creates a new style with custom class prefix
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let style = Style::create("my-component", "color:red").expect("Failed to create style.");
+    /// ```
     pub fn create<I1: Into<String>, I2: Into<Cow<'static, str>>>(
         class_prefix: I1,
         css: I2,
@@ -148,6 +172,20 @@ impl Style {
     }
 
     /// Get the parsed and generated style in `&str`.
+    ///
+    /// This is usually used for debug purposes or testing in non-wasm32 targets.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let style = Style::create("my-component", "color:red").expect("Failed to create style.");
+    ///
+    /// // Example Output:
+    /// // .stylist-uSu9NZZu {
+    /// // color: red;
+    /// // }
+    /// println!("{}", style.get_style_str());
+    /// ```
     pub fn get_style_str(&self) -> &str {
         self.inner.get_style_str()
     }
@@ -158,18 +196,10 @@ impl Style {
     }
 
     /// Unregister current style from style registry
+    ///
+    /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
     pub fn unregister(&self) {
         StyleRegistry::unregister(&*self.key());
-    }
-}
-
-#[cfg(target_arch = "wasm32")]
-impl Style {}
-
-impl ToString for Style {
-    /// Just returns the classname
-    fn to_string(&self) -> String {
-        self.get_class_name().to_string()
     }
 }
 

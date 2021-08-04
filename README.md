@@ -100,7 +100,7 @@ Alternatively, any struct that implements `YieldStyle` trait can call
 
 ```rust
 use std::borrow::Cow;
-use stylist::Style;
+use stylist::YieldStyle;
 
 pub struct Component;
 
@@ -111,7 +111,7 @@ impl YieldStyle {
 }
 
 impl Component {
-    fn new() -> Self{
+    fn new() -> Self {
         println!("{}", self.style().get_class_name());
 
         unimplemented!();
@@ -127,7 +127,7 @@ To enable yew integration. Enable feature `yew` in `Cargo.toml`.
 Then create a style and use it with yew like this:
 
 ```rust
-use stylist::Style;
+use stylist::YieldStyle;
 
 struct MyStyledComponent {}
 

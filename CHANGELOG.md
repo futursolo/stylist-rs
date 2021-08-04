@@ -8,6 +8,7 @@
   encountering an error.
 - `Style::create()` now takes `Into<Cow<'static, str>>` for css string
   and returns `stylist::Error`instead of `String` when encountering an error.
+- `Style` no longer implements `ToString`.
 
 ### Other Changes:
 - Added a new API `YieldStyle`.
