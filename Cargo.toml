@@ -53,3 +53,4 @@ wasm-bindgen-test = "0.3.24"
 
 [package.metadata.docs.rs]
 features = ["yew"]
+all-features = true
