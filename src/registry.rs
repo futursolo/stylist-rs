@@ -7,11 +7,11 @@ use once_cell::sync::Lazy;
 use crate::Style;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey(pub String, pub Cow<'static, str>);
+pub(crate) struct StyleKey(pub Cow<'static, str>, pub Cow<'static, str>);
 
 impl PartialEq<(&str, &str)> for StyleKey {
     fn eq(&self, other: &(&str, &str)) -> bool {
-        &(self.0.as_str(), &*self.1) == other
+        &(&*self.0, &*self.1) == other
     }
 }
 

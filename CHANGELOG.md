@@ -6,8 +6,9 @@
 - `Style::new()` now takes an `Into<Cow<'static, str>>` instead of
   `Into<String>` and returns `stylist::Error` instead of `String` when
   encountering an error.
-- `Style::create()` now takes `Into<Cow<'static, str>>` for css string
-  and returns `stylist::Error`instead of `String` when encountering an error.
+- `Style::create()` now takes `Into<Cow<'static, str>>` for class prefix
+  and css string and returns `stylist::Error`instead of `String` when
+  encountering an error.
 - `Style` no longer implements `ToString`.
 
 ### Other Changes:
@@ -16,6 +17,7 @@
 - Styles are now cached by default.
 - Fixed a Bug where `.a-class-name` is after `@media` would cause parser
   to return an error.
+- Added Docs.
 - Removed Unnecessary Clones.
 - Optimised for Performance.
 

@@ -157,7 +157,7 @@ impl Style {
     ///
     /// let style = Style::create("my-component", "color:red;").expect("Failed to create style.");
     /// ```
-    pub fn create<I1: Into<String>, I2: Into<Cow<'static, str>>>(
+    pub fn create<I1: Into<Cow<'static, str>>, I2: Into<Cow<'static, str>>>(
         class_prefix: I1,
         css: I2,
     ) -> Result<Self> {
