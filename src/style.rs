@@ -2,8 +2,7 @@ use once_cell::sync::OnceCell;
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use crate::ast::{Scope, ToCss};
-use crate::parser::Parser;
+use crate::ast::{Scopes, ToCss};
 use crate::registry::{StyleKey, StyleRegistry};
 use crate::utils::get_rand_str;
 #[cfg(target_arch = "wasm32")]
@@ -20,7 +19,7 @@ struct StyleContent {
     class_name: String,
 
     /// The abstract syntax tree of the css
-    ast: Arc<Vec<Scope>>,
+    ast: Arc<Scopes>,
 
     style_str: OnceCell<String>,
 }
@@ -31,16 +30,8 @@ impl StyleContent {
     }
 
     fn get_style_str(&self) -> &str {
-        self.style_str.get_or_init(|| {
-            self.ast
-                .iter()
-                .map(|scope| scope.to_css(self.get_class_name()))
-                .fold(String::new(), |mut acc, css_part| {
-                    acc.push('\n');
-                    acc.push_str(&css_part);
-                    acc
-                })
-        })
+        self.style_str
+            .get_or_init(|| self.ast.to_css(self.get_class_name()))
     }
 
     /// Mounts the styles to the document
@@ -132,7 +123,7 @@ impl Style {
     }
 
     fn create_impl(key: StyleKey) -> Result<Self> {
-        let ast = Parser::parse(&*key.1)?;
+        let ast = key.1.parse()?;
         let new_style = Self {
             inner: Arc::new(StyleContent {
                 class_name: format!("{}-{}", key.0, get_rand_str()),
@@ -245,8 +236,7 @@ mod tests {
         assert_eq!(
             style.get_style_str(),
             format!(
-                r#"
-.{style_name} {{
+                r#".{style_name} {{
 background-color: black;
 }}
 .{style_name} .with-class {{
@@ -257,7 +247,8 @@ color: red;
 .{style_name} {{
 color: yellow;
 }}
-}}"#,
+}}
+"#,
                 style_name = style.get_class_name()
             )
         )

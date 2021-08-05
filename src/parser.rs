@@ -1,4 +1,4 @@
-use crate::ast::{Block, Rule, RuleContent, Scope, ScopeContent, StyleAttribute};
+use crate::ast::{Block, Rule, RuleContent, Scope, ScopeContent, Scopes, StyleAttribute};
 use crate::{Error, Result};
 use nom::{
     branch::alt,
@@ -399,21 +399,24 @@ impl Parser {
 
     /// Parse scopes
     /// A Scope can be either a media rule or a css scope.
-    fn scopes(i: &str) -> IResult<&str, Vec<Scope>, VerboseError<&str>> {
+    fn scopes(i: &str) -> IResult<&str, Scopes, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Scopes: {}", i);
 
         let result = context(
             "StyleScopes",
             // Drop trailing whitespaces.
-            Self::trimmed(many0(alt(
-                // Either @media
-                (
-                    Parser::media_rule,
-                    // Or Scope
-                    Parser::scope,
-                ),
-            ))),
+            Self::trimmed(map(
+                many0(alt(
+                    // Either @media
+                    (
+                        Parser::media_rule,
+                        // Or Scope
+                        Parser::scope,
+                    ),
+                )),
+                Scopes,
+            )),
         )(i);
 
         #[cfg(test)]
@@ -422,8 +425,8 @@ impl Parser {
         result
     }
 
-    /// The parse the style and returns a `Result<Vec<Scope>>`.
-    pub(crate) fn parse(css: &str) -> Result<Vec<Scope>> {
+    /// The parse the style and returns a `Result<Scopes>`.
+    pub(crate) fn parse(css: &str) -> Result<Scopes> {
         match Self::scopes(css) {
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
                 Err(Error::Parse(convert_error(css, e)))
@@ -449,6 +452,7 @@ mod tests {
         let test_str = r#""#;
         assert!(Parser::parse(test_str)
             .expect("Failed to Parse Style")
+            .0
             .is_empty());
     }
 
@@ -468,7 +472,7 @@ mod tests {
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = vec![
+        let expected = Scopes(vec![
             Scope {
                 condition: Some("@media screen and (max-width: 500px)".into()),
                 stylesets: vec![ScopeContent::Block(Block {
@@ -489,7 +493,7 @@ mod tests {
                     }],
                 })],
             },
-        ];
+        ]);
 
         assert_eq!(parsed, expected);
 
@@ -512,7 +516,7 @@ mod tests {
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = vec![
+        let expected = Scopes(vec![
             Scope {
                 condition: Some("@media screen and (max-width: 500px)".into()),
                 stylesets: vec![ScopeContent::Block(Block {
@@ -533,7 +537,7 @@ mod tests {
                     }],
                 })],
             },
-        ];
+        ]);
 
         assert_eq!(parsed, expected);
 

@@ -1,3 +1,7 @@
+#![deny(clippy::all)]
+#![deny(unsafe_code)]
+#![deny(non_snake_case)]
+
 //! Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
 //!
 //! ## Usage
@@ -156,10 +160,6 @@
 //! There're theming examples using
 //! [Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
 //! and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
-
-#![deny(clippy::all)]
-#![deny(unsafe_code)]
-#![deny(non_snake_case)]
 
 mod ast;
 #[doc(hidden)]

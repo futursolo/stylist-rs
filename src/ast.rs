@@ -18,6 +18,10 @@
 /// Structs implementing this trait should be able to turn into
 /// a part of a CSS style sheet.
 use std::fmt;
+use std::str::FromStr;
+
+use crate::parser::Parser;
+use crate::{Error, Result};
 
 pub(crate) trait ToCss {
     fn to_css(&self, class_name: &str) -> String {
@@ -32,7 +36,7 @@ pub(crate) trait ToCss {
 
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Scopes(Vec<Scope>);
+pub(crate) struct Scopes(pub(crate) Vec<Scope>);
 
 impl ToCss for Scopes {
     fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
@@ -42,6 +46,14 @@ impl ToCss for Scopes {
         }
 
         Ok(())
+    }
+}
+
+impl FromStr for Scopes {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self> {
+        Parser::parse(s)
     }
 }
 
