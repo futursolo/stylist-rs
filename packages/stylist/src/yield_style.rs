@@ -15,7 +15,7 @@ use crate::{Result, Style};
 ///
 /// ```rust
 /// use yew::prelude::*;
-/// 
+///
 /// use std::borrow::Cow;
 /// use stylist::YieldStyle;
 ///

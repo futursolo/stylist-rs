@@ -1,8 +1,7 @@
-
-use stylist_core::Style;
 use std::borrow::Borrow;
-use stylist_core::ast::Scopes;
 use std::result::Result;
+use stylist_core::ast::Scopes;
+use stylist_core::Style;
 
 pub trait TryParseCss {
     type Error;
@@ -18,14 +17,10 @@ impl<'a> TryParseCss for &'a str {
 }
 
 pub trait StyleExt: Sized {
-    fn create<N: Borrow<str>, Css: TryParseCss>(
-        classname: N,
-        css: Css,
-    ) -> Result<Self, Css::Error>;
+    fn create<N: Borrow<str>, Css: TryParseCss>(classname: N, css: Css)
+        -> Result<Self, Css::Error>;
 
-    fn new<Css: TryParseCss>(
-        css: Css,
-    ) -> Result<Self, Css::Error> {
+    fn new<Css: TryParseCss>(css: Css) -> Result<Self, Css::Error> {
         Self::create("stylist", css)
     }
 }

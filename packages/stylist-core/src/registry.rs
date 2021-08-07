@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 
-use crate::{Style, ast::Scopes};
+use crate::{ast::Scopes, Style};
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub(crate) struct StyleKey(pub Arc<Scopes>);

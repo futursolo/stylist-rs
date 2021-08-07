@@ -1,4 +1,3 @@
-use stylist_core::ast::{Block, Rule, RuleContent, Scope, ScopeContent, Scopes, StyleAttribute};
 use crate::{Error, Result};
 use nom::{
     branch::alt,
@@ -10,6 +9,7 @@ use nom::{
     sequence::{delimited, preceded, separated_pair, terminated},
     IResult,
 };
+use stylist_core::ast::{Block, Rule, RuleContent, Scope, ScopeContent, Scopes, StyleAttribute};
 
 #[cfg(test)]
 use log::trace;
