@@ -13,7 +13,7 @@
 //! To create a stylesheet, you can use [`Style::new`]:
 //!
 //! ```rust
-//! use stylist::Style;
+//! use stylist::{Style, StyleExt};
 //!
 //! let style = Style::new(
 //!     r#"
@@ -30,7 +30,7 @@
 //! you can use [`Style::create`].
 //!
 //! ```rust
-//! use stylist::Style;
+//! use stylist::{Style, StyleExt};
 //!
 //! let style = Style::create(
 //!     "MyComponent",
@@ -161,18 +161,14 @@
 //! [Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
 //! and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
 
-mod ast;
-#[doc(hidden)]
-pub mod bindings;
-mod error;
-mod parser;
-mod registry;
-#[doc(hidden)]
-pub mod style;
-mod utils;
 #[doc(hidden)]
 pub mod yield_style;
 
+mod error;
+mod parser;
+mod style_ext;
+
 pub use error::{Error, Result};
-pub use style::Style;
+pub use style_ext::StyleExt;
+pub use stylist_core::{Style, style, bindings};
 pub use yield_style::YieldStyle;

@@ -1,5 +1,7 @@
+use std::borrow::Borrow;
 use once_cell::sync::OnceCell;
-use std::borrow::Cow;
+use std::convert::TryInto;
+use std::result::Result;
 use std::sync::Arc;
 
 use crate::ast::{Scopes, ToCss};
@@ -9,7 +11,6 @@ use crate::utils::get_rand_str;
 use crate::utils::{doc_head, document};
 #[cfg(target_arch = "wasm32")]
 use crate::Error;
-use crate::Result;
 
 #[derive(Debug)]
 struct StyleContent {
@@ -91,17 +92,65 @@ pub struct Style {
 }
 
 impl Style {
+    // The big method is monomorphic, so less code duplication and code bloat through generics
+    // and inlining
+    fn create_from_scopes_impl(class_prefix: &str, css: Scopes) -> Self {
+        let css = Arc::new(css);
+        // Creates the StyleKey, return from registry if already cached.
+        let key = StyleKey(css);
+        let reg = StyleRegistry::get_ref();
+        let mut reg = reg.lock().unwrap();
+
+        if let Some(m) = reg.get(&key) {
+            return m;
+        }
+
+        let new_style = Self {
+            inner: Arc::new(StyleContent {
+                class_name: format!("{}-{}", class_prefix, get_rand_str()),
+                ast: key.0.clone(),
+                style_str: OnceCell::new(),
+                key: Arc::new(key),
+            }),
+        };
+
+        #[cfg(target_arch = "wasm32")]
+        new_style.inner.mount().expect("Failed to mount");
+
+        // Register the created Style.
+        reg.register(new_style.clone());
+
+        new_style
+    }
+
     /// Creates a new style
     ///
     /// # Examples
     ///
     /// ```
-    /// use stylist::Style;
+    /// use stylist_core::{Style, ast::Scopes};
     ///
-    /// let style = Style::new("color:red;").expect("Failed to create style.");
+    /// let scopes: Scopes = Default::default();
+    /// let style = Style::try_from_scopes(scopes)?;
+    /// # Ok::<(), std::convert::Infallible>(())
     /// ```
-    pub fn new<S: Into<Cow<'static, str>>>(css: S) -> Result<Self> {
-        Self::create("stylist", css)
+    pub fn try_from_scopes<S: TryInto<Scopes>>(css: S) -> Result<Self, S::Error> {
+        let css = S::try_into(css)?;
+        Ok(Self::create_from_scopes("stylist", css))
+    }
+
+    /// Creates a new style with custom class prefix
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use stylist_core::Style;
+    ///
+    /// let scopes = Default::default();
+    /// let style = Style::create_from_scopes("my-component", scopes);
+    /// ```
+    pub fn create_from_scopes<I: Borrow<str>>(class_prefix: I, css: Scopes) -> Self {
+        Self::create_from_scopes_impl(class_prefix.borrow(), css)
     }
 
     /// Returns the class name for current style
@@ -111,64 +160,16 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// use stylist::Style;
+    /// use stylist_core::Style;
     ///
-    /// let style = Style::new("color:red;").expect("Failed to create style.");
+    /// let scopes = Default::default();
+    /// let style = Style::create_from_scopes("stylist", scopes);
     ///
     /// // Example Output: stylist-uSu9NZZu
     /// println!("{}", style.get_class_name());
     /// ```
     pub fn get_class_name(&self) -> &str {
         self.inner.get_class_name()
-    }
-
-    fn create_impl(key: StyleKey) -> Result<Self> {
-        let ast = key.1.parse()?;
-        let new_style = Self {
-            inner: Arc::new(StyleContent {
-                class_name: format!("{}-{}", key.0, get_rand_str()),
-                ast: Arc::new(ast),
-                style_str: OnceCell::new(),
-                key: Arc::new(key),
-            }),
-        };
-
-        #[cfg(target_arch = "wasm32")]
-        new_style.inner.mount()?;
-
-        Ok(new_style)
-    }
-
-    /// Creates a new style with custom class prefix
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use stylist::Style;
-    ///
-    /// let style = Style::create("my-component", "color:red;").expect("Failed to create style.");
-    /// ```
-    pub fn create<I1: Into<Cow<'static, str>>, I2: Into<Cow<'static, str>>>(
-        class_prefix: I1,
-        css: I2,
-    ) -> Result<Self> {
-        let (class_prefix, css) = (class_prefix.into(), css.into());
-
-        // Creates the StyleKey, return from registry if already cached.
-        let key = StyleKey(class_prefix, css.clone());
-        let reg = StyleRegistry::get_ref();
-        let mut reg = reg.lock().unwrap();
-
-        if let Some(m) = reg.get(&key) {
-            return Ok(m);
-        }
-
-        let new_style = Self::create_impl(key)?;
-
-        // Register the created Style.
-        reg.register(new_style.clone());
-
-        Ok(new_style)
     }
 
     /// Get the parsed and generated style in `&str`.
@@ -178,12 +179,13 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// use stylist::Style;
+    /// use stylist_core::Style;
     ///
-    /// let style = Style::create("my-component", "color:red;").expect("Failed to create style.");
+    /// let scopes = Default::default();
+    /// let style = Style::create_from_scopes("my-component", scopes);
     ///
     /// // Example Output:
-    /// // .stylist-uSu9NZZu {
+    /// // .my-component-uSu9NZZu {
     /// // color: red;
     /// // }
     /// println!("{}", style.get_style_str());
@@ -210,47 +212,10 @@ impl Style {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ast::sample_scopes;
 
     #[test]
     fn test_simple() {
-        Style::new("background-color: black;").expect("Failed to create Style.");
-    }
-
-    #[test]
-    fn test_complex() {
-        let style = Style::new(
-            r#"
-                background-color: black;
-
-                .with-class {
-                    color: red;
-                }
-
-                @media screen and (max-width: 600px) {
-                    color: yellow;
-                }
-            "#,
-        )
-        .expect("Failed to create Style.");
-
-        assert_eq!(
-            style.get_style_str(),
-            format!(
-                r#".{style_name} {{
-background-color: black;
-}}
-.{style_name} .with-class {{
-color: red;
-}}
-
-@media screen and (max-width: 600px) {{
-.{style_name} {{
-color: yellow;
-}}
-}}
-"#,
-                style_name = style.get_class_name()
-            )
-        )
+        Style::try_from_scopes(sample_scopes()).expect("Failed to create Style.");
     }
 }

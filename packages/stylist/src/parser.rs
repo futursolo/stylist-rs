@@ -1,4 +1,4 @@
-use crate::ast::{Block, Rule, RuleContent, Scope, ScopeContent, Scopes, StyleAttribute};
+use stylist_core::ast::{Block, Rule, RuleContent, Scope, ScopeContent, Scopes, StyleAttribute};
 use crate::{Error, Result};
 use nom::{
     branch::alt,

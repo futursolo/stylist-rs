@@ -1,19 +1,12 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 
-use crate::Style;
+use crate::{Style, ast::Scopes};
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey(pub Cow<'static, str>, pub Cow<'static, str>);
-
-impl PartialEq<(&str, &str)> for StyleKey {
-    fn eq(&self, other: &(&str, &str)) -> bool {
-        &(&*self.0, &*self.1) == other
-    }
-}
+pub(crate) struct StyleKey(pub Arc<Scopes>);
 
 static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
 
@@ -47,18 +40,18 @@ impl StyleRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Result;
+    use crate::ast::sample_scopes;
 
     fn init() {
         let _ = env_logger::builder().is_test(true).try_init();
     }
 
     #[test]
-    fn test_duplicate_style() -> Result<()> {
+    fn test_duplicate_style() {
         init();
 
-        let style_a = Style::new(r#"color: red;"#)?;
-        let style_b = Style::new(r#"color: red;"#)?;
+        let style_a = Style::try_from_scopes(sample_scopes()).unwrap();
+        let style_b = Style::try_from_scopes(sample_scopes()).unwrap();
 
         {
             let reg = StyleRegistry::get_ref();
@@ -68,25 +61,23 @@ mod tests {
         }
 
         assert_eq!(style_a.get_style_str(), style_b.get_style_str());
-        Ok(())
     }
 
     #[test]
-    fn test_duplicate_style_different_prefix() -> Result<()> {
+    fn test_duplicate_style_different_prefix() {
         init();
 
-        let style_a = Style::create("element-a", r#"color: red;"#)?;
-        let style_b = Style::create("element-b", r#"color: red;"#)?;
+        let style_a = Style::create_from_scopes("element-a", sample_scopes());
+        let style_b = Style::create_from_scopes("element-b", sample_scopes());
 
-        assert_ne!(style_a.get_style_str(), style_b.get_style_str());
-        Ok(())
+        assert_eq!(style_a.get_style_str(), style_b.get_style_str());
     }
 
     #[test]
-    fn test_unregister() -> Result<()> {
+    fn test_unregister() {
         init();
 
-        let style = Style::new(r#"color: red;"#)?;
+        let style = Style::try_from_scopes(sample_scopes()).unwrap();
 
         {
             let reg = REGISTRY.clone();
@@ -103,7 +94,5 @@ mod tests {
 
             assert!(reg.styles.get(&*style.key()).is_none());
         }
-
-        Ok(())
     }
 }

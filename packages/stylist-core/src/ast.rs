@@ -18,10 +18,6 @@
 /// Structs implementing this trait should be able to turn into
 /// a part of a CSS style sheet.
 use std::fmt;
-use std::str::FromStr;
-
-use crate::parser::Parser;
-use crate::{Error, Result};
 
 pub(crate) trait ToCss {
     fn to_css(&self, class_name: &str) -> String {
@@ -35,8 +31,20 @@ pub(crate) trait ToCss {
 }
 
 /// The top node of a style string.
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Scopes(pub(crate) Vec<Scope>);
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Scopes(pub Vec<Scope>);
+
+impl Scopes {
+    pub fn new() -> Self {
+        Self(Vec::new())
+    }
+}
+
+impl Default for Scopes {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl ToCss for Scopes {
     fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
@@ -49,18 +57,10 @@ impl ToCss for Scopes {
     }
 }
 
-impl FromStr for Scopes {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        Parser::parse(s)
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Scope {
-    pub(crate) condition: Option<String>,
-    pub(crate) stylesets: Vec<ScopeContent>,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Scope {
+    pub condition: Option<String>,
+    pub stylesets: Vec<ScopeContent>,
 }
 
 impl ToCss for Scope {
@@ -88,8 +88,8 @@ impl ToCss for Scope {
 }
 
 /// Everything that can reside inside a scope.
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) enum ScopeContent {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum ScopeContent {
     Block(Block),
     Rule(Rule),
     // e.g. media rules nested in support rules and vice versa
@@ -105,10 +105,10 @@ pub(crate) enum ScopeContent {
 ///     color: red;
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Block {
-    pub(crate) condition: Option<String>,
-    pub(crate) style_attributes: Vec<StyleAttribute>,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Block {
+    pub condition: Option<String>,
+    pub style_attributes: Vec<StyleAttribute>,
 }
 
 impl ToCss for Block {
@@ -162,10 +162,10 @@ impl ToCss for Block {
 /// A simple CSS proprerty in the form of a key value pair.
 ///
 /// E.g.: `color: red`
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct StyleAttribute {
-    pub(crate) key: String,
-    pub(crate) value: String,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct StyleAttribute {
+    pub key: String,
+    pub value: String,
 }
 
 impl ToCss for StyleAttribute {
@@ -177,10 +177,10 @@ impl ToCss for StyleAttribute {
 /// A rule is everything that does not contain any properties.
 ///
 /// An example would be `@keyframes`
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) struct Rule {
-    pub(crate) condition: String,
-    pub(crate) content: Vec<RuleContent>,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Rule {
+    pub condition: String,
+    pub content: Vec<RuleContent>,
 }
 
 impl ToCss for Rule {
@@ -196,8 +196,8 @@ impl ToCss for Rule {
 }
 
 /// Everything that can be inside a rule.
-#[derive(Debug, Clone, PartialEq)]
-pub(crate) enum RuleContent {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum RuleContent {
     String(String),
     CurlyBraces(Vec<RuleContent>),
 }
@@ -224,6 +224,20 @@ impl From<String> for RuleContent {
     fn from(s: String) -> Self {
         Self::String(s)
     }
+}
+
+#[cfg(test)]
+pub(crate) fn sample_scopes() -> Scopes {
+    Scopes(vec![Scope {
+        condition: None,
+        stylesets: vec![ScopeContent::Block(Block {
+            condition: None,
+            style_attributes: vec![StyleAttribute {
+                key: "color".to_string(),
+                value: "red".to_string(),
+            }],
+        })],
+    }])
 }
 
 #[cfg(test)]

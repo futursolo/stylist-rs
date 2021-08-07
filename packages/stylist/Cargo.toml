@@ -1,0 +1,41 @@
+[package]
+name = "stylist"
+version = "0.7.0"
+license = "MIT"
+repository = "https://github.com/futursolo/stylist-rs"
+authors = [
+    "Kaede Hoshiakwa <futursolo@icloud.com>",
+    "Martin Molzer <ga65guy@mytum.de>",
+]
+edition = "2018"
+description = "Stylist is a CSS-in-Rust styling solution for WebAssembly Applications."
+keywords = [
+    "CSS",
+    "web",
+    "css-in-rust",
+    "yew"
+]
+categories = ["wasm", "web-programming"]
+readme = "README.md"
+homepage = "https://github.com/futursolo/stylist-rs"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+nom = "6.2.1"
+stylist-core = { path = "../stylist-core" }
+thiserror = "1.0"
+wasm-bindgen = "0.2.74"
+
+[dev-dependencies]
+yew = { version = "0.18.0", default-features = false, features = ["web_sys"] }
+log = "0.4"
+env_logger = "0.9"
+
+[features]
+yew_integration = ["stylist-core/yew_integration"]
+
+[package.metadata.docs.rs]
+features = ["yew"]
+all-features = true
