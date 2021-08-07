@@ -10,7 +10,7 @@ use crate::utils::get_rand_str;
 #[cfg(target_arch = "wasm32")]
 use crate::utils::{doc_head, document};
 #[cfg(target_arch = "wasm32")]
-use crate::Error;
+use wasm_bindgen::JsValue;
 
 #[derive(Debug)]
 struct StyleContent {
@@ -37,35 +37,29 @@ impl StyleContent {
 
     /// Mounts the styles to the document
     #[cfg(target_arch = "wasm32")]
-    fn mount(&self) -> Result<()> {
+    fn mount(&self) -> Result<(), JsValue> {
         let document = document()?;
         let head = doc_head()?;
 
-        let style_element = document
-            .create_element("style")
-            .map_err(|e| Error::Web(Some(e)))?;
-        style_element
-            .set_attribute("data-style", self.get_class_name())
-            .map_err(|e| Error::Web(Some(e)))?;
+        let style_element = document.create_element("style")?;
+        style_element.set_attribute("data-style", self.get_class_name())?;
         style_element.set_text_content(Some(self.get_style_str()));
 
-        head.append_child(&style_element)
-            .map_err(|e| Error::Web(Some(e)))?;
+        head.append_child(&style_element)?;
         Ok(())
     }
 
     /// Unmounts the style from the DOM tree
     /// Does nothing if it's not in the DOM tree
     #[cfg(target_arch = "wasm32")]
-    fn unmount(&self) -> Result<()> {
+    fn unmount(&self) -> Result<(), JsValue> {
         let document = document()?;
 
-        if let Some(m) = document
-            .query_selector(&format!("style[data-style={}]", self.class_name))
-            .map_err(|e| Error::Web(Some(e)))?
+        if let Some(m) =
+            document.query_selector(&format!("style[data-style={}]", self.class_name))?
         {
             if let Some(parent) = m.parent_element() {
-                parent.remove_child(&m).map_err(|e| Error::Web(Some(e)))?;
+                parent.remove_child(&m)?;
             }
         }
 
