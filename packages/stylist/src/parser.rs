@@ -5,11 +5,11 @@ use nom::{
     character::complete::one_of,
     combinator::{map, map_res, opt},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
-    multi::{many0, many1, separated_list0},
+    multi::{fold_many0, many0, many1, separated_list0},
     sequence::{delimited, preceded, separated_pair, terminated},
     IResult,
 };
-use stylist_core::ast::{Block, Rule, RuleContent, Scope, ScopeContent, Sheet, StyleAttribute};
+use stylist_core::ast::{Block, Rule, RuleContent, ScopeContent, Sheet, StyleAttribute};
 
 #[cfg(test)]
 use log::trace;
@@ -151,6 +151,28 @@ impl Parser {
         result
     }
 
+    fn rule_contents(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Rule contents: {}", i);
+
+        Self::expect_non_empty(i)?;
+
+        let string_as_contents = map(Parser::rule_string, |s| vec![s]);
+        let string_or_curlies = alt((Parser::rule_curly_braces, string_as_contents));
+        let result = context(
+            "RuleContents",
+            fold_many0(string_or_curlies, Vec::new(), |mut acc, item| {
+                acc.extend(item);
+                acc
+            }),
+        )(i)?;
+
+        #[cfg(test)]
+        trace!("Rule contents: {:#?}", result);
+
+        Ok(result)
+    }
+
     fn rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Rule: {}", i);
@@ -163,13 +185,7 @@ impl Parser {
                 separated_pair(
                     preceded(tag("@"), is_not("{")),
                     tag("{"),
-                    terminated(
-                        terminated(
-                            many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
-                            opt(Parser::sp),
-                        ),
-                        tag("}"),
-                    ),
+                    terminated(terminated(Self::rule_contents, opt(Parser::sp)), tag("}")),
                 ),
                 |p: (&str, Vec<RuleContent>)| {
                     if p.0.starts_with("media") {
@@ -210,7 +226,7 @@ impl Parser {
     /// Parse values within curly braces. This is basically just a helper for rules since
     /// they may contain braced content. This function is for parsing it all and not
     /// returning an incomplete rule at the first appearance of a closed curly brace
-    fn rule_curly_braces(i: &str) -> IResult<&str, RuleContent, VerboseError<&str>> {
+    fn rule_curly_braces(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Curly Braces: {}", i);
 
@@ -218,14 +234,7 @@ impl Parser {
 
         let result = context(
             "StyleRuleCurlyBraces",
-            Self::trimmed(map(
-                delimited(
-                    tag("{"),
-                    many0(alt((Parser::rule_string, Parser::rule_curly_braces))),
-                    tag("}"),
-                ),
-                RuleContent::CurlyBraces,
-            )),
+            Self::trimmed(delimited(tag("{"), Self::rule_contents, tag("}"))),
         )(i);
 
         #[cfg(test)]
@@ -343,20 +352,14 @@ impl Parser {
     }
 
     /// Parse a CSS Scope
-    fn scope(i: &str) -> IResult<&str, Scope, VerboseError<&str>> {
+    fn scope(i: &str) -> IResult<&str, Vec<ScopeContent>, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Scope: {}", i);
 
         // Cannot accept empty media.
         Self::expect_non_empty(i)?;
 
-        let result = context(
-            "StyleScope",
-            Self::trimmed(map(Parser::scope_contents, |sc| Scope {
-                condition: None,
-                stylesets: sc,
-            })),
-        )(i);
+        let result = context("StyleScope", Self::trimmed(Parser::scope_contents))(i);
 
         #[cfg(test)]
         trace!("Scope: {:#?}", result);
@@ -364,7 +367,7 @@ impl Parser {
     }
 
     /// Parse `@media`
-    fn media_rule(i: &str) -> IResult<&str, Scope, VerboseError<&str>> {
+    fn media_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Media Rule: {}", i);
 
@@ -382,11 +385,11 @@ impl Parser {
                     terminated(Parser::scope_contents, tag("}")),
                 ),
                 // Map Results into a scope
-                |p: (&str, Vec<ScopeContent>)| -> Scope {
-                    Scope {
-                        condition: Some(format!("@media {}", p.0.trim())),
-                        stylesets: p.1,
-                    }
+                |mut p: (&str, Vec<ScopeContent>)| {
+                    ScopeContent::Rule(Rule {
+                        condition: format!("@media {}", p.0.trim()),
+                        content: p.1.drain(..).map(|i| i.into()).collect(),
+                    })
                 },
             )),
         )(i);
@@ -403,18 +406,16 @@ impl Parser {
         #[cfg(test)]
         trace!("Sheet: {}", i);
 
+        let media_rule = map(Self::media_rule, |s| vec![s]);
+        let contents = alt((media_rule, Self::scope));
         let result = context(
             "StyleSheet",
             // Drop trailing whitespaces.
             Self::trimmed(map(
-                many0(alt(
-                    // Either @media
-                    (
-                        Parser::media_rule,
-                        // Or Scope
-                        Parser::scope,
-                    ),
-                )),
+                fold_many0(contents, Vec::new(), |mut acc, item| {
+                    acc.extend(item);
+                    acc
+                }),
                 Sheet,
             )),
         )(i);
@@ -473,26 +474,26 @@ mod tests {
         let parsed = Parser::parse(test_str)?;
 
         let expected = Sheet(vec![
-            Scope {
-                condition: Some("@media screen and (max-width: 500px)".into()),
-                stylesets: vec![ScopeContent::Block(Block {
+            ScopeContent::Rule(Rule {
+                condition: "@media screen and (max-width: 500px)".into(),
+                content: vec![RuleContent::Block(Block {
                     condition: None,
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "red".into(),
                     }],
                 })],
-            },
-            Scope {
-                condition: Some("@media screen and (max-width: 200px)".into()),
-                stylesets: vec![ScopeContent::Block(Block {
+            }),
+            ScopeContent::Rule(Rule {
+                condition: "@media screen and (max-width: 200px)".into(),
+                content: vec![RuleContent::Block(Block {
                     condition: None,
                     style_attributes: vec![StyleAttribute {
                         key: "color".into(),
                         value: "yellow".into(),
                     }],
                 })],
-            },
+            }),
         ]);
 
         assert_eq!(parsed, expected);
@@ -517,26 +518,23 @@ mod tests {
         let parsed = Parser::parse(test_str)?;
 
         let expected = Sheet(vec![
-            Scope {
-                condition: Some("@media screen and (max-width: 500px)".into()),
-                stylesets: vec![ScopeContent::Block(Block {
+            ScopeContent::Rule(Rule {
+                condition: "@media screen and (max-width: 500px)".into(),
+                content: vec![RuleContent::Block(Block {
                     condition: None,
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "red".into(),
                     }],
                 })],
-            },
-            Scope {
-                condition: None,
-                stylesets: vec![ScopeContent::Block(Block {
-                    condition: Some(".some-class2".into()),
-                    style_attributes: vec![StyleAttribute {
-                        key: "color".into(),
-                        value: "yellow".into(),
-                    }],
-                })],
-            },
+            }),
+            ScopeContent::Block(Block {
+                condition: Some(".some-class2".into()),
+                style_attributes: vec![StyleAttribute {
+                    key: "color".into(),
+                    value: "yellow".into(),
+                }],
+            }),
         ]);
 
         assert_eq!(parsed, expected);

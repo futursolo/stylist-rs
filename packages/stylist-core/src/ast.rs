@@ -32,7 +32,7 @@ pub(crate) trait ToCss {
 
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Sheet(pub Vec<Scope>);
+pub struct Sheet(pub Vec<ScopeContent>);
 
 impl Sheet {
     pub fn new() -> Self {
@@ -57,36 +57,6 @@ impl ToCss for Sheet {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Scope {
-    pub condition: Option<String>,
-    pub stylesets: Vec<ScopeContent>,
-}
-
-impl ToCss for Scope {
-    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
-        if let Some(ref m) = self.condition {
-            writeln!(w, "{} {{", m)?;
-        }
-
-        for set in self.stylesets.iter() {
-            match set {
-                ScopeContent::Block(ref block) => block.write_css(w, class_name)?,
-                ScopeContent::Rule(ref rule) => rule.write_css(w, class_name)?,
-                // ScopeContent::Scope(scope) => scope.write_css(w, class_name)?,
-            }
-
-            writeln!(w)?;
-        }
-
-        if self.condition.is_some() {
-            write!(w, "}}")?;
-        }
-
-        Ok(())
-    }
-}
-
 /// Everything that can reside inside a scope.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ScopeContent {
@@ -94,6 +64,15 @@ pub enum ScopeContent {
     Rule(Rule),
     // e.g. media rules nested in support rules and vice versa
     // Scope(Scope),
+}
+
+impl ToCss for ScopeContent {
+    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+        match self {
+            ScopeContent::Block(ref b) => b.write_css(w, class_name),
+            ScopeContent::Rule(ref r) => r.write_css(w, class_name),
+        }
+    }
 }
 
 /// A block is a set of css properties that apply to elements that
@@ -112,32 +91,6 @@ pub struct Block {
 }
 
 impl ToCss for Block {
-    fn to_css(&self, class_name: &str) -> String {
-        let condition = match &self.condition {
-            Some(condition) => format!(" {}", condition),
-            None => String::new(),
-        };
-        let style_property_css = self
-            .style_attributes
-            .clone()
-            .into_iter()
-            .map(|style_property| style_property.to_css(class_name))
-            .fold(String::new(), |mut acc, css_part| {
-                acc.push('\n');
-                acc.push_str(&css_part);
-                acc
-            });
-        if condition.contains('&') {
-            format!(
-                "{} {{{}\n}}",
-                condition.replace("&", format!(".{}", class_name).as_str()),
-                style_property_css
-            )
-        } else {
-            format!(".{}{} {{{}\n}}", class_name, condition, style_property_css)
-        }
-    }
-
     fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         if let Some(ref condition) = self.condition {
             if condition.contains('&') {
@@ -188,7 +141,8 @@ impl ToCss for Rule {
         writeln!(w, "{} {{", self.condition)?;
 
         for i in self.content.iter() {
-            i.write_css(w, class_name)?
+            i.write_css(w, class_name)?;
+            writeln!(w)?;
         }
 
         write!(w, "}}")
@@ -198,24 +152,29 @@ impl ToCss for Rule {
 /// Everything that can be inside a rule.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RuleContent {
+    // A block
+    Block(Block),
+    // A nested rule
+    Rule(Rule),
+    // A raw string literal, i.e. something that wasn't parsed
     String(String),
-    CurlyBraces(Vec<RuleContent>),
+}
+
+impl From<ScopeContent> for RuleContent {
+    fn from(scope: ScopeContent) -> Self {
+        match scope {
+            ScopeContent::Block(b) => RuleContent::Block(b),
+            ScopeContent::Rule(r) => RuleContent::Rule(r),
+        }
+    }
 }
 
 impl ToCss for RuleContent {
     fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         match self {
-            RuleContent::String(ref s) => writeln!(w, "{}", s),
-            RuleContent::CurlyBraces(ref content) => {
-                writeln!(w, "{{")?;
-
-                for i in content.iter() {
-                    i.write_css(w, class_name)?;
-                    writeln!(w)?;
-                }
-
-                write!(w, "}}")
-            }
+            RuleContent::Block(ref b) => b.write_css(w, class_name),
+            RuleContent::Rule(ref r) => r.write_css(w, class_name),
+            RuleContent::String(ref s) => write!(w, "{}", s),
         }
     }
 }
@@ -228,16 +187,13 @@ impl From<String> for RuleContent {
 
 #[cfg(test)]
 pub(crate) fn sample_scopes() -> Sheet {
-    Sheet(vec![Scope {
+    Sheet(vec![ScopeContent::Block(Block {
         condition: None,
-        stylesets: vec![ScopeContent::Block(Block {
-            condition: None,
-            style_attributes: vec![StyleAttribute {
-                key: "color".to_string(),
-                value: "red".to_string(),
-            }],
-        })],
-    }])
+        style_attributes: vec![StyleAttribute {
+            key: "color".to_string(),
+            value: "red".to_string(),
+        }],
+    })])
 }
 
 #[cfg(test)]
@@ -246,37 +202,34 @@ mod tests {
 
     #[test]
     fn test_scope_building_without_condition() {
-        let test_block = Scope {
-            condition: None,
-            stylesets: vec![
-                ScopeContent::Block(Block {
-                    condition: None,
-                    style_attributes: vec![StyleAttribute {
-                        key: String::from("width"),
-                        value: String::from("100vw"),
-                    }],
-                }),
-                ScopeContent::Block(Block {
-                    condition: Some(String::from(".inner")),
-                    style_attributes: vec![StyleAttribute {
-                        key: String::from("background-color"),
-                        value: String::from("red"),
-                    }],
-                }),
-                ScopeContent::Rule(Rule {
-                    condition: String::from("@keyframes move"),
-                    content: vec![String::from(
-                        r#"from {
+        let test_block = Sheet(vec![
+            ScopeContent::Block(Block {
+                condition: None,
+                style_attributes: vec![StyleAttribute {
+                    key: String::from("width"),
+                    value: String::from("100vw"),
+                }],
+            }),
+            ScopeContent::Block(Block {
+                condition: Some(String::from(".inner")),
+                style_attributes: vec![StyleAttribute {
+                    key: String::from("background-color"),
+                    value: String::from("red"),
+                }],
+            }),
+            ScopeContent::Rule(Rule {
+                condition: String::from("@keyframes move"),
+                content: vec![String::from(
+                    r#"from {
 width: 100px;
 }
 to {
 width: 200px;
 }"#,
-                    )
-                    .into()],
-                }),
-            ],
-        };
+                )
+                .into()],
+            }),
+        ]);
         assert_eq!(
             test_block.to_css("test"),
             r#".test {
@@ -299,24 +252,24 @@ width: 200px;
 
     #[test]
     fn test_scope_building_with_condition() {
-        let test_block = Scope {
-            condition: Some(String::from("@media only screen and (min-width: 1000px)")),
-            stylesets: vec![
-                ScopeContent::Block(Block {
+        let test_block = Sheet(vec![ScopeContent::Rule(Rule {
+            condition: String::from("@media only screen and (min-width: 1000px)"),
+            content: vec![
+                RuleContent::Block(Block {
                     condition: None,
                     style_attributes: vec![StyleAttribute {
                         key: String::from("width"),
                         value: String::from("100vw"),
                     }],
                 }),
-                ScopeContent::Block(Block {
+                RuleContent::Block(Block {
                     condition: Some(String::from(".inner")),
                     style_attributes: vec![StyleAttribute {
                         key: String::from("background-color"),
                         value: String::from("red"),
                     }],
                 }),
-                ScopeContent::Rule(Rule {
+                RuleContent::Rule(Rule {
                     condition: String::from("@keyframes move"),
                     content: vec![String::from(
                         r#"from {
@@ -329,7 +282,7 @@ width: 200px;
                     .into()],
                 }),
             ],
-        };
+        })]);
         assert_eq!(
             test_block.to_css("test"),
             r#"@media only screen and (min-width: 1000px) {
@@ -347,7 +300,8 @@ to {
 width: 200px;
 }
 }
-}"#
+}
+"#
         );
     }
 }
