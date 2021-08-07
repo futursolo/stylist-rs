@@ -9,7 +9,7 @@ use nom::{
     sequence::{delimited, preceded, separated_pair, terminated},
     IResult,
 };
-use stylist_core::ast::{Block, Rule, RuleContent, Scope, ScopeContent, Scopes, StyleAttribute};
+use stylist_core::ast::{Block, Rule, RuleContent, Scope, ScopeContent, Sheet, StyleAttribute};
 
 #[cfg(test)]
 use log::trace;
@@ -397,14 +397,14 @@ impl Parser {
         result
     }
 
-    /// Parse scopes
+    /// Parse sheet
     /// A Scope can be either a media rule or a css scope.
-    fn scopes(i: &str) -> IResult<&str, Scopes, VerboseError<&str>> {
+    fn sheet(i: &str) -> IResult<&str, Sheet, VerboseError<&str>> {
         #[cfg(test)]
-        trace!("Scopes: {}", i);
+        trace!("Sheet: {}", i);
 
         let result = context(
-            "StyleScopes",
+            "StyleSheet",
             // Drop trailing whitespaces.
             Self::trimmed(map(
                 many0(alt(
@@ -415,19 +415,19 @@ impl Parser {
                         Parser::scope,
                     ),
                 )),
-                Scopes,
+                Sheet,
             )),
         )(i);
 
         #[cfg(test)]
-        trace!("Scopes: {:#?}", result);
+        trace!("Sheet: {:#?}", result);
 
         result
     }
 
-    /// The parse the style and returns a `Result<Scopes>`.
-    pub(crate) fn parse(css: &str) -> Result<Scopes> {
-        match Self::scopes(css) {
+    /// The parse the style and returns a `Result<Sheet>`.
+    pub(crate) fn parse(css: &str) -> Result<Sheet> {
+        match Self::sheet(css) {
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
                 Err(Error::Parse(convert_error(css, e)))
             }
@@ -472,7 +472,7 @@ mod tests {
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = Scopes(vec![
+        let expected = Sheet(vec![
             Scope {
                 condition: Some("@media screen and (max-width: 500px)".into()),
                 stylesets: vec![ScopeContent::Block(Block {
@@ -516,7 +516,7 @@ mod tests {
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = Scopes(vec![
+        let expected = Sheet(vec![
             Scope {
                 condition: Some("@media screen and (max-width: 500px)".into()),
                 stylesets: vec![ScopeContent::Block(Block {

@@ -4,7 +4,7 @@ use std::convert::TryInto;
 use std::result::Result;
 use std::sync::Arc;
 
-use crate::ast::{Scopes, ToCss};
+use crate::ast::{Sheet, ToCss};
 use crate::registry::{StyleKey, StyleRegistry};
 use crate::utils::get_rand_str;
 #[cfg(target_arch = "wasm32")]
@@ -20,7 +20,7 @@ struct StyleContent {
     class_name: String,
 
     /// The abstract syntax tree of the css
-    ast: Arc<Scopes>,
+    ast: Arc<Sheet>,
 
     style_str: OnceCell<String>,
 }
@@ -88,7 +88,7 @@ pub struct Style {
 impl Style {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_from_scopes_impl(class_prefix: &str, css: Scopes) -> Self {
+    fn create_from_sheet_impl(class_prefix: &str, css: Sheet) -> Self {
         let css = Arc::new(css);
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey(css);
@@ -122,15 +122,15 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// use stylist_core::{Style, ast::Scopes};
+    /// use stylist_core::{Style, ast::Sheet};
     ///
-    /// let scopes: Scopes = Default::default();
+    /// let scopes: Sheet = Default::default();
     /// let style = Style::try_from_scopes(scopes)?;
     /// # Ok::<(), std::convert::Infallible>(())
     /// ```
-    pub fn try_from_scopes<S: TryInto<Scopes>>(css: S) -> Result<Self, S::Error> {
+    pub fn try_from_scopes<S: TryInto<Sheet>>(css: S) -> Result<Self, S::Error> {
         let css = S::try_into(css)?;
-        Ok(Self::create_from_scopes("stylist", css))
+        Ok(Self::create_from_sheet("stylist", css))
     }
 
     /// Creates a new style with custom class prefix
@@ -141,10 +141,10 @@ impl Style {
     /// use stylist_core::Style;
     ///
     /// let scopes = Default::default();
-    /// let style = Style::create_from_scopes("my-component", scopes);
+    /// let style = Style::create_from_sheet("my-component", scopes);
     /// ```
-    pub fn create_from_scopes<I: Borrow<str>>(class_prefix: I, css: Scopes) -> Self {
-        Self::create_from_scopes_impl(class_prefix.borrow(), css)
+    pub fn create_from_sheet<I: Borrow<str>>(class_prefix: I, css: Sheet) -> Self {
+        Self::create_from_sheet_impl(class_prefix.borrow(), css)
     }
 
     /// Returns the class name for current style
@@ -157,7 +157,7 @@ impl Style {
     /// use stylist_core::Style;
     ///
     /// let scopes = Default::default();
-    /// let style = Style::create_from_scopes("stylist", scopes);
+    /// let style = Style::create_from_sheet("stylist", scopes);
     ///
     /// // Example Output: stylist-uSu9NZZu
     /// println!("{}", style.get_class_name());
@@ -176,7 +176,7 @@ impl Style {
     /// use stylist_core::Style;
     ///
     /// let scopes = Default::default();
-    /// let style = Style::create_from_scopes("my-component", scopes);
+    /// let style = Style::create_from_sheet("my-component", scopes);
     ///
     /// // Example Output:
     /// // .my-component-uSu9NZZu {

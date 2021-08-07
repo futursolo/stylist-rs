@@ -3,10 +3,10 @@ use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 
-use crate::{ast::Scopes, Style};
+use crate::{ast::Sheet, Style};
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey(pub Arc<Scopes>);
+pub(crate) struct StyleKey(pub Arc<Sheet>);
 
 static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
 
@@ -67,8 +67,8 @@ mod tests {
     fn test_duplicate_style_different_prefix() {
         init();
 
-        let style_a = Style::create_from_scopes("element-a", sample_scopes());
-        let style_b = Style::create_from_scopes("element-b", sample_scopes());
+        let style_a = Style::create_from_sheet("element-a", sample_scopes());
+        let style_b = Style::create_from_sheet("element-b", sample_scopes());
 
         assert_eq!(style_a.get_style_str(), style_b.get_style_str());
     }

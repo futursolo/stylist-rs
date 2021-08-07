@@ -32,21 +32,21 @@ pub(crate) trait ToCss {
 
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Scopes(pub Vec<Scope>);
+pub struct Sheet(pub Vec<Scope>);
 
-impl Scopes {
+impl Sheet {
     pub fn new() -> Self {
         Self(Vec::new())
     }
 }
 
-impl Default for Scopes {
+impl Default for Sheet {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl ToCss for Scopes {
+impl ToCss for Sheet {
     fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         for scope in self.0.iter() {
             scope.write_css(w, class_name)?;
@@ -227,8 +227,8 @@ impl From<String> for RuleContent {
 }
 
 #[cfg(test)]
-pub(crate) fn sample_scopes() -> Scopes {
-    Scopes(vec![Scope {
+pub(crate) fn sample_scopes() -> Sheet {
+    Sheet(vec![Scope {
         condition: None,
         stylesets: vec![ScopeContent::Block(Block {
             condition: None,
