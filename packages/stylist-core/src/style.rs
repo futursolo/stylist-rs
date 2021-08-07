@@ -1,7 +1,5 @@
 use once_cell::sync::OnceCell;
 use std::borrow::Borrow;
-use std::convert::TryInto;
-use std::result::Result;
 use std::sync::Arc;
 
 use crate::ast::{Sheet, ToCss};
@@ -125,12 +123,11 @@ impl Style {
     /// use stylist_core::{Style, ast::Sheet};
     ///
     /// let scopes: Sheet = Default::default();
-    /// let style = Style::try_from_scopes(scopes)?;
+    /// let style = Style::new_from_sheet(scopes);
     /// # Ok::<(), std::convert::Infallible>(())
     /// ```
-    pub fn try_from_scopes<S: TryInto<Sheet>>(css: S) -> Result<Self, S::Error> {
-        let css = S::try_into(css)?;
-        Ok(Self::create_from_sheet("stylist", css))
+    pub fn new_from_sheet(css: Sheet) -> Self {
+        Self::create_from_sheet("stylist", css)
     }
 
     /// Creates a new style with custom class prefix
@@ -200,16 +197,5 @@ impl Style {
         let reg = StyleRegistry::get_ref();
         let mut reg = reg.lock().unwrap();
         reg.unregister(&*self.key());
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ast::sample_scopes;
-
-    #[test]
-    fn test_simple() {
-        Style::try_from_scopes(sample_scopes()).expect("Failed to create Style.");
     }
 }

@@ -50,8 +50,8 @@ mod tests {
     fn test_duplicate_style() {
         init();
 
-        let style_a = Style::try_from_scopes(sample_scopes()).unwrap();
-        let style_b = Style::try_from_scopes(sample_scopes()).unwrap();
+        let style_a = Style::new_from_sheet(sample_scopes());
+        let style_b = Style::new_from_sheet(sample_scopes());
 
         {
             let reg = StyleRegistry::get_ref();
@@ -77,7 +77,7 @@ mod tests {
     fn test_unregister() {
         init();
 
-        let style = Style::try_from_scopes(sample_scopes()).unwrap();
+        let style = Style::new_from_sheet(sample_scopes());
 
         {
             let reg = REGISTRY.clone();
