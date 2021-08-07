@@ -458,6 +458,62 @@ mod tests {
     }
 
     #[test]
+    fn test_simple_example() {
+        init();
+        let test_str = r#"
+            background-color: red;
+
+            .nested {
+                background-color: blue;
+                width: 100px
+            }"#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet(vec![
+            ScopeContent::Block(Block {
+                condition: None,
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".to_string(),
+                    value: "red".to_string(),
+                }],
+            }),
+            ScopeContent::Block(Block {
+                condition: Some(".nested".into()),
+                style_attributes: vec![
+                    StyleAttribute {
+                        key: "background-color".to_string(),
+                        value: "blue".to_string(),
+                    },
+                    StyleAttribute {
+                        key: "width".to_string(),
+                        value: "100px".to_string(),
+                    },
+                ],
+            }),
+        ]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_rule_with_ampersand() {
+        init();
+        let test_str = r#"
+            &:hover {
+                background-color: #d0d0d9;
+            }"#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet(vec![ScopeContent::Block(Block {
+            condition: Some("&:hover".into()),
+            style_attributes: vec![StyleAttribute {
+                key: "background-color".to_string(),
+                value: "#d0d0d9".to_string(),
+            }],
+        })]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
     fn test_multiple_media_queries() -> Result<()> {
         init();
 
