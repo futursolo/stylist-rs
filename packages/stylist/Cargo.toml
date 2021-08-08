@@ -43,7 +43,6 @@ web-sys = { version = "0.3.51", features = [
 ] }
 
 [dev-dependencies]
-yew = { version = "0.18.0", default-features = false, features = ["web_sys"] }
 log = "0.4"
 env_logger = "0.9"
 
