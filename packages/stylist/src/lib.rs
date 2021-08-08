@@ -1,6 +1,7 @@
 #![deny(clippy::all)]
 #![deny(unsafe_code)]
 #![deny(non_snake_case)]
+#![cfg_attr(documenting, feature(doc_cfg))]
 
 //! Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
 //!
