@@ -169,6 +169,5 @@ mod parser;
 mod style_ext;
 
 pub use error::{Error, Result};
-pub use style_ext::StyleExt;
-pub use stylist_core::{style, Style};
+pub use style_ext::{Style, StyleExt, TryParseCss};
 pub use yield_style::YieldStyle;
