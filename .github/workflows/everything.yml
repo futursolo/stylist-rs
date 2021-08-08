@@ -41,6 +41,30 @@ jobs:
           command: test
           args: --all-features
 
+      - name: Setup trunk
+        uses: jetli/trunk-action@v0.1.0
+        with:
+          version: "latest"
+
+      - name: Setup Rust wasm
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: wasm32-unknown-unknown
+          profile: minimal
+
+      - name: "Test Example: yew-integration"
+        working-directory: ./examples/yew-integration
+        run: trunk build
+
+      - name: "Test Example: yew-theme-agent"
+        working-directory: ./examples/yew-theme-agent
+        run: trunk build
+
+      - name: "Test Example: yew-theme-yewdux"
+        working-directory: ./examples/yew-theme-yewdux
+        run: trunk build
+
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
