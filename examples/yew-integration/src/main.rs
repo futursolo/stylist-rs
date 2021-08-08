@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use stylist::{Style, YieldStyle};
+use stylist::{Style, StyleExt, YieldStyle};
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
 use log::Level;
