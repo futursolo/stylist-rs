@@ -14,7 +14,7 @@ static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::
 /// Every style automatically registers with the style registry.
 #[derive(Debug, Default)]
 pub(crate) struct StyleRegistry {
-    styles: HashMap<Arc<StyleKey>, Style>,
+    styles: HashMap<StyleKey, Style>,
 }
 
 impl StyleRegistry {
@@ -23,7 +23,8 @@ impl StyleRegistry {
     }
 
     pub fn register(&mut self, style: Style) {
-        if self.styles.insert(style.key(), style).is_some() {
+        let key = style.key().clone();
+        if self.styles.insert(key, style).is_some() {
             panic!("A Style with this StyleKey has already been created.");
         }
     }

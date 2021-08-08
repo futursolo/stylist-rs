@@ -1,5 +1,6 @@
 use once_cell::sync::OnceCell;
 use std::borrow::Borrow;
+use std::ops::Deref;
 use std::sync::Arc;
 
 use crate::ast::{Sheet, ToCss};
@@ -12,7 +13,7 @@ use wasm_bindgen::JsValue;
 
 #[derive(Debug)]
 struct StyleContent {
-    key: Arc<StyleKey>,
+    key: StyleKey,
 
     /// The designated class name of this style
     class_name: String,
@@ -64,8 +65,8 @@ impl StyleContent {
         Ok(())
     }
 
-    fn key(&self) -> Arc<StyleKey> {
-        self.key.clone()
+    fn key(&self) -> &StyleKey {
+        &self.key
     }
 }
 
@@ -102,7 +103,7 @@ impl Style {
                 class_name: format!("{}-{}", class_prefix, get_rand_str()),
                 ast: key.0.clone(),
                 style_str: OnceCell::new(),
-                key: Arc::new(key),
+                key,
             }),
         };
 
@@ -186,7 +187,7 @@ impl Style {
     }
 
     /// Return a reference of style key.
-    pub(crate) fn key(&self) -> Arc<StyleKey> {
+    pub(crate) fn key(&self) -> impl '_ + Deref<Target = StyleKey> {
         self.inner.key()
     }
 
