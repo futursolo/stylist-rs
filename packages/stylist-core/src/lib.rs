@@ -8,6 +8,9 @@ pub mod bindings;
 #[doc(hidden)]
 pub mod style;
 
+#[cfg(target_arch = "wasm32")]
+#[path = "arch_wasm.rs"]
+mod arch;
 mod registry;
 mod utils;
 

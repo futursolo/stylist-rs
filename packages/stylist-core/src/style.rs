@@ -3,13 +3,11 @@ use std::borrow::Borrow;
 use std::ops::Deref;
 use std::sync::Arc;
 
+#[cfg(target_arch = "wasm32")]
+use crate::arch::{doc_head, document, JsValue};
 use crate::ast::{Sheet, ToCss};
 use crate::registry::{StyleKey, StyleRegistry};
 use crate::utils::get_rand_str;
-#[cfg(target_arch = "wasm32")]
-use crate::utils::{doc_head, document};
-#[cfg(target_arch = "wasm32")]
-use wasm_bindgen::JsValue;
 
 #[derive(Debug)]
 struct StyleContent {
