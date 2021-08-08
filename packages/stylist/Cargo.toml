@@ -37,5 +37,6 @@ env_logger = "0.9"
 yew_integration = ["stylist-core/yew_integration"]
 
 [package.metadata.docs.rs]
-features = ["yew"]
+features = ["yew_integration"]
 all-features = true
+rustdoc-args = ["--cfg", "documenting"]

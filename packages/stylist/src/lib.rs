@@ -170,5 +170,5 @@ mod style_ext;
 
 pub use error::{Error, Result};
 pub use style_ext::StyleExt;
-pub use stylist_core::{bindings, style, Style};
+pub use stylist_core::{style, Style};
 pub use yield_style::YieldStyle;

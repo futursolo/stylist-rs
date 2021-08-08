@@ -51,3 +51,4 @@ yew_integration = ["yew"]
 [package.metadata.docs.rs]
 features = ["yew_integration"]
 all-features = true
+rustdoc-args = ["--cfg", "documenting"]

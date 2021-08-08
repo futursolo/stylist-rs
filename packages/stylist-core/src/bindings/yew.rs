@@ -3,6 +3,7 @@
 use crate::Style;
 use yew::html::Classes;
 
+#[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
 impl From<Style> for Classes {
     fn from(style: Style) -> Self {
         let mut classes = Self::new();
