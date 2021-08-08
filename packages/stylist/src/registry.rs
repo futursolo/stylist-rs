@@ -3,7 +3,8 @@ use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 
-use crate::{ast::Sheet, Style};
+use crate::Style;
+use stylist_core::ast::Sheet;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub(crate) struct StyleKey(pub Arc<Sheet>);
@@ -41,7 +42,17 @@ impl StyleRegistry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::sample_scopes;
+    use stylist_core::ast::*;
+
+    fn sample_scopes() -> Sheet {
+        Sheet(vec![ScopeContent::Block(Block {
+            condition: None,
+            style_attributes: vec![StyleAttribute {
+                key: "color".to_string(),
+                value: "red".to_string(),
+            }],
+        })])
+    }
 
     fn init() {
         let _ = env_logger::builder().is_test(true).try_init();

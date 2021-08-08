@@ -19,7 +19,7 @@
 /// a part of a CSS style sheet.
 use std::fmt;
 
-pub(crate) trait ToCss {
+pub trait ToCss {
     fn to_css(&self, class_name: &str) -> String {
         let mut s = String::new();
 
@@ -183,17 +183,6 @@ impl From<String> for RuleContent {
     fn from(s: String) -> Self {
         Self::String(s)
     }
-}
-
-#[cfg(test)]
-pub(crate) fn sample_scopes() -> Sheet {
-    Sheet(vec![ScopeContent::Block(Block {
-        condition: None,
-        style_attributes: vec![StyleAttribute {
-            key: "color".to_string(),
-            value: "red".to_string(),
-        }],
-    })])
 }
 
 #[cfg(test)]

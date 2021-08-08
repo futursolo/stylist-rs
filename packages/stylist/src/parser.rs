@@ -14,6 +14,24 @@ use stylist_core::ast::{Block, Rule, RuleContent, ScopeContent, Sheet, StyleAttr
 #[cfg(test)]
 use log::trace;
 
+/// Trait for types that can be parsed into css [`Sheets`].
+///
+/// [`Sheets`]: `stylist_core::ast::Sheet`
+pub trait TryParseCss {
+    /// Error type encountered during parsing
+    type Error;
+    /// Try to convert a self to a css [`Sheet`].
+    fn try_parse(self) -> std::result::Result<Sheet, Self::Error>;
+}
+
+impl<'a> TryParseCss for &'a str {
+    type Error = Error;
+
+    fn try_parse(self) -> Result<Sheet> {
+        crate::parser::Parser::parse(self)
+    }
+}
+
 pub(crate) struct Parser;
 
 impl Parser {

@@ -1,3 +1,4 @@
+use crate::TryParseCss;
 use once_cell::sync::OnceCell;
 use std::borrow::Borrow;
 use std::ops::Deref;
@@ -5,9 +6,9 @@ use std::sync::Arc;
 
 #[cfg(target_arch = "wasm32")]
 use crate::arch::{doc_head, document, JsValue};
-use crate::ast::{Sheet, ToCss};
 use crate::registry::{StyleKey, StyleRegistry};
 use crate::utils::get_rand_str;
+use stylist_core::ast::{Sheet, ToCss};
 
 #[derive(Debug)]
 struct StyleContent {
@@ -113,13 +114,13 @@ impl Style {
 
         new_style
     }
-
     /// Creates a new style
     ///
     /// # Examples
     ///
     /// ```
-    /// use stylist_core::{Style, ast::Sheet};
+    /// use stylist::Style;
+    /// use stylist_core::ast::Sheet;
     ///
     /// let scopes: Sheet = Default::default();
     /// let style = Style::new_from_sheet(scopes);
@@ -128,13 +129,44 @@ impl Style {
     pub fn new_from_sheet(css: Sheet) -> Self {
         Self::create_from_sheet("stylist", css)
     }
-
+    /// Creates a new style with a custom class prefix from some parsable css.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use stylist::Style;
+    ///
+    /// let style = Style::create("my-component", "background-color: red;")?;
+    /// # use stylist::TryParseCss;
+    /// # Ok::<(), <&str as TryParseCss>::Error>(())
+    /// ```
+    pub fn create<N: Borrow<str>, Css: TryParseCss>(
+        class_prefix: N,
+        css: Css,
+    ) -> Result<Self, Css::Error> {
+        let css = css.try_parse()?;
+        Ok(Style::create_from_sheet(class_prefix, css))
+    }
+    /// Creates a new style from some parsable css with a default prefix.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use stylist::Style;
+    ///
+    /// let style = Style::new("background-color: red;")?;
+    /// # use stylist::TryParseCss;
+    /// # Ok::<(), <&str as TryParseCss>::Error>(())
+    /// ```
+    pub fn new<Css: TryParseCss>(css: Css) -> Result<Self, Css::Error> {
+        Self::create("stylist", css)
+    }
     /// Creates a new style with custom class prefix
     ///
     /// # Examples
     ///
     /// ```
-    /// use stylist_core::Style;
+    /// use stylist::Style;
     ///
     /// let scopes = Default::default();
     /// let style = Style::create_from_sheet("my-component", scopes);
@@ -142,7 +174,6 @@ impl Style {
     pub fn create_from_sheet<I: Borrow<str>>(class_prefix: I, css: Sheet) -> Self {
         Self::create_from_sheet_impl(class_prefix.borrow(), css)
     }
-
     /// Returns the class name for current style
     ///
     /// You can add this class name to the element to apply the style.
@@ -150,7 +181,7 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// use stylist_core::Style;
+    /// use stylist::Style;
     ///
     /// let scopes = Default::default();
     /// let style = Style::create_from_sheet("stylist", scopes);
@@ -169,7 +200,7 @@ impl Style {
     /// # Examples
     ///
     /// ```
-    /// use stylist_core::Style;
+    /// use stylist::Style;
     ///
     /// let scopes = Default::default();
     /// let style = Style::create_from_sheet("my-component", scopes);
@@ -196,5 +227,50 @@ impl Style {
         let reg = StyleRegistry::get_ref();
         let mut reg = reg.lock().unwrap();
         reg.unregister(&*self.key());
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_simple() {
+        Style::new("background-color: black;").expect("Failed to create Style.");
+    }
+
+    #[test]
+    fn test_complex() {
+        let style = Style::new(
+            r#"
+                background-color: black;
+                .with-class {
+                    color: red;
+                }
+                @media screen and (max-width: 600px) {
+                    color: yellow;
+                }
+            "#,
+        )
+        .expect("Failed to create Style.");
+
+        assert_eq!(
+            style.get_style_str(),
+            format!(
+                r#".{style_name} {{
+background-color: black;
+}}
+.{style_name} .with-class {{
+color: red;
+}}
+@media screen and (max-width: 600px) {{
+.{style_name} {{
+color: yellow;
+}}
+}}
+"#,
+                style_name = style.get_class_name()
+            )
+        )
     }
 }

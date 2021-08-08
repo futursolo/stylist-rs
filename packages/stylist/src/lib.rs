@@ -13,7 +13,7 @@
 //! To create a stylesheet, you can use [`Style::new`]:
 //!
 //! ```rust
-//! use stylist::{Style, StyleExt};
+//! use stylist::Style;
 //!
 //! let style = Style::new(
 //!     r#"
@@ -30,7 +30,7 @@
 //! you can use [`Style::create`].
 //!
 //! ```rust
-//! use stylist::{Style, StyleExt};
+//! use stylist::Style;
 //!
 //! let style = Style::create(
 //!     "MyComponent",
@@ -161,13 +161,19 @@
 //! [Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
 //! and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
 
-#[doc(hidden)]
-pub mod yield_style;
+pub mod bindings;
 
+#[cfg(target_arch = "wasm32")]
+#[path = "arch_wasm.rs"]
+mod arch;
 mod error;
 mod parser;
-mod style_ext;
+mod registry;
+mod style;
+mod utils;
+mod yield_style;
 
 pub use error::{Error, Result};
-pub use style_ext::{Style, StyleExt, TryParseCss};
+pub use parser::TryParseCss;
+pub use style::Style;
 pub use yield_style::YieldStyle;
