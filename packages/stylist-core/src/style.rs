@@ -95,7 +95,7 @@ impl Style {
         let mut reg = reg.lock().unwrap();
 
         if let Some(m) = reg.get(&key) {
-            return m;
+            return m.clone();
         }
 
         let new_style = Self {

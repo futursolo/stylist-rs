@@ -33,8 +33,8 @@ impl StyleRegistry {
         self.styles.remove(key);
     }
 
-    pub fn get(&self, key: &StyleKey) -> Option<Style> {
-        self.styles.get(key).cloned()
+    pub fn get(&self, key: &StyleKey) -> Option<&Style> {
+        self.styles.get(key)
     }
 }
 
