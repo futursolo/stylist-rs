@@ -1,7 +1,7 @@
 #![deny(clippy::all)]
 #![deny(unsafe_code)]
 #![deny(non_snake_case)]
-#![cfg_attr(documenting, feature(doc_cfg))]
+#![cfg_attr(doc, feature(doc_cfg))]
 
 pub mod ast;
 pub mod bindings;
