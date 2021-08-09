@@ -113,20 +113,18 @@ impl Style {
 
         new_style
     }
-    /// Creates a new style
+    /// Creates a new style from some parsable css with a default prefix.
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use stylist::Style;
-    /// use stylist_core::ast::Sheet;
     ///
-    /// let scopes: Sheet = Default::default();
-    /// let style = Style::new_from_sheet(scopes);
-    /// # Ok::<(), std::convert::Infallible>(())
+    /// let style = Style::new("background-color: red;")?;
+    /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new_from_sheet(css: Sheet) -> Self {
-        Self::create_from_sheet("stylist", css)
+    pub fn new<Css: AsRef<str>>(css: Css) -> crate::Result<Self> {
+        Self::create("stylist", css)
     }
     /// Creates a new style with a custom class prefix from some parsable css.
     ///
@@ -145,20 +143,25 @@ impl Style {
         let css = Parser::parse(css.as_ref())?;
         Ok(Style::create_from_sheet(class_prefix, css))
     }
-    /// Creates a new style from some parsable css with a default prefix.
+    /// Creates a new style from an existing style sheet. Compared to [`Style::new`]
+    /// the caller is responsible for generating the style, but the constructor is
+    /// infallible.
     ///
     /// # Examples
     ///
-    /// ```rust
-    /// use stylist::Style;
-    ///
-    /// let style = Style::new("background-color: red;")?;
-    /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<Css: AsRef<str>>(css: Css) -> crate::Result<Self> {
-        Self::create("stylist", css)
+    /// use stylist::Style;
+    /// use stylist_core::ast::Sheet;
+    ///
+    /// let scopes: Sheet = Default::default();
+    /// let style = Style::new_from_sheet(scopes);
+    /// ```
+    pub fn new_from_sheet(css: Sheet) -> Self {
+        Self::create_from_sheet("stylist", css)
     }
-    /// Creates a new style with custom class prefix
+    /// Creates a new style from an existing style sheet and a custom class prefix.
+    /// Compared to [`Style::create`] the caller is responsible for generating the style,
+    /// but the constructor is infallible.
     ///
     /// # Examples
     ///
@@ -180,11 +183,11 @@ impl Style {
     /// ```
     /// use stylist::Style;
     ///
-    /// let scopes = Default::default();
-    /// let style = Style::create_from_sheet("stylist", scopes);
+    /// let style = Style::create("my-component", "background-color: red;")?;
     ///
     /// // Example Output: stylist-uSu9NZZu
     /// println!("{}", style.get_class_name());
+    /// # Ok::<(), stylist::Error>(())
     /// ```
     pub fn get_class_name(&self) -> &str {
         self.inner.get_class_name()
@@ -199,14 +202,14 @@ impl Style {
     /// ```
     /// use stylist::Style;
     ///
-    /// let scopes = Default::default();
-    /// let style = Style::create_from_sheet("my-component", scopes);
+    /// let style = Style::create("my-component", "background-color: red;")?;
     ///
     /// // Example Output:
     /// // .my-component-uSu9NZZu {
     /// // color: red;
     /// // }
     /// println!("{}", style.get_style_str());
+    /// # Ok::<(), stylist::Error>(())
     /// ```
     pub fn get_style_str(&self) -> &str {
         self.inner.get_style_str()
