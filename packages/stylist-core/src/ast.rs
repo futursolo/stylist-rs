@@ -1,24 +1,24 @@
-/// A scope represents a media query or all content not in a media query.
-///
-/// As an example:
-/// ```css
-/// /* BEGIN Scope */
-/// .wrapper {
-///     width: 100vw;
-/// }
-/// /* END Scope */
-/// /* BEGIN Scope */
-/// @media only screen and (min-width: 1000px) {
-///     .wrapper {
-///         width: 1000px;
-///     }
-/// }
-/// /* END Scope */
-/// ```
-/// Structs implementing this trait should be able to turn into
-/// a part of a CSS style sheet.
+//! This module contains the semantic representation of a CSS.
+//!
+//! ```text
+//! struct Sheet
+//! └── Vec<enum ScopeContent>
+//!     ├── struct Block
+//!     │   ├── selector: String
+//!     │   └── Vec<struct StyleAttribute>
+//!     │       ├── key: String
+//!     │       └── value: String
+//!     └── struct Rule
+//!         ├── condition: String
+//!         └── Vec<enum RuleContent>
+//!             ├── Block (*)
+//!             └── Rule (*)
+//! ```
+//!
 use std::fmt;
 
+/// Structs implementing this trait should be able to turn into
+/// a part of a CSS style sheet.
 pub trait ToCss {
     fn to_css(&self, class_name: &str) -> String {
         let mut s = String::new();
@@ -57,7 +57,26 @@ impl ToCss for Sheet {
     }
 }
 
-/// Everything that can reside inside a scope.
+/// A scope represents a media query or all content not in a media query.
+/// The CSS-Syntax-Level-3 standard calls all of these rules, which is used
+/// here specifically for At-Rules. A Qualified rule is represented by a [`Block`],
+/// an At-Rule is represented by a [`Rule`].
+///
+/// As an example:
+/// ```css
+/// /* BEGIN Scope */
+/// .wrapper {
+///     width: 100vw;
+/// }
+/// /* END Scope */
+/// /* BEGIN Scope */
+/// @media only screen and (min-width: 1000px) {
+///     .wrapper {
+///         width: 1000px;
+///     }
+/// }
+/// /* END Scope */
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ScopeContent {
     Block(Block),
@@ -76,7 +95,7 @@ impl ToCss for ScopeContent {
 }
 
 /// A block is a set of css properties that apply to elements that
-/// match the condition.
+/// match the condition. The CSS standard calls these "Qualified rules".
 ///
 /// E.g.:
 /// ```css
@@ -86,6 +105,9 @@ impl ToCss for ScopeContent {
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Block {
+    /// If set to [`None`], signals to substitute with the classname generated for the
+    /// [`Sheet`] in which this is conatined. Otherwise substitute the classname for
+    /// each occuring '&', i.e. `None` is equivalent to `Some("&")`.
     pub condition: Option<String>,
     pub style_attributes: Vec<StyleAttribute>,
 }
@@ -112,7 +134,8 @@ impl ToCss for Block {
     }
 }
 
-/// A simple CSS proprerty in the form of a key value pair.
+/// A simple CSS property in the form of a key value pair. Mirrors what would
+/// be called a "Declaration" in the CSS standard.
 ///
 /// E.g.: `color: red`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -127,12 +150,24 @@ impl ToCss for StyleAttribute {
     }
 }
 
-/// A rule is everything that does not contain any properties.
+/// An At-Rule can contain both other blocks and in some cases more At-Rules.
 ///
-/// An example would be `@keyframes`
+/// E.g.:
+/// ```css
+///  @keyframes move {
+///     from {
+///         width: 100px;
+///     }
+///     to {
+///         width: 200px;
+///     }
+/// }
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Rule {
     pub condition: String,
+    /// Note that not all At-Rules allow arbitrary other At-Rules to appear
+    /// inside them, or arbitrary blocks. No safeguards at this point!
     pub content: Vec<RuleContent>,
 }
 
@@ -152,11 +187,13 @@ impl ToCss for Rule {
 /// Everything that can be inside a rule.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RuleContent {
-    // A block
+    /// A block
     Block(Block),
-    // A nested rule
+    /// A nested rule
     Rule(Rule),
-    // A raw string literal, i.e. something that wasn't parsed
+    /// A raw string literal, i.e. something that wasn't parsed.
+    /// This is an escape-hatch and may get removed in the future
+    /// for a more meaningful alternative
     String(String),
 }
 
