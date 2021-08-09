@@ -7,7 +7,7 @@ use crate::Style;
 use stylist_core::ast::Sheet;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey(pub Arc<Sheet>);
+pub(crate) struct StyleKey(pub String, pub Arc<Sheet>);
 
 static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
 
@@ -82,7 +82,7 @@ mod tests {
         let style_a = Style::create_from_sheet("element-a", sample_scopes());
         let style_b = Style::create_from_sheet("element-b", sample_scopes());
 
-        assert_eq!(style_a.get_style_str(), style_b.get_style_str());
+        assert_ne!(style_a.get_class_name(), style_b.get_class_name());
     }
 
     #[test]

@@ -1,6 +1,5 @@
-use crate::TryParseCss;
+use crate::parser::Parser;
 use once_cell::sync::OnceCell;
-use std::borrow::Borrow;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -89,7 +88,7 @@ impl Style {
     fn create_from_sheet_impl(class_prefix: &str, css: Sheet) -> Self {
         let css = Arc::new(css);
         // Creates the StyleKey, return from registry if already cached.
-        let key = StyleKey(css);
+        let key = StyleKey(class_prefix.to_string(), css);
         let reg = StyleRegistry::get_ref();
         let mut reg = reg.lock().unwrap();
 
@@ -100,7 +99,7 @@ impl Style {
         let new_style = Self {
             inner: Arc::new(StyleContent {
                 class_name: format!("{}-{}", class_prefix, get_rand_str()),
-                ast: key.0.clone(),
+                ast: key.1.clone(),
                 style_str: OnceCell::new(),
                 key,
             }),
@@ -137,14 +136,13 @@ impl Style {
     /// use stylist::Style;
     ///
     /// let style = Style::create("my-component", "background-color: red;")?;
-    /// # use stylist::TryParseCss;
-    /// # Ok::<(), <&str as TryParseCss>::Error>(())
+    /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn create<N: Borrow<str>, Css: TryParseCss>(
+    pub fn create<N: AsRef<str>, Css: AsRef<str>>(
         class_prefix: N,
         css: Css,
-    ) -> Result<Self, Css::Error> {
-        let css = css.try_parse()?;
+    ) -> crate::Result<Self> {
+        let css = Parser::parse(css.as_ref())?;
         Ok(Style::create_from_sheet(class_prefix, css))
     }
     /// Creates a new style from some parsable css with a default prefix.
@@ -155,10 +153,9 @@ impl Style {
     /// use stylist::Style;
     ///
     /// let style = Style::new("background-color: red;")?;
-    /// # use stylist::TryParseCss;
-    /// # Ok::<(), <&str as TryParseCss>::Error>(())
+    /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<Css: TryParseCss>(css: Css) -> Result<Self, Css::Error> {
+    pub fn new<Css: AsRef<str>>(css: Css) -> crate::Result<Self> {
         Self::create("stylist", css)
     }
     /// Creates a new style with custom class prefix
@@ -171,8 +168,8 @@ impl Style {
     /// let scopes = Default::default();
     /// let style = Style::create_from_sheet("my-component", scopes);
     /// ```
-    pub fn create_from_sheet<I: Borrow<str>>(class_prefix: I, css: Sheet) -> Self {
-        Self::create_from_sheet_impl(class_prefix.borrow(), css)
+    pub fn create_from_sheet<I: AsRef<str>>(class_prefix: I, css: Sheet) -> Self {
+        Self::create_from_sheet_impl(class_prefix.as_ref(), css)
     }
     /// Returns the class name for current style
     ///

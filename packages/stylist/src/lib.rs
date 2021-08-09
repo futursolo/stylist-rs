@@ -175,6 +175,5 @@ mod utils;
 mod yield_style;
 
 pub use error::{Error, Result};
-pub use parser::TryParseCss;
 pub use style::Style;
 pub use yield_style::YieldStyle;
