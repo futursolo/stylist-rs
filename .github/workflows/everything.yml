@@ -89,7 +89,6 @@ jobs:
       - name: Run cargo publish --dry-run for stylist-core
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions-rs/cargo@v1
-        working-directory: ./packages/stylist-core
         with:
           command: publish
           args: --dry-run --manifest-path packages/stylist-core/Cargo.toml
@@ -97,7 +96,6 @@ jobs:
       - name: Run cargo publish for stylist-core
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: actions-rs/cargo@v1
-        working-directory: ./packages/stylist-core
         with:
           command: publish
           args: --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist-core/Cargo.toml
@@ -110,7 +108,6 @@ jobs:
       # - name: Run cargo publish --dry-run for stylist
       #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       #   uses: actions-rs/cargo@v1
-      #   working-directory: ./packages/stylist
       #   with:
       #     command: publish
       #     args: --dry-run --manifest-path packages/stylist/Cargo.toml
@@ -118,7 +115,6 @@ jobs:
       - name: Run cargo publish for stylist
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: actions-rs/cargo@v1
-        working-directory: ./packages/stylist
         with:
           command: publish
           args: --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist/Cargo.toml
