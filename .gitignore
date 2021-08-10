@@ -1,5 +1,6 @@
 # Rust
 /target
+/packages/*/target
 /examples/*/target
 Cargo.lock
 
