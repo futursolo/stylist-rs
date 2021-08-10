@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -7,7 +8,7 @@ use crate::ast::Sheet;
 use crate::Style;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey(pub String, pub Arc<Sheet>);
+pub(crate) struct StyleKey(pub Cow<'static, str>, pub Arc<Sheet>);
 
 static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
 

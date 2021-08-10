@@ -90,8 +90,8 @@ pub struct GlobalStyleProps {
 
 /// A Global Style that will be applied to `<html />` tag, inspired by [emotion](https://emotion.sh).
 ///
-/// The `css` attribute accepts either a [`Style`] or a string variant and panics if the string
-/// failed to be parsed into a stylesheet.
+/// The `css` attribute accepts either a [`Style`] or anything that implements [`IntoPropValue<Style>`] and
+/// panics if the string failed to be parsed into a stylesheet.
 ///
 /// # Example:
 ///

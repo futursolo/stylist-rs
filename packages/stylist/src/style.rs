@@ -1,4 +1,5 @@
 use once_cell::sync::OnceCell;
+use std::borrow::Cow;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -7,7 +8,7 @@ use std::sync::Arc;
 use crate::arch::{doc_head, document, JsValue};
 use crate::ast::{Sheet, ToCss};
 use crate::registry::{StyleKey, StyleRegistry};
-use crate::utils::get_rand_str;
+use crate::utils::get_entropy;
 
 #[derive(Debug)]
 struct StyleContent {
@@ -85,10 +86,10 @@ pub struct Style {
 impl Style {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_from_sheet_impl(class_prefix: &str, css: Sheet) -> Self {
+    fn create_from_sheet_impl<I: Into<Cow<'static, str>>>(class_prefix: I, css: Sheet) -> Self {
         let css = Arc::new(css);
         // Creates the StyleKey, return from registry if already cached.
-        let key = StyleKey(class_prefix.to_string(), css);
+        let key = StyleKey(class_prefix.into(), css);
         let reg = StyleRegistry::get_ref();
         let mut reg = reg.lock().unwrap();
 
@@ -98,7 +99,7 @@ impl Style {
 
         let new_style = Self {
             inner: Arc::new(StyleContent {
-                class_name: format!("{}-{}", class_prefix, get_rand_str()),
+                class_name: format!("{}-{}", key.0, get_entropy()),
                 ast: key.1.clone(),
                 style_str: OnceCell::new(),
                 key,
@@ -138,7 +139,7 @@ impl Style {
     /// let style = Style::create("my-component", "background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn create<N: AsRef<str>, Css: AsRef<str>>(
+    pub fn create<N: Into<Cow<'static, str>>, Css: AsRef<str>>(
         class_prefix: N,
         css: Css,
     ) -> crate::Result<Self> {
@@ -175,8 +176,8 @@ impl Style {
     /// let scopes = Default::default();
     /// let style = Style::create_from_sheet("my-component", scopes);
     /// ```
-    pub fn create_from_sheet<I: AsRef<str>>(class_prefix: I, css: Sheet) -> Self {
-        Self::create_from_sheet_impl(class_prefix.as_ref(), css)
+    pub fn create_from_sheet<I: Into<Cow<'static, str>>>(class_prefix: I, css: Sheet) -> Self {
+        Self::create_from_sheet_impl(class_prefix, css)
     }
     /// Returns the class name for current style
     ///
