@@ -1,7 +1,7 @@
 ---
 name: Run Tests & Publishing
 
-on: [push, pull_requests]
+on: [push, pull_request]
 
 jobs:
   test:
@@ -92,7 +92,7 @@ jobs:
         working-directory: ./packages/stylist-core
         with:
           command: publish
-          args: --dry-run
+          args: --dry-run --manifest-path packages/stylist-core/Cargo.toml
 
       - name: Run cargo publish for stylist-core
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -100,7 +100,11 @@ jobs:
         working-directory: ./packages/stylist-core
         with:
           command: publish
-          args: --token ${{ secrets.CRATES_IO_TOKEN }}
+          args: --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist-core/Cargo.toml
+
+      - name: Wait crates.io to Refresh
+        run: sleep 30s
+        shell: bash
 
       # Not possible until stylist-core is published
       # - name: Run cargo publish --dry-run for stylist
@@ -109,7 +113,7 @@ jobs:
       #   working-directory: ./packages/stylist
       #   with:
       #     command: publish
-      #     args: --dry-run
+      #     args: --dry-run --manifest-path packages/stylist/Cargo.toml
 
       - name: Run cargo publish for stylist
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -117,4 +121,4 @@ jobs:
         working-directory: ./packages/stylist
         with:
           command: publish
-          args: --token ${{ secrets.CRATES_IO_TOKEN }}
+          args: --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist/Cargo.toml

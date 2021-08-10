@@ -16,7 +16,7 @@ keywords = [
     "yew"
 ]
 categories = ["wasm", "web-programming"]
-readme = "README.md"
+readme = "../../README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 
 [lib]
