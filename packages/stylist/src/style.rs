@@ -114,6 +114,7 @@ impl Style {
 
         new_style
     }
+
     /// Creates a new style from some parsable css with a default prefix.
     ///
     /// # Examples
@@ -127,6 +128,7 @@ impl Style {
     pub fn new<Css: AsRef<str>>(css: Css) -> crate::Result<Self> {
         Self::create("stylist", css)
     }
+
     /// Creates a new style with a custom class prefix from some parsable css.
     ///
     /// # Examples
@@ -144,6 +146,7 @@ impl Style {
         let css = Parser::parse(css.as_ref())?;
         Ok(Style::create_from_sheet(class_prefix, css))
     }
+
     /// Creates a new style from an existing style sheet. Compared to [`Style::new`]
     /// the caller is responsible for generating the style, but the constructor is
     /// infallible.
@@ -160,6 +163,7 @@ impl Style {
     pub fn new_from_sheet(css: Sheet) -> Self {
         Self::create_from_sheet("stylist", css)
     }
+
     /// Creates a new style from an existing style sheet and a custom class prefix.
     /// Compared to [`Style::create`] the caller is responsible for generating the style,
     /// but the constructor is infallible.

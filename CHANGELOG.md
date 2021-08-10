@@ -4,9 +4,11 @@
 ### Breaking Changes:
 - `Style::new()` and `Style::create()` now takes `AsRef<str>` for
   Stylesheet.
+- Feature `yew` has been renamed back to `yew_integration`
 
 ### Other Changes:
-- Added a new crate `stylist_core` for AST.
+- Added a `<GlobalStyle />` Component for global styling.
+- Moved AST to a new crate `stylist_core`.
 - AST has been exposed under `stylist::ast`.
 - Documentation now shows feature flags.
 
