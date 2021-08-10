@@ -19,6 +19,11 @@ categories = ["wasm", "web-programming"]
 readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 
+[dependencies]
+nom = "6.2.1"
+thiserror = "1.0"
+wasm-bindgen = "0.2.74"
+
 [dev-dependencies]
 log = "0.4"
 env_logger = "0.9"

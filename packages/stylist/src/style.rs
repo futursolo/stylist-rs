@@ -1,4 +1,3 @@
-use crate::parser::Parser;
 use once_cell::sync::OnceCell;
 use std::ops::Deref;
 use std::str::FromStr;
@@ -143,7 +142,7 @@ impl Style {
         class_prefix: N,
         css: Css,
     ) -> crate::Result<Self> {
-        let css = Parser::parse(css.as_ref())?;
+        let css = css.as_ref().parse()?;
         Ok(Style::create_from_sheet(class_prefix, css))
     }
 

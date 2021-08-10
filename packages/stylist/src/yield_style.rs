@@ -65,8 +65,7 @@ pub trait YieldStyle {
     ///
     /// Returns [`Err(Error)`](crate::Error) when failed to create a style.
     fn try_style(&self) -> Result<Style> {
-        let sheet = crate::parser::Parser::parse(self.style_str().as_ref())?;
-        Ok(Style::create_from_sheet(self.prefix(), sheet))
+        Style::new(self.style_str())
     }
 
     /// Returns the generated style.

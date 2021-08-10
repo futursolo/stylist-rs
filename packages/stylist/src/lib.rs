@@ -168,19 +168,19 @@ mod bindings;
 #[cfg(target_arch = "wasm32")]
 #[path = "arch_wasm.rs"]
 mod arch;
-mod error;
-mod parser;
 mod registry;
 mod style;
 mod utils;
 mod yield_style;
 
+pub use style::Style;
+pub use yield_style::YieldStyle;
+
 #[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
 #[cfg(feature = "yew_integration")]
 pub use bindings::yew;
+
 #[doc(inline)]
 pub use stylist_core::ast;
-
-pub use error::{Error, Result};
-pub use style::Style;
-pub use yield_style::YieldStyle;
+#[doc(inline)]
+pub use stylist_core::{Error, Result};

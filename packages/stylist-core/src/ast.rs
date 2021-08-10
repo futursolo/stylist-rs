@@ -16,6 +16,9 @@
 //! ```
 //!
 use std::fmt;
+use std::str::FromStr;
+
+use crate::parser::Parser;
 
 /// Structs implementing this trait should be able to turn into
 /// a part of a CSS style sheet.
@@ -33,6 +36,14 @@ pub trait ToCss {
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Sheet(pub Vec<ScopeContent>);
+
+impl FromStr for Sheet {
+    type Err = crate::Error;
+
+    fn from_str(s: &str) -> crate::Result<Self> {
+        Parser::parse(s)
+    }
+}
 
 impl Sheet {
     pub fn new() -> Self {
