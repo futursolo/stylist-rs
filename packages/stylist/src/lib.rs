@@ -162,17 +162,17 @@
 //! [Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
 //! and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
 
-mod ast;
-#[doc(hidden)]
 pub mod bindings;
+
+#[cfg(target_arch = "wasm32")]
+#[path = "arch_wasm.rs"]
+mod arch;
 mod error;
 mod parser;
 mod registry;
-#[doc(hidden)]
-pub mod style;
+mod style;
 mod utils;
-#[doc(hidden)]
-pub mod yield_style;
+mod yield_style;
 
 pub use error::{Error, Result};
 pub use style::Style;

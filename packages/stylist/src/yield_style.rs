@@ -14,9 +14,9 @@ use crate::{Result, Style};
 /// # Example:
 ///
 /// ```rust
-/// use std::borrow::Cow;
-///
 /// use yew::prelude::*;
+///
+/// use std::borrow::Cow;
 /// use stylist::YieldStyle;
 ///
 /// struct MyStyledComponent {}
@@ -65,7 +65,8 @@ pub trait YieldStyle {
     ///
     /// Returns [`Err(Error)`](crate::Error) when failed to create a style.
     fn try_style(&self) -> Result<Style> {
-        Style::create(self.prefix(), self.style_str())
+        let sheet = crate::parser::Parser::parse(self.style_str().as_ref())?;
+        Ok(Style::create_from_sheet(self.prefix(), sheet))
     }
 
     /// Returns the generated style.
