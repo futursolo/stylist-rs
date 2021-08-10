@@ -8,7 +8,10 @@ use crate::ast::Sheet;
 use crate::Style;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey(pub Cow<'static, str>, pub Arc<Sheet>);
+pub(crate) struct StyleKey {
+    pub prefix: Cow<'static, str>,
+    pub ast: Arc<Sheet>,
+}
 
 static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
 

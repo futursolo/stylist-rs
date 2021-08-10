@@ -65,6 +65,14 @@ jobs:
         working-directory: ./examples/yew-theme-yewdux
         run: trunk build
 
+      - name: "Test Example: yew-global-style"
+        working-directory: ./examples/yew-global-style
+        run: trunk build
+
+      - name: "Test Example: yew-counter-style"
+        working-directory: ./examples/yew-counter-style
+        run: trunk build
+
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest

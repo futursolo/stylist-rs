@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use once_cell::sync::Lazy;
 
 #[cfg(feature = "rand")]
-pub(crate) fn get_rand_str() -> String {
+pub fn get_rand_str() -> String {
     use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 
     static RNG: Lazy<Arc<Mutex<SmallRng>>> =
@@ -18,7 +18,7 @@ pub(crate) fn get_rand_str() -> String {
 }
 
 #[cfg(any(test, not(feature = "rand")))]
-pub(crate) fn get_next_style_id() -> String {
+pub fn get_next_style_id() -> String {
     static CTR: Lazy<Arc<Mutex<u64>>> = Lazy::new(Arc::default);
     let mut ctr = CTR.lock().expect("Failed to lock Rng.");
 
@@ -41,8 +41,9 @@ mod tests {
 
     #[test]
     fn test_counter() {
-        assert_eq!(get_next_style_id(), "style-1");
-        assert_eq!(get_next_style_id(), "style-2");
-        assert_eq!(get_next_style_id(), "style-3");
+        // As long as everytime it yields a different id, it will be fine.
+        assert_ne!(get_next_style_id(), get_next_style_id());
+        assert_ne!(get_next_style_id(), get_next_style_id());
+        assert_ne!(get_next_style_id(), get_next_style_id());
     }
 }

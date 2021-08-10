@@ -17,9 +17,6 @@ struct StyleContent {
     /// The designated class name of this style
     class_name: String,
 
-    /// The abstract syntax tree of the css
-    ast: Arc<Sheet>,
-
     style_str: OnceCell<String>,
 }
 
@@ -30,7 +27,7 @@ impl StyleContent {
 
     fn get_style_str(&self) -> &str {
         self.style_str
-            .get_or_init(|| self.ast.to_css(self.get_class_name()))
+            .get_or_init(|| self.key.ast.to_css(self.get_class_name()))
     }
 
     /// Mounts the styles to the document
@@ -86,10 +83,13 @@ pub struct Style {
 impl Style {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_from_sheet_impl<I: Into<Cow<'static, str>>>(class_prefix: I, css: Sheet) -> Self {
+    fn create_from_sheet_impl(class_prefix: Cow<'static, str>, css: Sheet) -> Self {
         let css = Arc::new(css);
         // Creates the StyleKey, return from registry if already cached.
-        let key = StyleKey(class_prefix.into(), css);
+        let key = StyleKey {
+            prefix: class_prefix,
+            ast: css,
+        };
         let reg = StyleRegistry::get_ref();
         let mut reg = reg.lock().unwrap();
 
@@ -99,8 +99,7 @@ impl Style {
 
         let new_style = Self {
             inner: Arc::new(StyleContent {
-                class_name: format!("{}-{}", key.0, get_entropy()),
-                ast: key.1.clone(),
+                class_name: format!("{}-{}", key.prefix, get_entropy()),
                 style_str: OnceCell::new(),
                 key,
             }),
@@ -177,7 +176,7 @@ impl Style {
     /// let style = Style::create_from_sheet("my-component", scopes);
     /// ```
     pub fn create_from_sheet<I: Into<Cow<'static, str>>>(class_prefix: I, css: Sheet) -> Self {
-        Self::create_from_sheet_impl(class_prefix, css)
+        Self::create_from_sheet_impl(class_prefix.into(), css)
     }
     /// Returns the class name for current style
     ///
