@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.8
+### Breaking Changes:
+- `Style::new()` and `Style::create()` now takes `AsRef<str>` for
+  Stylesheet.
+
+### Other Changes:
+- Added a new crate `stylist_core` for AST.
+- AST has been exposed under `stylist::ast`.
+- Documentation now shows feature flags.
+
 ## v0.7
 
 ### Breaking Changes:

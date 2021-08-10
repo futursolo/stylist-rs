@@ -3,8 +3,8 @@ use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 
+use crate::ast::Sheet;
 use crate::Style;
-use stylist_core::ast::Sheet;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub(crate) struct StyleKey(pub String, pub Arc<Sheet>);

@@ -34,7 +34,7 @@
 //! use stylist::Style;
 //!
 //! let style = Style::create(
-//!     "MyComponent",
+//!     "my-component",
 //!     r#"
 //!     background-color: red;
 //!
@@ -162,7 +162,8 @@
 //! [Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
 //! and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
 
-pub mod bindings;
+#[doc(hidden)]
+mod bindings;
 
 #[cfg(target_arch = "wasm32")]
 #[path = "arch_wasm.rs"]
@@ -173,6 +174,12 @@ mod registry;
 mod style;
 mod utils;
 mod yield_style;
+
+#[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
+#[cfg(feature = "yew_integration")]
+pub use bindings::yew;
+#[doc(inline)]
+pub use stylist_core::ast;
 
 pub use error::{Error, Result};
 pub use style::Style;

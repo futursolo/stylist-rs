@@ -1,7 +1,7 @@
 ---
 name: Run Tests & Publishing
 
-on: push
+on: [push, pull_requests]
 
 jobs:
   test:
@@ -39,7 +39,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: test
-          args: --all-features
+          args: --all-features --all
 
       - name: Setup trunk
         uses: jetli/trunk-action@v0.1.0
@@ -86,16 +86,35 @@ jobs:
       - name: Restore Rust Cache
         uses: Swatinem/rust-cache@v1
 
-      - name: Run cargo publish --dry-run
+      - name: Run cargo publish --dry-run for stylist-core
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         uses: actions-rs/cargo@v1
+        working-directory: ./packages/stylist-core
         with:
           command: publish
           args: --dry-run
 
-      - name: Run cargo publish
+      - name: Run cargo publish for stylist-core
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
         uses: actions-rs/cargo@v1
+        working-directory: ./packages/stylist-core
+        with:
+          command: publish
+          args: --token ${{ secrets.CRATES_IO_TOKEN }}
+
+      # Not possible until stylist-core is published
+      # - name: Run cargo publish --dry-run for stylist
+      #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      #   uses: actions-rs/cargo@v1
+      #   working-directory: ./packages/stylist
+      #   with:
+      #     command: publish
+      #     args: --dry-run
+
+      - name: Run cargo publish for stylist
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: actions-rs/cargo@v1
+        working-directory: ./packages/stylist
         with:
           command: publish
           args: --token ${{ secrets.CRATES_IO_TOKEN }}

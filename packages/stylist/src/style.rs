@@ -1,13 +1,14 @@
 use crate::parser::Parser;
 use once_cell::sync::OnceCell;
 use std::ops::Deref;
+use std::str::FromStr;
 use std::sync::Arc;
 
 #[cfg(target_arch = "wasm32")]
 use crate::arch::{doc_head, document, JsValue};
+use crate::ast::{Sheet, ToCss};
 use crate::registry::{StyleKey, StyleRegistry};
 use crate::utils::get_rand_str;
-use stylist_core::ast::{Sheet, ToCss};
 
 #[derive(Debug)]
 struct StyleContent {
@@ -185,7 +186,7 @@ impl Style {
     ///
     /// let style = Style::create("my-component", "background-color: red;")?;
     ///
-    /// // Example Output: stylist-uSu9NZZu
+    /// // Example Output: my-component-uSu9NZZu
     /// println!("{}", style.get_class_name());
     /// # Ok::<(), stylist::Error>(())
     /// ```
@@ -206,7 +207,7 @@ impl Style {
     ///
     /// // Example Output:
     /// // .my-component-uSu9NZZu {
-    /// // color: red;
+    /// // background-color: red;
     /// // }
     /// println!("{}", style.get_style_str());
     /// # Ok::<(), stylist::Error>(())
@@ -227,6 +228,20 @@ impl Style {
         let reg = StyleRegistry::get_ref();
         let mut reg = reg.lock().unwrap();
         reg.unregister(&*self.key());
+    }
+}
+
+impl FromStr for Style {
+    type Err = crate::Error;
+
+    fn from_str(s: &str) -> crate::Result<Self> {
+        Style::new(s)
+    }
+}
+
+impl From<Sheet> for Style {
+    fn from(sheet: Sheet) -> Self {
+        Self::new_from_sheet(sheet)
     }
 }
 
