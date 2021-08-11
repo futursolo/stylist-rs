@@ -100,11 +100,12 @@ impl Style {
         }
 
         let new_style = Self {
-            inner: Arc::new(StyleContent {
+            inner: StyleContent {
                 class_name: format!("{}-{}", key.prefix, get_entropy()),
                 style_str: OnceCell::new(),
                 key,
-            }),
+            }
+            .into(),
         };
 
         #[cfg(target_arch = "wasm32")]
