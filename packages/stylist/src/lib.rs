@@ -3,6 +3,7 @@
 #![deny(unsafe_code)]
 #![deny(non_snake_case)]
 #![cfg_attr(documenting, feature(doc_cfg))]
+#![cfg_attr(any(releasing, not(debug_assertions)), deny(dead_code, unused_imports))]
 
 //! Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
 //!
