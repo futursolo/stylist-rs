@@ -1,4 +1,6 @@
 #![deny(clippy::all)]
+#![deny(unsafe_code)]
+#![deny(non_snake_case)]
 #![deny(missing_debug_implementations)]
 #![deny(unsafe_code)]
 #![deny(non_snake_case)]
@@ -9,13 +11,13 @@
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 
-mod argument;
+mod stringly;
+mod tokentree;
+
 mod css;
-mod fstring;
 mod global_style;
 mod sheet;
 mod style;
-mod to_tokens_with_args;
 
 #[proc_macro]
 #[proc_macro_error]
@@ -39,4 +41,36 @@ pub fn global_style(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 pub fn css(input: TokenStream) -> TokenStream {
     css::macro_fn(input.into()).into()
+}
+
+#[cfg(test)]
+mod test {
+    use log::debug;
+
+    fn init() {
+        let _ = env_logger::builder().is_test(true).try_init();
+    }
+
+    #[test]
+    fn test_macro_invokation() {
+        init();
+        let color_red = "red";
+        let css = stylist::css! {
+            ${"&:has()"} {
+
+            }
+            backgroundColor: blue;
+            backgroundColor: red(${"color"});
+            &, .some-class, --someid, r#struct, #byid, body {
+                color: ${color_red};
+            }
+            @media print {
+                fontFace: Roboto;
+            }
+            @-webkit-keyframes {
+            }
+        };
+        let style = stylist::Style::new(css).unwrap();
+        debug!("{}", style.get_style_str())
+    }
 }

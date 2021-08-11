@@ -1,0 +1,5 @@
+error: expected curly braces
+ --> $DIR/selector_as_attribute-fail.rs:3:30
+  |
+3 |         looks_like_selector(): blue;
+  |                              ^

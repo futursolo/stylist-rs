@@ -7,8 +7,8 @@ use quote::quote;
 
 use stylist_core::ast::*;
 
-use crate::argument::Argument;
-use crate::fstring;
+use super::argument::Argument;
+use super::fstring;
 
 pub(crate) trait ToTokensWithArgs {
     fn to_tokens_with_args(
