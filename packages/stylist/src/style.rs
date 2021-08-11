@@ -1,14 +1,13 @@
 use crate::{Error, Result};
 use once_cell::sync::OnceCell;
 use std::borrow::Cow;
-use std::convert::TryFrom;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 
 #[cfg(target_arch = "wasm32")]
 use crate::arch::{doc_head, document, JsValue};
-use crate::ast::{Sheet, ToCss};
+use crate::ast::{IntoSheet, Sheet, ToStyleStr};
 use crate::registry::{StyleKey, StyleRegistry};
 use crate::utils::get_entropy;
 
@@ -29,7 +28,7 @@ impl StyleContent {
 
     fn get_style_str(&self) -> &str {
         self.style_str
-            .get_or_init(|| self.key.ast.to_css(self.get_class_name()))
+            .get_or_init(|| self.key.ast.to_style_str(self.get_class_name()))
     }
 
     /// Mounts the styles to the document
@@ -127,7 +126,10 @@ impl Style {
     /// let style = Style::new("background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<Css: AsRef<str>>(css: Css) -> Result<Self> {
+    pub fn new<Css>(css: Css) -> Result<Self>
+    where
+        Css: IntoSheet,
+    {
         Self::create("stylist", css)
     }
 
@@ -141,45 +143,15 @@ impl Style {
     /// let style = Style::create("my-component", "background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn create<N: Into<Cow<'static, str>>, Css: AsRef<str>>(
-        class_prefix: N,
-        css: Css,
-    ) -> Result<Self> {
-        let css = css.as_ref().parse()?;
-        Style::create_from_sheet(class_prefix, css)
-    }
-
-    /// Creates a new style from an existing style sheet.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use stylist::Style;
-    /// use stylist_core::ast::Sheet;
-    ///
-    /// let scopes: Sheet = Default::default();
-    /// let style = Style::new_from_sheet(scopes);
-    /// ```
-    pub fn new_from_sheet(css: Sheet) -> Result<Self> {
-        Self::create_from_sheet("stylist", css)
-    }
-
-    /// Creates a new style from an existing style sheet and a custom class prefix.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use stylist::Style;
-    ///
-    /// let scopes = Default::default();
-    /// let style = Style::create_from_sheet("my-component", scopes);
-    /// ```
-    pub fn create_from_sheet<I: Into<Cow<'static, str>>>(
-        class_prefix: I,
-        css: Sheet,
-    ) -> Result<Self> {
+    pub fn create<N, Css>(class_prefix: N, css: Css) -> Result<Self>
+    where
+        N: Into<Cow<'static, str>>,
+        Css: IntoSheet,
+    {
+        let css = css.into_sheet()?;
         Self::create_from_sheet_impl(class_prefix.into(), css)
     }
+
     /// Returns the class name for current style
     ///
     /// You can add this class name to the element to apply the style.
@@ -241,14 +213,6 @@ impl FromStr for Style {
 
     fn from_str(s: &str) -> Result<Self> {
         Style::new(s)
-    }
-}
-
-impl TryFrom<Sheet> for Style {
-    type Error = Error;
-
-    fn try_from(sheet: Sheet) -> Result<Self> {
-        Self::new_from_sheet(sheet)
     }
 }
 

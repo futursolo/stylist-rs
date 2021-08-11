@@ -1,4 +1,5 @@
 #![deny(clippy::all)]
+#![deny(missing_debug_implementations)]
 #![deny(unsafe_code)]
 #![deny(non_snake_case)]
 #![cfg_attr(documenting, feature(doc_cfg))]

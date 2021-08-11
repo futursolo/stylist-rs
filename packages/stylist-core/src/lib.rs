@@ -1,5 +1,6 @@
 #![deny(clippy::all)]
 #![deny(unsafe_code)]
+#![deny(missing_debug_implementations)]
 #![deny(non_snake_case)]
 
 mod error;

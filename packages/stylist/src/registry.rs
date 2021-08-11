@@ -60,8 +60,8 @@ mod tests {
     fn test_duplicate_style() {
         init();
 
-        let style_a = Style::new_from_sheet(sample_scopes()).expect("Failed to create Style.");
-        let style_b = Style::new_from_sheet(sample_scopes()).expect("Failed to create Style.");
+        let style_a = Style::new(sample_scopes()).expect("Failed to create Style.");
+        let style_b = Style::new(sample_scopes()).expect("Failed to create Style.");
 
         {
             let reg = StyleRegistry::get_ref();
@@ -77,10 +77,8 @@ mod tests {
     fn test_duplicate_style_different_prefix() {
         init();
 
-        let style_a = Style::create_from_sheet("element-a", sample_scopes())
-            .expect("Failed to create Style.");
-        let style_b = Style::create_from_sheet("element-b", sample_scopes())
-            .expect("Failed to create Style.");
+        let style_a = Style::create("element-a", sample_scopes()).expect("Failed to create Style.");
+        let style_b = Style::create("element-b", sample_scopes()).expect("Failed to create Style.");
 
         assert_ne!(style_a.get_class_name(), style_b.get_class_name());
     }
@@ -89,8 +87,8 @@ mod tests {
     fn test_unregister() {
         init();
 
-        let style = Style::create_from_sheet(
-            "super-secret-prefix-that-never-gets-collided",
+        let style = Style::create(
+            "super-secret-prefix-for-unregister-that-never-gets-collided",
             sample_scopes(),
         )
         .expect("Failed to create Style.");
