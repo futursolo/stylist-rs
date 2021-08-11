@@ -34,7 +34,7 @@ impl StyleContent {
 
     /// Mounts the styles to the document
     #[cfg(target_arch = "wasm32")]
-    fn mount(&self) -> Result<(), JsValue> {
+    fn mount(&self) -> std::result::Result<(), JsValue> {
         let document = document()?;
         let head = doc_head()?;
 
@@ -49,7 +49,7 @@ impl StyleContent {
     /// Unmounts the style from the DOM tree
     /// Does nothing if it's not in the DOM tree
     #[cfg(target_arch = "wasm32")]
-    fn unmount(&self) -> Result<(), JsValue> {
+    fn unmount(&self) -> std::result::Result<(), JsValue> {
         let document = document()?;
 
         if let Some(m) =
