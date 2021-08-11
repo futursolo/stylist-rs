@@ -5,10 +5,9 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 
-#[cfg(target_arch = "wasm32")]
-use crate::arch::{doc_head, document, JsValue};
 use crate::ast::{IntoSheet, Sheet, ToStyleStr};
-use crate::registry::{StyleKey, StyleRegistry};
+use crate::manager::{DefaultManager, StyleManager};
+use crate::registry::StyleKey;
 use crate::utils::get_entropy;
 
 #[derive(Debug)]
@@ -19,6 +18,8 @@ struct StyleContent {
     class_name: String,
 
     style_str: OnceCell<String>,
+
+    manager: Box<dyn StyleManager>,
 }
 
 impl StyleContent {
@@ -31,39 +32,17 @@ impl StyleContent {
             .get_or_init(|| self.key.ast.to_style_str(self.get_class_name()))
     }
 
-    /// Mounts the styles to the document
     #[cfg(target_arch = "wasm32")]
-    fn mount(&self) -> std::result::Result<(), JsValue> {
-        let document = document()?;
-        let head = doc_head()?;
-
-        let style_element = document.create_element("style")?;
-        style_element.set_attribute("data-style", self.get_class_name())?;
-        style_element.set_text_content(Some(self.get_style_str()));
-
-        head.append_child(&style_element)?;
-        Ok(())
-    }
-
-    /// Unmounts the style from the DOM tree
-    /// Does nothing if it's not in the DOM tree
-    #[cfg(target_arch = "wasm32")]
-    fn unmount(&self) -> std::result::Result<(), JsValue> {
-        let document = document()?;
-
-        if let Some(m) =
-            document.query_selector(&format!("style[data-style={}]", self.class_name))?
-        {
-            if let Some(parent) = m.parent_element() {
-                parent.remove_child(&m)?;
-            }
-        }
-
-        Ok(())
+    fn unmount(&self) -> Result<()> {
+        self.manager().unmount(self.get_class_name())
     }
 
     fn key(&self) -> &StyleKey {
         &self.key
+    }
+
+    fn manager(&self) -> &dyn StyleManager {
+        &*self.manager
     }
 }
 
@@ -84,14 +63,19 @@ pub struct Style {
 impl Style {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_from_sheet_impl(class_prefix: Cow<'static, str>, css: Sheet) -> Result<Self> {
+    fn create_impl<M: StyleManager + 'static>(
+        class_prefix: Cow<'static, str>,
+        css: Sheet,
+        manager: M,
+    ) -> Result<Self> {
         let css = Arc::new(css);
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
             prefix: class_prefix,
             ast: css,
         };
-        let reg = StyleRegistry::get_ref();
+
+        let reg = manager.get_registry();
         let mut reg = reg.lock().unwrap();
 
         if let Some(m) = reg.get(&key) {
@@ -103,12 +87,13 @@ impl Style {
                 class_name: format!("{}-{}", key.prefix, get_entropy()),
                 style_str: OnceCell::new(),
                 key,
+                manager: Box::new(manager) as Box<dyn StyleManager>,
             }
             .into(),
         };
 
         #[cfg(target_arch = "wasm32")]
-        new_style.inner.mount().map_err(|e| Error::Web(Some(e)))?;
+        new_style.inner.manager().mount(&new_style)?;
 
         // Register the created Style.
         reg.register(new_style.clone());
@@ -149,7 +134,30 @@ impl Style {
         Css: IntoSheet,
     {
         let css = css.into_sheet()?;
-        Self::create_from_sheet_impl(class_prefix.into(), css)
+        Self::create_impl(class_prefix.into(), css, DefaultManager::default())
+    }
+
+    /// Creates a new style from some parsable css with a default prefix using a custom
+    /// manager.
+    pub fn new_with_manager<Css, M>(css: Css, manager: M) -> Result<Self>
+    where
+        Css: IntoSheet,
+        M: StyleManager + 'static,
+    {
+        let css = css.into_sheet()?;
+        Self::create_impl(manager.prefix(), css, manager)
+    }
+
+    /// Creates a new style with a custom class prefix from some parsable css using a custom
+    /// manager.
+    pub fn create_with_manager<N, Css, M>(class_prefix: N, css: Css, manager: M) -> Result<Self>
+    where
+        N: Into<Cow<'static, str>>,
+        Css: IntoSheet,
+        M: StyleManager + 'static,
+    {
+        let css = css.into_sheet()?;
+        Self::create_impl(class_prefix.into(), css, manager)
     }
 
     /// Returns the class name for current style
@@ -202,7 +210,7 @@ impl Style {
     ///
     /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
     pub fn unregister(&self) {
-        let reg = StyleRegistry::get_ref();
+        let reg = self.inner.manager().get_registry();
         let mut reg = reg.lock().unwrap();
         reg.unregister(&*self.key());
     }

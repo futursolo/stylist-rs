@@ -1,32 +1,24 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
-
-use once_cell::sync::Lazy;
+use std::sync::Arc;
 
 use crate::ast::Sheet;
 use crate::Style;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey {
+pub struct StyleKey {
     pub prefix: Cow<'static, str>,
     pub ast: Arc<Sheet>,
 }
 
-static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
-
 /// The style registry is just a global struct that makes sure no style gets lost.
 /// Every style automatically registers with the style registry.
 #[derive(Debug, Default)]
-pub(crate) struct StyleRegistry {
+pub struct StyleRegistry {
     styles: HashMap<StyleKey, Style>,
 }
 
 impl StyleRegistry {
-    pub fn get_ref() -> Arc<Mutex<StyleRegistry>> {
-        REGISTRY.clone()
-    }
-
     pub fn register(&mut self, style: Style) {
         let key = style.key().clone();
         if self.styles.insert(key, style).is_some() {
@@ -45,11 +37,17 @@ impl StyleRegistry {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::{Arc, Mutex};
+
     use super::*;
-    use stylist_core::ast::*;
+    use crate::manager::{DefaultManager, StyleManager};
 
     fn sample_scopes() -> Sheet {
         "color: red;".parse().expect("Failed to Parse style.")
+    }
+
+    fn get_registry() -> Arc<Mutex<StyleRegistry>> {
+        DefaultManager::default().get_registry()
     }
 
     fn init() {
@@ -64,7 +62,7 @@ mod tests {
         let style_b = Style::new(sample_scopes()).expect("Failed to create Style.");
 
         {
-            let reg = StyleRegistry::get_ref();
+            let reg = get_registry();
             let reg = reg.lock().unwrap();
 
             log::debug!("{:#?}", reg);
@@ -94,7 +92,7 @@ mod tests {
         .expect("Failed to create Style.");
 
         {
-            let reg = StyleRegistry::get_ref();
+            let reg = get_registry();
             let reg = reg.lock().unwrap();
 
             assert!(reg.styles.get(&*style.key()).is_some());
@@ -103,7 +101,7 @@ mod tests {
         style.unregister();
 
         {
-            let reg = StyleRegistry::get_ref();
+            let reg = get_registry();
             let reg = reg.lock().unwrap();
 
             assert!(reg.styles.get(&*style.key()).is_none());
