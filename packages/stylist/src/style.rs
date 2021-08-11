@@ -1,5 +1,7 @@
+use crate::{Error, Result};
 use once_cell::sync::OnceCell;
 use std::borrow::Cow;
+use std::convert::TryFrom;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -83,7 +85,7 @@ pub struct Style {
 impl Style {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_from_sheet_impl(class_prefix: Cow<'static, str>, css: Sheet) -> Self {
+    fn create_from_sheet_impl(class_prefix: Cow<'static, str>, css: Sheet) -> Result<Self> {
         let css = Arc::new(css);
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
@@ -94,7 +96,7 @@ impl Style {
         let mut reg = reg.lock().unwrap();
 
         if let Some(m) = reg.get(&key) {
-            return m.clone();
+            return Ok(m.clone());
         }
 
         let new_style = Self {
@@ -106,12 +108,12 @@ impl Style {
         };
 
         #[cfg(target_arch = "wasm32")]
-        new_style.inner.mount().expect("Failed to mount");
+        new_style.inner.mount().map_err(|e| Error::Web(Some(e)))?;
 
         // Register the created Style.
         reg.register(new_style.clone());
 
-        new_style
+        Ok(new_style)
     }
 
     /// Creates a new style from some parsable css with a default prefix.
@@ -124,7 +126,7 @@ impl Style {
     /// let style = Style::new("background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<Css: AsRef<str>>(css: Css) -> crate::Result<Self> {
+    pub fn new<Css: AsRef<str>>(css: Css) -> Result<Self> {
         Self::create("stylist", css)
     }
 
@@ -141,14 +143,12 @@ impl Style {
     pub fn create<N: Into<Cow<'static, str>>, Css: AsRef<str>>(
         class_prefix: N,
         css: Css,
-    ) -> crate::Result<Self> {
+    ) -> Result<Self> {
         let css = css.as_ref().parse()?;
-        Ok(Style::create_from_sheet(class_prefix, css))
+        Style::create_from_sheet(class_prefix, css)
     }
 
-    /// Creates a new style from an existing style sheet. Compared to [`Style::new`]
-    /// the caller is responsible for generating the style, but the constructor is
-    /// infallible.
+    /// Creates a new style from an existing style sheet.
     ///
     /// # Examples
     ///
@@ -159,13 +159,11 @@ impl Style {
     /// let scopes: Sheet = Default::default();
     /// let style = Style::new_from_sheet(scopes);
     /// ```
-    pub fn new_from_sheet(css: Sheet) -> Self {
+    pub fn new_from_sheet(css: Sheet) -> Result<Self> {
         Self::create_from_sheet("stylist", css)
     }
 
     /// Creates a new style from an existing style sheet and a custom class prefix.
-    /// Compared to [`Style::create`] the caller is responsible for generating the style,
-    /// but the constructor is infallible.
     ///
     /// # Examples
     ///
@@ -175,7 +173,10 @@ impl Style {
     /// let scopes = Default::default();
     /// let style = Style::create_from_sheet("my-component", scopes);
     /// ```
-    pub fn create_from_sheet<I: Into<Cow<'static, str>>>(class_prefix: I, css: Sheet) -> Self {
+    pub fn create_from_sheet<I: Into<Cow<'static, str>>>(
+        class_prefix: I,
+        css: Sheet,
+    ) -> Result<Self> {
         Self::create_from_sheet_impl(class_prefix.into(), css)
     }
     /// Returns the class name for current style
@@ -235,15 +236,17 @@ impl Style {
 }
 
 impl FromStr for Style {
-    type Err = crate::Error;
+    type Err = Error;
 
-    fn from_str(s: &str) -> crate::Result<Self> {
+    fn from_str(s: &str) -> Result<Self> {
         Style::new(s)
     }
 }
 
-impl From<Sheet> for Style {
-    fn from(sheet: Sheet) -> Self {
+impl TryFrom<Sheet> for Style {
+    type Error = Error;
+
+    fn try_from(sheet: Sheet) -> Result<Self> {
         Self::new_from_sheet(sheet)
     }
 }
