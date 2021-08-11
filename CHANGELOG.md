@@ -8,7 +8,9 @@
 
 ### Other Changes:
 - Added a `<GlobalStyle />` Component for global styling.
-- Moved AST to a new crate `stylist_core`.
+- Added an alternative counter-based class name on the style when
+  feature `rand` is disabled.
+- Moved AST and Parser logic to a new crate `stylist_core`.
 - AST has been exposed under `stylist::ast`.
 - Documentation now shows feature flags.
 
