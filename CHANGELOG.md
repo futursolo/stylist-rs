@@ -2,8 +2,9 @@
 
 ## v0.8
 ### Breaking Changes:
-- `Style::new()` and `Style::create()` now takes `AsRef<str>` for
-  Stylesheet.
+- `Style::new()` and `Style::create()` now takes a new trait `IntoSheet` for
+  Stylesheet which is implemented by default for both
+`stylist::ast::Sheet` and everything that implements `AsRef<str>`.
 - Feature `yew` has been renamed back to `yew_integration`
 
 ### Other Changes:

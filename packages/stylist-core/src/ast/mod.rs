@@ -20,18 +20,11 @@ use std::str::FromStr;
 
 use crate::parser::Parser;
 
-/// Structs implementing this trait should be able to turn into
-/// a part of a CSS style sheet.
-pub trait ToCss {
-    fn to_css(&self, class_name: &str) -> String {
-        let mut s = String::new();
+mod into_sheet;
+mod to_style_str;
 
-        self.write_css(&mut s, class_name).unwrap();
-
-        s
-    }
-    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result;
-}
+pub use into_sheet::IntoSheet;
+pub use to_style_str::ToStyleStr;
 
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -57,10 +50,10 @@ impl Default for Sheet {
     }
 }
 
-impl ToCss for Sheet {
-    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+impl ToStyleStr for Sheet {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         for scope in self.0.iter() {
-            scope.write_css(w, class_name)?;
+            scope.write_style(w, class_name)?;
             writeln!(w)?;
         }
 
@@ -96,11 +89,11 @@ pub enum ScopeContent {
     // Scope(Scope),
 }
 
-impl ToCss for ScopeContent {
-    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+impl ToStyleStr for ScopeContent {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         match self {
-            ScopeContent::Block(ref b) => b.write_css(w, class_name),
-            ScopeContent::Rule(ref r) => r.write_css(w, class_name),
+            ScopeContent::Block(ref b) => b.write_style(w, class_name),
+            ScopeContent::Rule(ref r) => r.write_style(w, class_name),
         }
     }
 }
@@ -123,8 +116,8 @@ pub struct Block {
     pub style_attributes: Vec<StyleAttribute>,
 }
 
-impl ToCss for Block {
-    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+impl ToStyleStr for Block {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         if let Some(ref condition) = self.condition {
             if condition.contains('&') {
                 let scoped_class = format!(".{}", class_name);
@@ -137,7 +130,7 @@ impl ToCss for Block {
         }
 
         for attr in self.style_attributes.iter() {
-            attr.write_css(w, class_name)?;
+            attr.write_style(w, class_name)?;
             writeln!(w)?;
         }
 
@@ -155,8 +148,8 @@ pub struct StyleAttribute {
     pub value: String,
 }
 
-impl ToCss for StyleAttribute {
-    fn write_css<W: fmt::Write>(&self, w: &mut W, _class_name: &str) -> fmt::Result {
+impl ToStyleStr for StyleAttribute {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, _class_name: &str) -> fmt::Result {
         write!(w, "{}: {};", self.key, self.value)
     }
 }
@@ -182,12 +175,12 @@ pub struct Rule {
     pub content: Vec<RuleContent>,
 }
 
-impl ToCss for Rule {
-    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+impl ToStyleStr for Rule {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         writeln!(w, "{} {{", self.condition)?;
 
         for i in self.content.iter() {
-            i.write_css(w, class_name)?;
+            i.write_style(w, class_name)?;
             writeln!(w)?;
         }
 
@@ -217,11 +210,11 @@ impl From<ScopeContent> for RuleContent {
     }
 }
 
-impl ToCss for RuleContent {
-    fn write_css<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+impl ToStyleStr for RuleContent {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
         match self {
-            RuleContent::Block(ref b) => b.write_css(w, class_name),
-            RuleContent::Rule(ref r) => r.write_css(w, class_name),
+            RuleContent::Block(ref b) => b.write_style(w, class_name),
+            RuleContent::Rule(ref r) => r.write_style(w, class_name),
             RuleContent::String(ref s) => write!(w, "{}", s),
         }
     }
@@ -268,7 +261,7 @@ width: 200px;
             }),
         ]);
         assert_eq!(
-            test_block.to_css("test"),
+            test_block.to_style_str("test"),
             r#".test {
 width: 100vw;
 }
@@ -321,7 +314,7 @@ width: 200px;
             ],
         })]);
         assert_eq!(
-            test_block.to_css("test"),
+            test_block.to_style_str("test"),
             r#"@media only screen and (min-width: 1000px) {
 .test {
 width: 100vw;
