@@ -1,11 +1,12 @@
 use once_cell::sync::Lazy;
+use std::borrow::Cow;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use stylist::manager::StyleManager;
 use stylist::registry::StyleRegistry;
 use stylist::yew::GlobalStyle;
-use stylist::{Result, Style};
+use stylist::{Result, Style, YieldStyle};
 use web_sys::{window, Element, Node, ShadowRootInit, ShadowRootMode};
 use yew::prelude::*;
 
@@ -53,7 +54,22 @@ impl Component for ShadowRoot {
                         node: root.clone().into(),
                     };
 
-                    let style = Style::new_with_manager("background-color: pink;", mgr).unwrap();
+                    let style = Style::new_with_manager(
+                        r#"
+                            background-color: pink;
+                            width: 200px;
+                            height: 200px;
+                            border-radius: 5px;
+
+
+                            padding: 15px;
+                            box-sizing: border-box;
+
+                            box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+                        "#,
+                        mgr,
+                    )
+                    .unwrap();
 
                     let children = window()
                         .unwrap()
@@ -112,16 +128,54 @@ impl Component for App {
         html! {
             <>
                 <GlobalStyle css=r#"
+                    &, & body {
+                        font-family: sans-serif;
+
+                        padding: 0;
+                        margin: 0;
+
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        flex-direction: column;
+
+                        background-color: rgb(237, 244, 255);
+                    }
+
                     span {
                         color: red;
                     }
                 "# />
-                <div>
+                <h1>{"Yew Shadow DOM Example"}</h1>
+                <div class=self.style()>
                     <span>{"Outside of Shadow DOM."}</span>
                     <ShadowRoot />
                 </div>
             </>
         }
+    }
+}
+
+impl YieldStyle for App {
+    fn style_str(&self) -> Cow<'static, str> {
+        r#"
+            box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+            height: 500px;
+            width: 500px;
+            border-radius: 5px;
+
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+
+            padding: 15px;
+            box-sizing: border-box;
+
+            flex-direction: column;
+            background-color: white;
+        "#
+        .into()
     }
 }
 
