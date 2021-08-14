@@ -13,6 +13,8 @@ pub(crate) enum ThemeKind {
 pub(crate) struct Theme {
     pub font_color: String,
     pub background_color: String,
+
+    pub paper_color: String,
 }
 
 #[derive(Debug)]
@@ -37,13 +39,15 @@ impl Store for ThemeStore {
 
             light_theme: Theme {
                 font_color: "black".to_string(),
-                background_color: "white".to_string(),
+                background_color: "rgb(237, 244, 255)".to_string(),
+                paper_color: "white".to_string(),
             }
             .into(),
 
             dark_theme: Theme {
                 font_color: "white".to_string(),
                 background_color: "black".to_string(),
+                paper_color: "rgb(50, 50, 50)".to_string(),
             }
             .into(),
         }
