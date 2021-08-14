@@ -1,5 +1,6 @@
 use once_cell::sync::Lazy;
-use std::sync::{Arc, Mutex};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use stylist::manager::StyleManager;
 use stylist::registry::StyleRegistry;
@@ -16,13 +17,13 @@ pub(crate) struct ShadowManager {
     node: Node,
 }
 
-unsafe impl Send for ShadowManager {}
-unsafe impl Sync for ShadowManager {}
-
 impl StyleManager for ShadowManager {
-    fn get_registry(&self) -> Arc<Mutex<StyleRegistry>> {
-        static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(Arc::default);
-        REGISTRY.clone()
+    fn get_registry(&self) -> Rc<RefCell<StyleRegistry>> {
+        thread_local! {
+            static REGISTRY: Lazy<Rc<RefCell<StyleRegistry>>> = Lazy::new(Rc::default);
+        }
+
+        REGISTRY.with(|m| (*m).clone())
     }
 
     fn get_container(&self) -> Result<Node> {

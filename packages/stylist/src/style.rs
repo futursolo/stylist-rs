@@ -1,9 +1,9 @@
-use once_cell::sync::OnceCell;
+use once_cell::unsync::OnceCell;
 use std::borrow::Cow;
 use std::fmt;
 use std::ops::Deref;
+use std::rc::Rc;
 use std::str::FromStr;
-use std::sync::Arc;
 
 use crate::ast::{IntoSheet, Sheet, ToStyleStr};
 use crate::manager::{DefaultManager, StyleManager};
@@ -35,7 +35,7 @@ impl fmt::Display for StyleId {
 
 #[derive(Debug)]
 struct StyleContent {
-    key: Arc<StyleKey<'static>>,
+    key: Rc<StyleKey<'static>>,
 
     /// The designated class name of this style
     class_name: String,
@@ -67,7 +67,7 @@ impl StyleContent {
         self.manager().unmount(self.id())
     }
 
-    fn key(&self) -> Arc<StyleKey<'static>> {
+    fn key(&self) -> Rc<StyleKey<'static>> {
         self.key.clone()
     }
 
@@ -87,7 +87,7 @@ impl Drop for StyleContent {
 /// A struct that represents a scoped Style.
 #[derive(Debug, Clone)]
 pub struct Style {
-    inner: Arc<StyleContent>,
+    inner: Rc<StyleContent>,
 }
 
 impl Style {
@@ -105,7 +105,7 @@ impl Style {
         };
 
         let reg = manager.get_registry();
-        let mut reg = reg.lock().unwrap();
+        let mut reg = reg.borrow_mut();
 
         if let Some(m) = reg.get(&key) {
             return Ok(m);
@@ -125,7 +125,7 @@ impl Style {
                 style_str: OnceCell::new(),
                 id: OnceCell::new(),
                 manager: Box::new(manager) as Box<dyn StyleManager>,
-                key: Arc::new(key),
+                key: Rc::new(key),
             }
             .into(),
         };
@@ -240,7 +240,7 @@ impl Style {
     }
 
     /// Return a reference of style key.
-    pub(crate) fn key(&self) -> Arc<StyleKey<'static>> {
+    pub(crate) fn key(&self) -> Rc<StyleKey<'static>> {
         self.inner.key()
     }
 
@@ -249,7 +249,7 @@ impl Style {
     /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
     pub fn unregister(&self) {
         let reg = self.inner.manager().get_registry();
-        let mut reg = reg.lock().unwrap();
+        let mut reg = reg.borrow_mut();
         reg.unregister(self.key());
     }
 

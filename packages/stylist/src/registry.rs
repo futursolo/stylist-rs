@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::rc::Rc;
 
 use crate::ast::Sheet;
 use crate::Style;
@@ -15,7 +15,7 @@ pub struct StyleKey<'a> {
 /// Every style automatically registers with the style registry.
 #[derive(Debug, Default)]
 pub struct StyleRegistry {
-    styles: HashMap<Arc<StyleKey<'static>>, Style>,
+    styles: HashMap<Rc<StyleKey<'static>>, Style>,
 }
 
 impl StyleRegistry {
@@ -26,7 +26,7 @@ impl StyleRegistry {
         }
     }
 
-    pub(crate) fn unregister(&mut self, key: Arc<StyleKey<'static>>) {
+    pub(crate) fn unregister(&mut self, key: Rc<StyleKey<'static>>) {
         self.styles.remove(&key);
     }
 
@@ -37,7 +37,8 @@ impl StyleRegistry {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
+    use std::cell::RefCell;
+    use std::rc::Rc;
 
     use super::*;
     use crate::manager::{DefaultManager, StyleManager};
@@ -46,7 +47,7 @@ mod tests {
         "color: red;".parse().expect("Failed to Parse style.")
     }
 
-    fn get_registry() -> Arc<Mutex<StyleRegistry>> {
+    fn get_registry() -> Rc<RefCell<StyleRegistry>> {
         DefaultManager::default().get_registry()
     }
 
@@ -63,7 +64,7 @@ mod tests {
 
         {
             let reg = get_registry();
-            let reg = reg.lock().unwrap();
+            let reg = reg.borrow_mut();
 
             log::debug!("{:#?}", reg);
         }
@@ -93,7 +94,7 @@ mod tests {
 
         {
             let reg = get_registry();
-            let reg = reg.lock().unwrap();
+            let reg = reg.borrow_mut();
 
             assert!(reg.styles.get(&*style.key()).is_some());
         }
@@ -102,7 +103,7 @@ mod tests {
 
         {
             let reg = get_registry();
-            let reg = reg.lock().unwrap();
+            let reg = reg.borrow_mut();
 
             assert!(reg.styles.get(&*style.key()).is_none());
         }
