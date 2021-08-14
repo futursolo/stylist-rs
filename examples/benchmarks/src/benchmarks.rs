@@ -43,8 +43,26 @@ pub fn bench_parse_complex() -> f64 {
 }
 
 pub fn bench_cached_lookup() -> f64 {
+    let snippet = "color:red;";
+    let mut sheets = Vec::new();
+
+    for i in 1..100 {
+        let sheet: Sheet = {
+            let mut s = String::new();
+            for _ in 0..i {
+                s.push_str(snippet);
+            }
+
+            s.parse().expect("Failed to parse stylesheet.")
+        };
+
+        sheets.push(sheet);
+    }
+    for sheet in sheets {
+        let _style = Style::new(sheet).expect("Failed to mount stylesheet.");
+    }
+
     let sheet: Sheet = "color:red;".parse().expect("Failed to parse stylesheet.");
-    let _style = Style::new(sheet.clone()).expect("Failed to create style.");
 
     let start_time = now();
     for _ in 0..1_000_000 {
@@ -55,7 +73,7 @@ pub fn bench_cached_lookup() -> f64 {
 }
 
 pub fn bench_mounting() -> f64 {
-    let snippet = "color:red;";
+    let snippet = "color:blue;";
     let mut sheets = Vec::new();
 
     for i in 1..1001 {
