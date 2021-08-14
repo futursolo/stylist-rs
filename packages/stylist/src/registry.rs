@@ -8,9 +8,9 @@ use crate::ast::Sheet;
 use crate::Style;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey {
+pub(crate) struct StyleKey<'a> {
     pub prefix: Cow<'static, str>,
-    pub ast: Arc<Sheet>,
+    pub ast: Cow<'a, Sheet>,
 }
 
 static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::default()));
@@ -19,7 +19,7 @@ static REGISTRY: Lazy<Arc<Mutex<StyleRegistry>>> = Lazy::new(|| Arc::new(Mutex::
 /// Every style automatically registers with the style registry.
 #[derive(Debug, Default)]
 pub(crate) struct StyleRegistry {
-    styles: HashMap<StyleKey, Style>,
+    styles: HashMap<Arc<StyleKey<'static>>, Style>,
 }
 
 impl StyleRegistry {
@@ -34,12 +34,12 @@ impl StyleRegistry {
         }
     }
 
-    pub fn unregister(&mut self, key: &StyleKey) {
-        self.styles.remove(key);
+    pub fn unregister(&mut self, key: Arc<StyleKey<'static>>) {
+        self.styles.remove(&key);
     }
 
-    pub fn get(&self, key: &StyleKey) -> Option<&Style> {
-        self.styles.get(key)
+    pub fn get(&self, key: &StyleKey<'_>) -> Option<Style> {
+        self.styles.get(key).cloned()
     }
 }
 

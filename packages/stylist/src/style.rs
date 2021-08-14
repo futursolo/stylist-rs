@@ -1,7 +1,6 @@
 use crate::{Error, Result};
 use once_cell::sync::OnceCell;
 use std::borrow::Cow;
-use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -13,7 +12,7 @@ use crate::utils::get_entropy;
 
 #[derive(Debug)]
 struct StyleContent {
-    key: StyleKey,
+    key: Arc<StyleKey<'static>>,
 
     /// The designated class name of this style
     class_name: String,
@@ -62,8 +61,8 @@ impl StyleContent {
         Ok(())
     }
 
-    fn key(&self) -> &StyleKey {
-        &self.key
+    fn key(&self) -> Arc<StyleKey<'static>> {
+        self.key.clone()
     }
 }
 
@@ -84,8 +83,10 @@ pub struct Style {
 impl Style {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_from_sheet_impl(class_prefix: Cow<'static, str>, css: Sheet) -> Result<Self> {
-        let css = Arc::new(css);
+    fn create_from_sheet_impl(
+        class_prefix: Cow<'static, str>,
+        css: Cow<'_, Sheet>,
+    ) -> Result<Self> {
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
             prefix: class_prefix,
@@ -95,14 +96,19 @@ impl Style {
         let mut reg = reg.lock().unwrap();
 
         if let Some(m) = reg.get(&key) {
-            return Ok(m.clone());
+            return Ok(m);
         }
+
+        let key = StyleKey {
+            prefix: key.prefix,
+            ast: Cow::Owned(key.ast.into_owned()),
+        };
 
         let new_style = Self {
             inner: StyleContent {
                 class_name: format!("{}-{}", key.prefix, get_entropy()),
                 style_str: OnceCell::new(),
-                key,
+                key: Arc::new(key),
             }
             .into(),
         };
@@ -126,9 +132,9 @@ impl Style {
     /// let style = Style::new("background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<Css>(css: Css) -> Result<Self>
+    pub fn new<'a, Css>(css: Css) -> Result<Self>
     where
-        Css: IntoSheet,
+        Css: IntoSheet<'a>,
     {
         Self::create("stylist", css)
     }
@@ -143,10 +149,10 @@ impl Style {
     /// let style = Style::create("my-component", "background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn create<N, Css>(class_prefix: N, css: Css) -> Result<Self>
+    pub fn create<'a, N, Css>(class_prefix: N, css: Css) -> Result<Self>
     where
         N: Into<Cow<'static, str>>,
-        Css: IntoSheet,
+        Css: IntoSheet<'a>,
     {
         let css = css.into_sheet()?;
         Self::create_from_sheet_impl(class_prefix.into(), css)
@@ -194,7 +200,7 @@ impl Style {
     }
 
     /// Return a reference of style key.
-    pub(crate) fn key(&self) -> impl '_ + Deref<Target = StyleKey> {
+    pub(crate) fn key(&self) -> Arc<StyleKey<'static>> {
         self.inner.key()
     }
 
@@ -204,7 +210,7 @@ impl Style {
     pub fn unregister(&self) {
         let reg = StyleRegistry::get_ref();
         let mut reg = reg.lock().unwrap();
-        reg.unregister(&*self.key());
+        reg.unregister(self.key());
     }
 }
 
