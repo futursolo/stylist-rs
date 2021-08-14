@@ -101,6 +101,9 @@ impl Style {
 
         let key = StyleKey {
             prefix: key.prefix,
+            // I don't think there's a way to turn a Cow<'_, Sheet> to a Cow<'static, Sheet>
+            // if inner is &'static Sheet without cloning.
+            // But I think it would be good enough if allocation only happens once.
             ast: Cow::Owned(key.ast.into_owned()),
         };
 
@@ -242,6 +245,9 @@ mod tests {
                 @media screen and (max-width: 600px) {
                     color: yellow;
                 }
+                @supports (display: grid) {
+                    display: grid;
+                }
             "#,
         )
         .expect("Failed to create Style.");
@@ -258,6 +264,11 @@ color: red;
 @media screen and (max-width: 600px) {{
 .{style_name} {{
 color: yellow;
+}}
+}}
+@supports (display: grid) {{
+.{style_name} {{
+display: grid;
 }}
 }}
 "#,

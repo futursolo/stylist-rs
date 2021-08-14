@@ -400,6 +400,40 @@ impl Parser {
         result
     }
 
+    /// Parse `@supports`
+    fn supports_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Supports Rule: {}", i);
+
+        // Cannot accept empty supports.
+        Self::expect_non_empty(i)?;
+
+        let result = context(
+            "Supports",
+            Self::trimmed(map(
+                separated_pair(
+                    // Collect supports Rules.
+                    preceded(tag("@supports "), is_not("{")),
+                    tag("{"),
+                    // Collect contents with-in supports rules.
+                    terminated(Parser::scope_contents, tag("}")),
+                ),
+                // Map Results into a scope
+                |mut p: (&str, Vec<ScopeContent>)| {
+                    ScopeContent::Rule(Rule {
+                        condition: format!("@supports {}", p.0.trim()),
+                        content: p.1.drain(..).map(|i| i.into()).collect(),
+                    })
+                },
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Supports Rule: {:#?}", result);
+
+        result
+    }
+
     /// Parse sheet
     /// A Scope can be either a media rule or a css scope.
     fn sheet(i: &str) -> IResult<&str, Sheet, VerboseError<&str>> {
@@ -407,7 +441,8 @@ impl Parser {
         trace!("Sheet: {}", i);
 
         let media_rule = map(Self::media_rule, |s| vec![s]);
-        let contents = alt((media_rule, Self::scope));
+        let supports_rule = map(Self::supports_rule, |s| vec![s]);
+        let contents = alt((alt((media_rule, supports_rule)), Self::scope));
         let result = context(
             "StyleSheet",
             // Drop trailing whitespaces.
@@ -429,6 +464,7 @@ impl Parser {
     /// The parse the style and returns a `Result<Sheet>`.
     pub(crate) fn parse(css: &str) -> Result<Sheet> {
         match Self::sheet(css) {
+            // Converting to String, primarily due to lifetime requirements.
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
                 Err(Error::Parse(convert_error(css, e)))
             }
@@ -590,6 +626,67 @@ mod tests {
                     key: "color".into(),
                     value: "yellow".into(),
                 }],
+            }),
+        ]);
+
+        assert_eq!(parsed, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_supports_rule() -> Result<()> {
+        init();
+
+        let test_str = r#"
+                @supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
+                    backdrop-filter: blur(2px);
+                    -webkit-backdrop-filter: blur(2px);
+                    background-color: rgb(0, 0, 0, 0.7);
+                }
+
+                @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+                    background-color: rgb(25, 25, 25);
+                }
+
+            "#;
+        let parsed = Parser::parse(test_str)?;
+
+        let expected = Sheet(vec![
+            ScopeContent::Rule(Rule {
+                condition:
+                    "@supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))"
+                        .into(),
+                content: vec![RuleContent::Block(Block {
+                    condition: None,
+                    style_attributes: vec![
+                        StyleAttribute {
+                            key: "backdrop-filter".into(),
+                            value: "blur(2px)".into(),
+                        },
+                        StyleAttribute {
+                            key: "-webkit-backdrop-filter".into(),
+                            value: "blur(2px)".into(),
+                        },
+                        StyleAttribute {
+                            key: "background-color".into(),
+                            value: "rgb(0, 0, 0, 0.7)".into(),
+                        }
+                    ],
+                })],
+            }),
+
+            ScopeContent::Rule(Rule {
+                condition:
+                    "@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)))"
+                        .into(),
+                content: vec![RuleContent::Block(Block {
+                    condition: None,
+                    style_attributes: vec![StyleAttribute {
+                        key: "background-color".into(),
+                        value: "rgb(25, 25, 25)".into(),
+                    }],
+                })],
             }),
         ]);
 
