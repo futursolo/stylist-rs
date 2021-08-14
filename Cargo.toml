@@ -6,5 +6,4 @@ members = [
     "examples/yew-integration",
     "examples/yew-theme-agent",
     "examples/yew-theme-yewdux",
-    "examples/yew-counter-style",
 ]

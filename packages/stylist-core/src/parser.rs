@@ -485,10 +485,20 @@ impl Parser {
     pub(crate) fn parse(css: &str) -> Result<Sheet> {
         match Self::sheet(css) {
             // Converting to String, primarily due to lifetime requirements.
-            Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
-                Err(Error::Parse(convert_error(css, e)))
-            }
-            Err(nom::Err::Incomplete(e)) => Err(Error::Parse(format!("{:#?}", e))),
+            Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => Err(Error::Parse {
+                reason: convert_error(css, e.clone()),
+                source: Some(VerboseError {
+                    errors: e
+                        .errors
+                        .into_iter()
+                        .map(|(i, e)| (i.to_string(), e))
+                        .collect(),
+                }),
+            }),
+            Err(nom::Err::Incomplete(e)) => Err(Error::Parse {
+                reason: format!("{:#?}", e),
+                source: None,
+            }),
             Ok((_, res)) => Ok(res),
         }
     }
