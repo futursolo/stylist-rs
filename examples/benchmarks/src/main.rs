@@ -1,9 +1,26 @@
+use std::borrow::Cow;
+
+use gloo::timers::callback::Timeout;
+use stylist::yew::GlobalStyle;
+use stylist::YieldStyle;
 use yew::prelude::*;
 
 use log::Level;
 
 mod benchmarks;
 mod utils;
+
+static GLOBAL_STYLE: &str = r#"
+    html&, body {
+        margin: 0;
+        padding: 0;
+        font-family: sans-serif;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        align-items: center;
+    }
+"#;
 
 pub enum BenchMsg {
     ParseSimpleFinish(f64),
@@ -44,9 +61,10 @@ impl Component for Benchmarks {
 
     fn rendered(&mut self, first_render: bool) {
         if first_render {
-            self.link
-                .callback(|_| BenchMsg::ParseSimpleFinish(benchmarks::bench_parse_simple()))
-                .emit(());
+            let cb = self
+                .link
+                .callback(|_| BenchMsg::ParseSimpleFinish(benchmarks::bench_parse_simple()));
+            Timeout::new(100, move || cb.emit(())).forget();
         }
     }
 
@@ -54,33 +72,43 @@ impl Component for Benchmarks {
         match msg {
             BenchMsg::ParseSimpleFinish(m) => {
                 self.parse_simple = Some(m);
-                self.link
-                    .callback(|_| BenchMsg::ParseComplexFinish(benchmarks::bench_parse_complex()))
-                    .emit(());
+                let cb = self
+                    .link
+                    .callback(|_| BenchMsg::ParseComplexFinish(benchmarks::bench_parse_complex()));
+
+                Timeout::new(100, move || cb.emit(())).forget();
             }
             BenchMsg::ParseComplexFinish(m) => {
                 self.parse_complex = Some(m);
-                self.link
-                    .callback(|_| BenchMsg::CachedLookupFinish(benchmarks::bench_cached_lookup()))
-                    .emit(());
+
+                let cb = self
+                    .link
+                    .callback(|_| BenchMsg::CachedLookupFinish(benchmarks::bench_cached_lookup()));
+
+                Timeout::new(100, move || cb.emit(())).forget();
             }
 
             BenchMsg::CachedLookupFinish(m) => {
                 self.cached_lookup = Some(m);
-                self.link
-                    .callback(|_| {
+
+                let cb =
+                    self.link.callback(|_| {
                         BenchMsg::CachedLookupBigSheetFinish(
                             benchmarks::bench_cached_lookup_big_sheet(),
                         )
-                    })
-                    .emit(());
+                    });
+
+                Timeout::new(100, move || cb.emit(())).forget();
             }
 
             BenchMsg::CachedLookupBigSheetFinish(m) => {
                 self.cached_lookup_big_sheet = Some(m);
-                self.link
-                    .callback(|_| BenchMsg::MountingFinish(benchmarks::bench_mounting()))
-                    .emit(());
+
+                let cb = self
+                    .link
+                    .callback(|_| BenchMsg::MountingFinish(benchmarks::bench_mounting()));
+
+                Timeout::new(100, move || cb.emit(())).forget();
             }
 
             BenchMsg::MountingFinish(m) => {
@@ -97,21 +125,98 @@ impl Component for Benchmarks {
 
     fn view(&self) -> Html {
         html! {
-            <div>
+            <div class=self.style()>
                 {
                     if !self.finished {
-                        html!{<div>{"Benchmarking... The browser may be unresponsive during the benchmark."}</div>}
+                        html!{<div class="running">{"Benchmarking..."}<br />{"The browser may be unresponsive during the benchmark."}</div>}
                     } else {
-                        Html::default()
+                        html!{<div class="running" />}
                     }
                 }
-                <div>{"Parse Simple (100,000 iterations): "}{self.parse_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</div>
-                <div>{"Parse Complex (10,000 iterations): "}{self.parse_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</div>
-                <div>{"Cached Lookup (1,000,000 iterations): "}{self.cached_lookup.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</div>
-                <div>{"Cached Lookup, Big Sheet (100,000 iterations): "}{self.cached_lookup_big_sheet.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</div>
-                <div>{"Mounting (1,000 iterations): "}{self.mounting.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>{"Benchmark"}</th>
+                            <th>{"Result"}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <th>{"Parse Simple (100,000 iterations): "}</th>
+                            <th>{self.parse_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+
+                        <tr>
+                            <th>{"Parse Complex (10,000 iterations): "}</th>
+                            <th>{self.parse_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+                        <tr>
+                            <th>{"Cached Lookup (1,000,000 iterations): "}</th>
+                            <th>{self.cached_lookup.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+                        <tr>
+                            <th>{"Cached Lookup, Big Sheet (100,000 iterations): "}</th>
+                            <th>{self.cached_lookup_big_sheet.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+                        <tr>
+                            <th>{"Mounting (1,000 iterations): "}</th>
+                            <th>{self.mounting.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         }
+    }
+}
+
+impl YieldStyle for Benchmarks {
+    fn style_str(&self) -> Cow<'static, str> {
+        r#"
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+
+            .running {
+                height: 50px;
+            }
+
+            table {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+
+            thead {
+                font-weight: bold;
+                background-color: rgb(240, 240, 240);
+            }
+
+            th {
+                text-align: left;
+                border: 1px solid black;
+                border-collapse: collapse;
+                padding: 5px;
+            }
+
+            tbody th {
+                font-weight: normal;
+            }
+
+            th:nth-child(1) {
+                padding-right: 20px;
+            }
+
+            th:nth-child(2) {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            tbody tr:nth-child(even) {
+                background-color: rgb(240, 240, 240);
+            }
+        "#
+        .into()
     }
 }
 
@@ -150,19 +255,49 @@ impl Component for App {
 
     fn view(&self) -> Html {
         html! {
-            <div>
-
-                {
-                    if self.started {
-                        html!{<Benchmarks />}
-                    } else {
-                        html!{<button onclick=self.link.callback(|_| AppMsg::Start)>
-                            {"Start!"}
-                        </button>}
+            <>
+                <GlobalStyle css=GLOBAL_STYLE />
+                <div class=self.style()>
+                    <h1>{"Stylist Benchmark"}</h1>
+                    {
+                        if self.started {
+                            html!{<Benchmarks />}
+                        } else {
+                            html!{
+                                <>
+                                    <div class="before-intro">{"To start benchmarking, please click start:"}</div>
+                                    <button onclick=self.link.callback(|_| AppMsg::Start)>
+                                        {"Start!"}
+                                    </button>
+                                </>
+                            }
+                        }
                     }
-                }
-            </div>
+                </div>
+            </>
         }
+    }
+}
+
+impl YieldStyle for App {
+    fn style_str(&self) -> Cow<'static, str> {
+        r#"
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+
+            .before-intro {
+                padding-bottom: 20px;
+            }
+
+            button {
+                width: 300px;
+                height: 50px;
+                font-size: 20px;
+            }
+        "#
+        .into()
     }
 }
 
