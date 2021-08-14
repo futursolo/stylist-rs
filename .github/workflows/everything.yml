@@ -53,25 +53,11 @@ jobs:
           target: wasm32-unknown-unknown
           profile: minimal
 
-      - name: "Test Example: yew-integration"
-        working-directory: ./examples/yew-integration
-        run: trunk build
-
-      - name: "Test Example: yew-theme-agent"
-        working-directory: ./examples/yew-theme-agent
-        run: trunk build
-
-      - name: "Test Example: yew-theme-yewdux"
-        working-directory: ./examples/yew-theme-yewdux
-        run: trunk build
-
-      - name: "Test Example: yew-global-style"
-        working-directory: ./examples/yew-global-style
-        run: trunk build
-
-      - name: "Test Example: yew-counter-style"
-        working-directory: ./examples/yew-counter-style
-        run: trunk build
+      - name: Run cargo build --all-features --all --target=wasm32-unknown-unknown
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all-features --all --target=wasm32-unknown-unknown
 
   publish:
     name: Publish to crates.io

@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use stylist::yew::GlobalStyle;
 use stylist::{Style, YieldStyle};
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
@@ -38,8 +39,18 @@ impl YieldStyle for Inside {
     // So you can create style dynamically (theming).
     fn style_str(&self) -> Cow<'static, str> {
         r#"
-            background-color: blue;
-            width: 100px;
+            width: 200px;
+            height: 200px;
+            border-radius: 5px;
+
+            background: black;
+
+            padding: 15px;
+            box-sizing: border-box;
+
+            box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+            color: white;
+
         "#
         .into()
     }
@@ -57,7 +68,20 @@ impl Component for App {
         // Alternatively, you can create Style manually during Component creation.
         let style = Style::new(
             r#"
-                background-color: red;
+                box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+                height: 500px;
+                width: 500px;
+                border-radius: 5px;
+
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+
+                padding: 15px;
+                box-sizing: border-box;
+
+                flex-direction: column;
+                background-color: white;
             "#,
         )
         .unwrap();
@@ -74,10 +98,30 @@ impl Component for App {
 
     fn view(&self) -> Html {
         html! {
-            <div class=self.style.clone()>
-                {"The quick brown fox jumps over the lazy dog"}
-                <Inside />
-            </div>
+            <>
+                // Global Styles can be applied with <GlobalStyle /> component.
+                <GlobalStyle css=r#"
+                    &, & body {
+                        font-family: sans-serif;
+
+                        padding: 0;
+                        margin: 0;
+
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        flex-direction: column;
+
+                        background-color: rgb(237, 244, 255);
+                    }
+                "# />
+                <h1>{"Yew Integration"}</h1>
+                <div class=self.style.clone()>
+                    {"The quick brown fox jumps over the lazy dog"}
+                    <Inside />
+                </div>
+            </>
         }
     }
 }
