@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use stylist::yew::GlobalStyle;
 use stylist::YieldStyle;
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 use yewdux::prelude::*;
@@ -33,9 +34,23 @@ impl Component for BaseInside {
     }
 
     fn view(&self) -> Html {
+        let theme_str = match self.dispatch.state().theme.kind {
+            ThemeKind::Light => "Dark Theme",
+            ThemeKind::Dark => "Light Theme",
+        };
+
+        let other_theme = match self.dispatch.state().theme.kind {
+            ThemeKind::Light => ThemeKind::Dark,
+            ThemeKind::Dark => ThemeKind::Light,
+        };
+
+        let switch_theme = self
+            .dispatch
+            .callback(move |_| Action::SetTheme(other_theme.clone()));
+
         html! {
             <div class=self.style()>
-                {"The quick brown fox jumps over the lazy dog"}
+                <button onclick=switch_theme>{"Switch to "}{theme_str}</button>
             </div>
         }
     }
@@ -43,14 +58,17 @@ impl Component for BaseInside {
 
 impl YieldStyle for BaseInside {
     fn style_str(&self) -> Cow<'static, str> {
-        let theme = self.dispatch.state().theme.current();
-
-        format!(
-            r#"
-                color: {font_color};
-            "#,
-            font_color = theme.font_color
-        )
+        r#"
+            button {
+                color: white;
+                height: 50px;
+                width: 300px;
+                font-size: 20px;
+                background-color: rgb(88, 164, 255);
+                border-radius: 5px;
+                border: none;
+            }
+        "#
         .into()
     }
 }
@@ -78,22 +96,43 @@ impl Component for App {
     }
 
     fn view(&self) -> Html {
-        let theme_kind = self.dispatch.state().theme.kind.clone();
+        let theme = self.dispatch.state().theme.clone();
 
-        let other_theme = match theme_kind {
-            ThemeKind::Light => ThemeKind::Dark,
-            ThemeKind::Dark => ThemeKind::Light,
+        let theme_str = match theme.kind {
+            ThemeKind::Light => "light theme",
+            ThemeKind::Dark => "dark theme",
         };
 
-        let toggle_theme = self
-            .dispatch
-            .callback(move |_| Action::SetTheme(other_theme.clone()));
-
         html! {
-            <div class=self.style()>
-                <Inside />
-                <button onclick=toggle_theme>{"Toggle Theme"}</button>
-            </div>
+            <>
+                // Global Styles can be applied with <GlobalStyle /> component.
+                <GlobalStyle css=format!(
+                    r#"
+                        &, & body {{
+                            font-family: sans-serif;
+
+                            padding: 0;
+                            margin: 0;
+
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                            flex-direction: column;
+
+                            background-color: {bg};
+                            color: {ft_color};
+                        }}
+                    "#,
+                    bg = theme.current().background_color,
+                    ft_color = theme.current().font_color,
+                ) />
+                <h1>{"Yew Theming w/ Yewdux"}</h1>
+                <div class=self.style()>
+                    {"You are now using the "}{theme_str}{"!"}
+                    <Inside />
+                </div>
+            </>
         }
     }
 }
@@ -104,11 +143,22 @@ impl YieldStyle for App {
 
         format!(
             r#"
-                height: 100vh;
-                width: 100vw;
-                background-color: {bg_color};
+                box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+                height: 500px;
+                width: 500px;
+                border-radius: 5px;
+
+                display: flex;
+                justify-content: space-around;
+                align-items: center;
+
+                padding: 15px;
+                box-sizing: border-box;
+
+                flex-direction: column;
+                background-color: {bg};
             "#,
-            bg_color = theme.background_color
+            bg = theme.paper_color
         )
         .into()
     }

@@ -3,8 +3,8 @@ use crate::{Error, Result};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while},
-    character::complete::one_of,
-    combinator::{map, map_res, opt},
+    character::complete::{anychar, none_of, one_of},
+    combinator::{map, map_res, opt, recognize},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
     multi::{fold_many0, many0, many1, separated_list0},
     sequence::{delimited, preceded, separated_pair, terminated},
@@ -34,7 +34,7 @@ impl Parser {
         Self::expect_non_empty(i)?;
 
         let chars = " \t\r\n";
-        take_while(move |c| chars.contains(c))(i)
+        context("Whitespace", take_while(move |c| chars.contains(c)))(i)
     }
 
     /// Drop whitespaces
@@ -122,6 +122,53 @@ impl Parser {
         result
     }
 
+    /// Parse a quoted string.
+    fn string(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("String: {}", i);
+
+        Self::expect_non_empty(i)?;
+
+        let escaped_char = context("EscapedChar", recognize(preceded(tag("\\"), anychar)));
+
+        let parse_str = recognize(preceded(
+            tag("\""),
+            terminated(many0(alt((is_not(r#"\""#), escaped_char))), tag("\"")),
+        ));
+
+        let result = context("String", Self::trimmed(parse_str))(i);
+
+        #[cfg(test)]
+        trace!("String: {:#?}", result);
+
+        result
+    }
+
+    /// Parse a selector.
+    fn condition(i: &str) -> IResult<&str, String, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Condition: {}", i);
+
+        Self::expect_non_empty(i)?;
+
+        let result = context(
+            "Condition",
+            Self::trimmed(map(
+                recognize(preceded(
+                    none_of("}@"),
+                    many1(alt((is_not("\"{"), Self::string))),
+                )),
+                |p: &str| p.to_string(),
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Condition: {:#?}", result);
+
+        result
+    }
+
+    /// Parse a [`Block`].
     fn block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Block: {}", i);
@@ -132,11 +179,11 @@ impl Parser {
             "StyleBlock",
             Self::trimmed(map(
                 separated_pair(
-                    is_not("}@{"),
+                    Self::condition,
                     tag("{"),
                     terminated(terminated(Parser::attributes, opt(Parser::sp)), tag("}")),
                 ),
-                |p: (&str, Vec<StyleAttribute>)| {
+                |p: (String, Vec<StyleAttribute>)| {
                     ScopeContent::Block(Block {
                         condition: Some(p.0.trim().to_string()),
                         style_attributes: p.1,
@@ -183,16 +230,21 @@ impl Parser {
             "Rule",
             Self::trimmed(map_res(
                 separated_pair(
-                    preceded(tag("@"), is_not("{")),
+                    recognize(preceded(tag("@"), is_not("{"))),
                     tag("{"),
                     terminated(terminated(Self::rule_contents, opt(Parser::sp)), tag("}")),
                 ),
                 |p: (&str, Vec<RuleContent>)| {
-                    if p.0.starts_with("media") {
+                    if p.0.starts_with("@media") {
                         return Err(String::from("Not a media query"));
                     }
+
+                    if p.0.starts_with("@supports") {
+                        return Err(String::from("Not a support at rule"));
+                    }
+
                     Ok(ScopeContent::Rule(Rule {
-                        condition: format!("@{}", p.0),
+                        condition: p.0.trim().to_string(),
                         content: p.1,
                     }))
                 },
@@ -366,28 +418,31 @@ impl Parser {
         result
     }
 
-    /// Parse `@media`
-    fn media_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
+    /// Parse `@supports` and `@media`
+    fn at_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
-        trace!("Media Rule: {}", i);
+        trace!("At Rule: {}", i);
 
-        // Cannot accept empty media.
+        // Cannot accept empty rule.
         Self::expect_non_empty(i)?;
 
         let result = context(
-            "MediaRule",
+            "AtRule",
             Self::trimmed(map(
                 separated_pair(
-                    // Collect Media Rules.
-                    preceded(tag("@media "), is_not("{")),
+                    // Collect at Rules.
+                    recognize(preceded(
+                        alt((tag("@supports "), tag("@media "))),
+                        is_not("{"),
+                    )),
                     tag("{"),
-                    // Collect contents with-in media rules.
+                    // Collect contents with-in supports rules.
                     terminated(Parser::scope_contents, tag("}")),
                 ),
                 // Map Results into a scope
                 |mut p: (&str, Vec<ScopeContent>)| {
                     ScopeContent::Rule(Rule {
-                        condition: format!("@media {}", p.0.trim()),
+                        condition: p.0.trim().to_string(),
                         content: p.1.drain(..).map(|i| i.into()).collect(),
                     })
                 },
@@ -395,19 +450,19 @@ impl Parser {
         )(i);
 
         #[cfg(test)]
-        trace!("Media Rule: {:#?}", result);
+        trace!("At Rule: {:#?}", result);
 
         result
     }
 
     /// Parse sheet
-    /// A Scope can be either a media rule or a css scope.
+    /// A Scope can be either an at rule or a css scope.
     fn sheet(i: &str) -> IResult<&str, Sheet, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Sheet: {}", i);
 
-        let media_rule = map(Self::media_rule, |s| vec![s]);
-        let contents = alt((media_rule, Self::scope));
+        let at_rule = map(Self::at_rule, |s| vec![s]);
+        let contents = alt((at_rule, Self::scope));
         let result = context(
             "StyleSheet",
             // Drop trailing whitespaces.
@@ -429,10 +484,21 @@ impl Parser {
     /// The parse the style and returns a `Result<Sheet>`.
     pub(crate) fn parse(css: &str) -> Result<Sheet> {
         match Self::sheet(css) {
-            Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => {
-                Err(Error::Parse(convert_error(css, e)))
-            }
-            Err(nom::Err::Incomplete(e)) => Err(Error::Parse(format!("{:#?}", e))),
+            // Converting to String, primarily due to lifetime requirements.
+            Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => Err(Error::Parse {
+                reason: convert_error(css, e.clone()),
+                source: Some(VerboseError {
+                    errors: e
+                        .errors
+                        .into_iter()
+                        .map(|(i, e)| (i.to_string(), e))
+                        .collect(),
+                }),
+            }),
+            Err(nom::Err::Incomplete(e)) => Err(Error::Parse {
+                reason: format!("{:#?}", e),
+                source: None,
+            }),
             Ok((_, res)) => Ok(res),
         }
     }
@@ -491,6 +557,71 @@ mod tests {
                 ],
             }),
         ]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_simple_selector_with_at() {
+        init();
+
+        let test_str = r#"
+            background-color: red;
+
+            [placeholder="someone@example.com"] {
+                background-color: blue;
+                width: 100px
+            }"#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet(vec![
+            ScopeContent::Block(Block {
+                condition: None,
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".to_string(),
+                    value: "red".to_string(),
+                }],
+            }),
+            ScopeContent::Block(Block {
+                condition: Some(r#"[placeholder="someone@example.com"]"#.into()),
+                style_attributes: vec![
+                    StyleAttribute {
+                        key: "background-color".to_string(),
+                        value: "blue".to_string(),
+                    },
+                    StyleAttribute {
+                        key: "width".to_string(),
+                        value: "100px".to_string(),
+                    },
+                ],
+            }),
+        ]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_simple_escape() {
+        init();
+
+        let test_str = r#"
+            [placeholder="\" {}"] {
+                background-color: blue;
+                width: 100px
+            }"#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet(vec![ScopeContent::Block(Block {
+            condition: Some(r#"[placeholder="\" {}"]"#.into()),
+            style_attributes: vec![
+                StyleAttribute {
+                    key: "background-color".to_string(),
+                    value: "blue".to_string(),
+                },
+                StyleAttribute {
+                    key: "width".to_string(),
+                    value: "100px".to_string(),
+                },
+            ],
+        })]);
         assert_eq!(parsed, expected);
     }
 
@@ -590,6 +721,67 @@ mod tests {
                     key: "color".into(),
                     value: "yellow".into(),
                 }],
+            }),
+        ]);
+
+        assert_eq!(parsed, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_supports_rule() -> Result<()> {
+        init();
+
+        let test_str = r#"
+                @supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)) {
+                    backdrop-filter: blur(2px);
+                    -webkit-backdrop-filter: blur(2px);
+                    background-color: rgb(0, 0, 0, 0.7);
+                }
+
+                @supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))) {
+                    background-color: rgb(25, 25, 25);
+                }
+
+            "#;
+        let parsed = Parser::parse(test_str)?;
+
+        let expected = Sheet(vec![
+            ScopeContent::Rule(Rule {
+                condition:
+                    "@supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))"
+                        .into(),
+                content: vec![RuleContent::Block(Block {
+                    condition: None,
+                    style_attributes: vec![
+                        StyleAttribute {
+                            key: "backdrop-filter".into(),
+                            value: "blur(2px)".into(),
+                        },
+                        StyleAttribute {
+                            key: "-webkit-backdrop-filter".into(),
+                            value: "blur(2px)".into(),
+                        },
+                        StyleAttribute {
+                            key: "background-color".into(),
+                            value: "rgb(0, 0, 0, 0.7)".into(),
+                        }
+                    ],
+                })],
+            }),
+
+            ScopeContent::Rule(Rule {
+                condition:
+                    "@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)))"
+                        .into(),
+                content: vec![RuleContent::Block(Block {
+                    condition: None,
+                    style_attributes: vec![StyleAttribute {
+                        key: "background-color".into(),
+                        value: "rgb(25, 25, 25)".into(),
+                    }],
+                })],
             }),
         ]);
 

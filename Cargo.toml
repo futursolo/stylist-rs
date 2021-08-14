@@ -2,10 +2,9 @@
 members = [
     "packages/stylist",
     "packages/stylist-core",
+    "examples/benchmarks",
     "examples/yew-integration",
     "examples/yew-shadow",
     "examples/yew-theme-agent",
     "examples/yew-theme-yewdux",
-    "examples/yew-global-style",
-    "examples/yew-counter-style",
 ]

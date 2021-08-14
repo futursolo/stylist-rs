@@ -3,8 +3,12 @@ use thiserror::Error;
 #[derive(Debug, Error)]
 pub enum Error {
     /// Failed to parse CSS.
-    #[error("Failed to Parse CSS, due to: {}", .0)]
-    Parse(String),
+    #[error("Failed to Parse CSS, due to:\n{}", .reason)]
+    Parse {
+        reason: String,
+        #[source]
+        source: Option<nom::error::VerboseError<String>>,
+    },
 
     /// Failed to interact with Web API.
     ///

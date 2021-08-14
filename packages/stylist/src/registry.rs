@@ -6,16 +6,16 @@ use crate::ast::Sheet;
 use crate::Style;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub(crate) struct StyleKey {
+pub struct StyleKey<'a> {
     pub prefix: Cow<'static, str>,
-    pub ast: Arc<Sheet>,
+    pub ast: Cow<'a, Sheet>,
 }
 
 /// The style registry is just a global struct that makes sure no style gets lost.
 /// Every style automatically registers with the style registry.
 #[derive(Debug, Default)]
 pub struct StyleRegistry {
-    styles: HashMap<StyleKey, Style>,
+    styles: HashMap<Arc<StyleKey<'static>>, Style>,
 }
 
 impl StyleRegistry {
@@ -26,12 +26,12 @@ impl StyleRegistry {
         }
     }
 
-    pub(crate) fn unregister(&mut self, key: &StyleKey) {
-        self.styles.remove(key);
+    pub(crate) fn unregister(&mut self, key: Arc<StyleKey<'static>>) {
+        self.styles.remove(&key);
     }
 
-    pub(crate) fn get(&self, key: &StyleKey) -> Option<&Style> {
-        self.styles.get(key)
+    pub(crate) fn get(&self, key: &StyleKey<'_>) -> Option<Style> {
+        self.styles.get(key).cloned()
     }
 }
 
