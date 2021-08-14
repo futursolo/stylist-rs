@@ -50,6 +50,7 @@ env_logger = "0.9"
 [features]
 default = ["rand"]
 yew_integration = ["yew"]
+style_manager = []
 
 [package.metadata.docs.rs]
 features = ["yew_integration"]

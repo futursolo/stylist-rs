@@ -6,13 +6,12 @@ use crate::ast::Sheet;
 use crate::Style;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub struct StyleKey<'a> {
+pub(crate) struct StyleKey<'a> {
     pub prefix: Cow<'static, str>,
     pub ast: Cow<'a, Sheet>,
 }
 
-/// The style registry is just a global struct that makes sure no style gets lost.
-/// Every style automatically registers with the style registry.
+/// The style registry is a registry that keeps an instance of all styles for current manager.
 #[derive(Debug, Default)]
 pub struct StyleRegistry {
     styles: HashMap<Rc<StyleKey<'static>>, Style>,

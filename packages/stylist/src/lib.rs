@@ -107,10 +107,8 @@
 //! }
 //!
 //! impl Component {
-//!     fn print_style(&self) -> Self {
+//!     fn print_style(&self) {
 //!         println!("{}", self.style().get_class_name());
-//!
-//!         unimplemented!();
 //!     }
 //! }
 //!
@@ -170,8 +168,20 @@ mod bindings;
 #[path = "arch_wasm.rs"]
 mod arch;
 
+#[cfg_attr(documenting, doc(cfg(feature = "style_manager")))]
+#[cfg(feature = "style_manager")]
 pub mod manager;
+
+#[cfg(not(feature = "style_manager"))]
+mod manager;
+
+#[cfg_attr(documenting, doc(cfg(feature = "style_manager")))]
+#[cfg(feature = "style_manager")]
 pub mod registry;
+
+#[cfg(not(feature = "style_manager"))]
+mod registry;
+
 mod style;
 mod utils;
 mod yield_style;

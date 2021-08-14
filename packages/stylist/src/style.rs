@@ -177,6 +177,7 @@ impl Style {
 
     /// Creates a new style from some parsable css with a default prefix using a custom
     /// manager.
+    #[cfg_attr(documenting, doc(cfg(feature = "style_manager")))]
     pub fn new_with_manager<'a, Css, M>(css: Css, manager: M) -> Result<Self>
     where
         Css: IntoSheet<'a>,
@@ -188,6 +189,7 @@ impl Style {
 
     /// Creates a new style with a custom class prefix from some parsable css using a custom
     /// manager.
+    #[cfg_attr(documenting, doc(cfg(feature = "style_manager")))]
     pub fn create_with_manager<'a, N, Css, M>(class_prefix: N, css: Css, manager: M) -> Result<Self>
     where
         N: Into<Cow<'static, str>>,

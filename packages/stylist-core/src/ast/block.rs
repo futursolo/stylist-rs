@@ -14,7 +14,7 @@ use super::{StyleAttribute, ToStyleStr};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Block {
     /// If set to [`None`], signals to substitute with the classname generated for the
-    /// [`Sheet`] in which this is conatined. Otherwise substitute the classname for
+    /// [`Sheet`](super::Sheet) in which this is conatined. Otherwise substitute the classname for
     /// each occuring '&', i.e. `None` is equivalent to `Some("&")`.
     pub condition: Option<String>,
     pub style_attributes: Vec<StyleAttribute>,

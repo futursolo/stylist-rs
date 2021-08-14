@@ -21,7 +21,7 @@ pub trait StyleManager: fmt::Debug {
         "stylist".into()
     }
 
-    /// Returns an [`Arc<Mutex<StyleRegistry>>`] of [`StyleRegistry`].
+    /// Returns an [`Rc<RefCell<StyleRegistry>>`] of [`StyleRegistry`].
     fn get_registry(&self) -> Rc<RefCell<StyleRegistry>>;
 
     /// Returns the container element of all styles managed by this StyleManager.
