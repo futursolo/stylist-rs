@@ -1,6 +1,7 @@
 use crate::{Error, Result};
 use once_cell::sync::OnceCell;
 use std::borrow::Cow;
+use std::fmt;
 use std::ops::Deref;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -9,6 +10,27 @@ use crate::ast::{IntoSheet, Sheet, ToStyleStr};
 use crate::manager::{DefaultManager, StyleManager};
 use crate::registry::StyleKey;
 use crate::utils::get_entropy;
+
+/// The Unique Identifier of a Style
+/// This is currently the same as the class name of a style.
+/// But this may change in the future.
+///
+/// This is primarily used by [`StyleManager`] to track the mounted instance of [`Style`].
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct StyleId(String);
+
+impl Deref for StyleId {
+    type Target = str;
+    fn deref(&self) -> &Self::Target {
+        self.0.as_str()
+    }
+}
+
+impl fmt::Display for StyleId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug)]
 struct StyleContent {
@@ -19,10 +41,17 @@ struct StyleContent {
 
     style_str: OnceCell<String>,
 
+    id: OnceCell<StyleId>,
+
     manager: Box<dyn StyleManager>,
 }
 
 impl StyleContent {
+    fn id(&self) -> &StyleId {
+        self.id
+            .get_or_init(|| StyleId(self.get_class_name().to_owned()))
+    }
+
     fn get_class_name(&self) -> &str {
         &self.class_name
     }
@@ -34,7 +63,7 @@ impl StyleContent {
 
     #[cfg(target_arch = "wasm32")]
     fn unmount(&self) -> Result<()> {
-        self.manager().unmount(self.get_class_name())
+        self.manager().unmount(self.id())
     }
 
     fn key(&self) -> &StyleKey {
@@ -86,6 +115,7 @@ impl Style {
             inner: StyleContent {
                 class_name: format!("{}-{}", key.prefix, get_entropy()),
                 style_str: OnceCell::new(),
+                id: OnceCell::new(),
                 key,
                 manager: Box::new(manager) as Box<dyn StyleManager>,
             }
@@ -206,13 +236,18 @@ impl Style {
         self.inner.key()
     }
 
-    /// Unregister current style from style registry
+    /// Unregister current style from style registry.
     ///
     /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
     pub fn unregister(&self) {
         let reg = self.inner.manager().get_registry();
         let mut reg = reg.lock().unwrap();
         reg.unregister(&*self.key());
+    }
+
+    /// Returns the [`StyleId`] for current style.
+    pub fn id(&self) -> &StyleId {
+        self.inner.id()
     }
 }
 

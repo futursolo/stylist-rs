@@ -6,7 +6,7 @@ use crate::ast::Sheet;
 use crate::Style;
 
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
-pub struct StyleKey {
+pub(crate) struct StyleKey {
     pub prefix: Cow<'static, str>,
     pub ast: Arc<Sheet>,
 }
@@ -19,18 +19,18 @@ pub struct StyleRegistry {
 }
 
 impl StyleRegistry {
-    pub fn register(&mut self, style: Style) {
+    pub(crate) fn register(&mut self, style: Style) {
         let key = style.key().clone();
         if self.styles.insert(key, style).is_some() {
             panic!("A Style with this StyleKey has already been created.");
         }
     }
 
-    pub fn unregister(&mut self, key: &StyleKey) {
+    pub(crate) fn unregister(&mut self, key: &StyleKey) {
         self.styles.remove(key);
     }
 
-    pub fn get(&self, key: &StyleKey) -> Option<&Style> {
+    pub(crate) fn get(&self, key: &StyleKey) -> Option<&Style> {
         self.styles.get(key)
     }
 }

@@ -167,9 +167,9 @@
 #[doc(hidden)]
 mod bindings;
 
-#[cfg(target_arch = "wasm32")]
 #[path = "arch_wasm.rs"]
 mod arch;
+
 pub mod manager;
 pub mod registry;
 mod style;
