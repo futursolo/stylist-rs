@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 use super::ToStyleStr;
@@ -10,7 +11,7 @@ use super::ToStyleStr;
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Selector {
-    pub inner: String,
+    pub inner: Cow<'static, str>,
 }
 
 impl ToStyleStr for Selector {
@@ -26,7 +27,7 @@ impl ToStyleStr for Selector {
     }
 }
 
-impl<T: Into<String>> From<T> for Selector {
+impl<T: Into<Cow<'static, str>>> From<T> for Selector {
     fn from(s: T) -> Self {
         Self { inner: s.into() }
     }

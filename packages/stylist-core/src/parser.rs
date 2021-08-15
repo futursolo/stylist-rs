@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use crate::ast::{Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StyleAttribute};
 use crate::{Error, Result};
 use nom::{
@@ -159,7 +161,7 @@ impl Parser {
                     none_of(",}@{"),
                     many1(alt((is_not(" \t\r\n,\"{"), Self::string))),
                 )),
-                |p: &str| p.into(),
+                |p: &str| p.to_owned().into(),
             )),
         )(i);
 
@@ -204,7 +206,7 @@ impl Parser {
                 ),
                 |p: (Vec<Selector>, Vec<StyleAttribute>)| {
                     ScopeContent::Block(Block {
-                        condition: p.0,
+                        condition: p.0.into(),
                         style_attributes: p.1,
                     })
                 },
@@ -384,7 +386,7 @@ impl Parser {
                 Parser::dangling_attributes,
                 |attr: Vec<StyleAttribute>| {
                     ScopeContent::Block(Block {
-                        condition: Vec::new(),
+                        condition: Cow::Borrowed(&[]),
                         style_attributes: attr,
                     })
                 },
@@ -552,14 +554,14 @@ mod tests {
 
         let expected = Sheet(vec![
             ScopeContent::Block(Block {
-                condition: Vec::new(),
+                condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
                     key: "background-color".to_string(),
                     value: "red".to_string(),
                 }],
             }),
             ScopeContent::Block(Block {
-                condition: vec![".nested".into()],
+                condition: vec![".nested".into()].into(),
                 style_attributes: vec![
                     StyleAttribute {
                         key: "background-color".to_string(),
@@ -590,14 +592,14 @@ mod tests {
 
         let expected = Sheet(vec![
             ScopeContent::Block(Block {
-                condition: Vec::new(),
+                condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
                     key: "background-color".to_string(),
                     value: "red".to_string(),
                 }],
             }),
             ScopeContent::Block(Block {
-                condition: vec![r#"[placeholder="someone@example.com"]"#.into()],
+                condition: vec![r#"[placeholder="someone@example.com"]"#.into()].into(),
                 style_attributes: vec![
                     StyleAttribute {
                         key: "background-color".to_string(),
@@ -625,7 +627,7 @@ mod tests {
         let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
 
         let expected = Sheet(vec![ScopeContent::Block(Block {
-            condition: vec![r#"[placeholder="\" {}"]"#.into()],
+            condition: vec![r#"[placeholder="\" {}"]"#.into()].into(),
             style_attributes: vec![
                 StyleAttribute {
                     key: "background-color".to_string(),
@@ -650,7 +652,7 @@ mod tests {
         let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
 
         let expected = Sheet(vec![ScopeContent::Block(Block {
-            condition: vec!["&:hover".into()],
+            condition: vec!["&:hover".into()].into(),
             style_attributes: vec![StyleAttribute {
                 key: "background-color".to_string(),
                 value: "#d0d0d9".to_string(),
@@ -679,7 +681,7 @@ mod tests {
             ScopeContent::Rule(Rule {
                 condition: "@media screen and (max-width: 500px)".into(),
                 content: vec![RuleContent::Block(Block {
-                    condition: Vec::new(),
+                    condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "red".into(),
@@ -689,7 +691,7 @@ mod tests {
             ScopeContent::Rule(Rule {
                 condition: "@media screen and (max-width: 200px)".into(),
                 content: vec![RuleContent::Block(Block {
-                    condition: Vec::new(),
+                    condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "color".into(),
                         value: "yellow".into(),
@@ -723,7 +725,7 @@ mod tests {
             ScopeContent::Rule(Rule {
                 condition: "@media screen and (max-width: 500px)".into(),
                 content: vec![RuleContent::Block(Block {
-                    condition: Vec::new(),
+                    condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "red".into(),
@@ -731,7 +733,7 @@ mod tests {
                 })],
             }),
             ScopeContent::Block(Block {
-                condition: vec![".some-class2".into()],
+                condition: vec![".some-class2".into()].into(),
                 style_attributes: vec![StyleAttribute {
                     key: "color".into(),
                     value: "yellow".into(),
@@ -757,7 +759,7 @@ mod tests {
         let parsed = Parser::parse(test_str)?;
 
         let expected = Sheet(vec![ScopeContent::Block(Block {
-            condition: vec!["div".into(), "span".into()],
+            condition: vec!["div".into(), "span".into()].into(),
             style_attributes: vec![StyleAttribute {
                 key: "color".into(),
                 value: "yellow".into(),
@@ -793,7 +795,7 @@ mod tests {
                     "@supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))"
                         .into(),
                 content: vec![RuleContent::Block(Block {
-                    condition: Vec::new(),
+                    condition: Cow::Borrowed(&[]),
                     style_attributes: vec![
                         StyleAttribute {
                             key: "backdrop-filter".into(),
@@ -816,7 +818,7 @@ mod tests {
                     "@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)))"
                         .into(),
                 content: vec![RuleContent::Block(Block {
-                    condition: Vec::new(),
+                    condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "rgb(25, 25, 25)".into(),

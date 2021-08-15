@@ -39,19 +39,20 @@ pub use to_style_str::ToStyleStr;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::borrow::Cow;
 
     #[test]
     fn test_scope_building_without_condition() {
         let test_block = Sheet(vec![
             ScopeContent::Block(Block {
-                condition: Vec::new(),
+                condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
                     key: String::from("width"),
                     value: String::from("100vw"),
                 }],
             }),
             ScopeContent::Block(Block {
-                condition: vec![".inner".into()],
+                condition: vec![".inner".into()].into(),
                 style_attributes: vec![StyleAttribute {
                     key: String::from("background-color"),
                     value: String::from("red"),
@@ -96,14 +97,14 @@ width: 200px;
             condition: String::from("@media only screen and (min-width: 1000px)"),
             content: vec![
                 RuleContent::Block(Block {
-                    condition: Vec::new(),
+                    condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: String::from("width"),
                         value: String::from("100vw"),
                     }],
                 }),
                 RuleContent::Block(Block {
-                    condition: vec![".inner".into()],
+                    condition: vec![".inner".into()].into(),
                     style_attributes: vec![StyleAttribute {
                         key: String::from("background-color"),
                         value: String::from("red"),

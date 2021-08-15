@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 use super::{Selector, StyleAttribute, ToStyleStr};
@@ -16,7 +17,7 @@ pub struct Block {
     /// If set to [`None`], signals to substitute with the classname generated for the
     /// [`Sheet`] in which this is conatined. Otherwise substitute the classname for
     /// each occuring '&', i.e. `None` is equivalent to `Some("&")`.
-    pub condition: Vec<Selector>,
+    pub condition: Cow<'static, [Selector]>,
     pub style_attributes: Vec<StyleAttribute>,
 }
 
