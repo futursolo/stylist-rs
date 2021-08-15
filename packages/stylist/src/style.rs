@@ -248,6 +248,10 @@ mod tests {
                 @supports (display: grid) {
                     display: grid;
                 }
+
+                header, footer {
+                    border: 1px solid black;
+                }
             "#,
         )
         .expect("Failed to create Style.");
@@ -270,6 +274,9 @@ color: yellow;
 .{style_name} {{
 display: grid;
 }}
+}}
+.{style_name} header, .{style_name} footer {{
+border: 1px solid black;
 }}
 "#,
                 style_name = style.get_class_name()

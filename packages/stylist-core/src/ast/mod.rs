@@ -21,6 +21,7 @@ mod into_sheet;
 mod rule;
 mod rule_content;
 mod scope_content;
+mod selector;
 mod sheet;
 mod style_attr;
 mod to_style_str;
@@ -30,6 +31,7 @@ pub use into_sheet::IntoSheet;
 pub use rule::Rule;
 pub use rule_content::RuleContent;
 pub use scope_content::ScopeContent;
+pub use selector::Selector;
 pub use sheet::Sheet;
 pub use style_attr::StyleAttribute;
 pub use to_style_str::ToStyleStr;
@@ -42,14 +44,14 @@ mod tests {
     fn test_scope_building_without_condition() {
         let test_block = Sheet(vec![
             ScopeContent::Block(Block {
-                condition: None,
+                condition: Vec::new(),
                 style_attributes: vec![StyleAttribute {
                     key: String::from("width"),
                     value: String::from("100vw"),
                 }],
             }),
             ScopeContent::Block(Block {
-                condition: Some(String::from(".inner")),
+                condition: vec![".inner".into()],
                 style_attributes: vec![StyleAttribute {
                     key: String::from("background-color"),
                     value: String::from("red"),
@@ -94,14 +96,14 @@ width: 200px;
             condition: String::from("@media only screen and (min-width: 1000px)"),
             content: vec![
                 RuleContent::Block(Block {
-                    condition: None,
+                    condition: Vec::new(),
                     style_attributes: vec![StyleAttribute {
                         key: String::from("width"),
                         value: String::from("100vw"),
                     }],
                 }),
                 RuleContent::Block(Block {
-                    condition: Some(String::from(".inner")),
+                    condition: vec![".inner".into()],
                     style_attributes: vec![StyleAttribute {
                         key: String::from("background-color"),
                         value: String::from("red"),
