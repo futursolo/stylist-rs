@@ -6,7 +6,8 @@
 - `Style::new()` and `Style::create()` now takes a new trait `IntoSheet` for
   Stylesheet which is implemented by default for both
 `stylist::ast::Sheet` and everything that implements `AsRef<str>`.
-- Feature `yew` has been renamed back to `yew_integration`
+- Feature `yew` has been renamed back to `yew_integration`.
+- Selectors list now gets a class name added for each selector.
 
 ### Other Changes:
 - Added a `<GlobalStyle />` Component for global styling.
@@ -16,6 +17,7 @@
 - Moved AST and Parser logic to a new crate `stylist_core`.
 - AST has been exposed under `stylist::ast`.
 - Improved performance for look ups for cached styles.
+- Improved Examples.
 - Documentation now shows feature flags.
 
 ## v0.7
