@@ -43,23 +43,25 @@ mod tests {
 
     #[test]
     fn test_scope_building_without_condition() {
-        let test_block = Sheet(vec![
+        let test_block = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
-                    key: String::from("width"),
-                    value: String::from("100vw"),
-                }],
+                    key: "width".into(),
+                    value: "100vw".into(),
+                }]
+                .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![".inner".into()].into(),
                 style_attributes: vec![StyleAttribute {
-                    key: String::from("background-color"),
-                    value: String::from("red"),
-                }],
+                    key: "background-color".into(),
+                    value: "red".into(),
+                }]
+                .into(),
             }),
             ScopeContent::Rule(Rule {
-                condition: String::from("@keyframes move"),
+                condition: "@keyframes move".into(),
                 content: vec![String::from(
                     r#"from {
 width: 100px;
@@ -68,7 +70,8 @@ to {
 width: 200px;
 }"#,
                 )
-                .into()],
+                .into()]
+                .into(),
             }),
         ]);
         assert_eq!(
@@ -93,36 +96,41 @@ width: 200px;
 
     #[test]
     fn test_scope_building_with_condition() {
-        let test_block = Sheet(vec![ScopeContent::Rule(Rule {
-            condition: String::from("@media only screen and (min-width: 1000px)"),
+        let test_block = Sheet::from(vec![ScopeContent::Rule(Rule {
+            condition: "@media only screen and (min-width: 1000px)".into(),
             content: vec![
                 RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
-                        key: String::from("width"),
-                        value: String::from("100vw"),
-                    }],
+                        key: "width".into(),
+                        value: "100vw".into(),
+                    }]
+                    .into(),
                 }),
                 RuleContent::Block(Block {
                     condition: vec![".inner".into()].into(),
                     style_attributes: vec![StyleAttribute {
-                        key: String::from("background-color"),
-                        value: String::from("red"),
-                    }],
+                        key: "background-color".into(),
+                        value: "red".into(),
+                    }]
+                    .into(),
                 }),
-                RuleContent::Rule(Rule {
-                    condition: String::from("@keyframes move"),
-                    content: vec![String::from(
-                        r#"from {
+                RuleContent::Rule(
+                    Rule {
+                        condition: "@keyframes move".into(),
+                        content: vec![r#"from {
 width: 100px;
 }
 to {
 width: 200px;
-}"#,
-                    )
-                    .into()],
-                }),
-            ],
+}"#
+                        .into()]
+                        .into(),
+                    }
+                    .into(),
+                ),
+            ]
+            .into(),
         })]);
         assert_eq!(
             test_block.to_style_str("test"),

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 use super::ToStyleStr;
@@ -8,8 +9,8 @@ use super::ToStyleStr;
 /// E.g.: `color: red`
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StyleAttribute {
-    pub key: String,
-    pub value: String,
+    pub key: Cow<'static, str>,
+    pub value: Cow<'static, str>,
 }
 
 impl ToStyleStr for StyleAttribute {

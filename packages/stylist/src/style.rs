@@ -75,6 +75,62 @@ impl Drop for StyleContent {
 }
 
 /// A struct that represents a scoped Style.
+///
+/// # Style Scoping and Substitution Rule for Current Selector(`&`):
+///
+/// Currently, Stylist processes selectors follow the following rules:
+///
+/// If a style attribute is not in any block (dangling style attribute), it will be scoped with
+///   the generated class name. (Applied to the element where the generated class name is applied
+///   to.)
+///
+///
+///   For example, for the following style:
+///
+///   ```css
+///   color: red;
+///   ```
+///
+///   Stylist will generate the following stylesheet:
+///
+///   ```css
+///   .stylist-uSu9NZZu {
+///       color: red;
+///   }
+///   ```
+///
+///
+/// For style attributes that are in a block, for each selector of that block, the following rules
+///   apply:
+/// - If a selector contains a Current Selector(`&`), the current selector will be substituted with
+///   the generated class name.
+/// - If a selector does not contain a Current Selector, it will be prefixed with the generated
+///   class name.
+///
+///
+///   Example, original style:
+///
+///   ```css
+///   &.invalid input, input:invalid {
+///       color: red;
+///   }
+///
+///   .hint {
+///       font-size: 0.9rem;
+///   }
+///   ```
+///
+///   Stylist generated stylesheet:
+///
+///   ```css
+///   .stylist-uSu9NZZu.invalid input, .stylist-uSu9NZZu input:invalid {
+///       color: red;
+///   }
+///
+///   .stylist-uSu9NZZu .hint {
+///       font-size: 0.9rem;
+///   }
+///   ```
 #[derive(Debug, Clone)]
 pub struct Style {
     inner: Arc<StyleContent>,

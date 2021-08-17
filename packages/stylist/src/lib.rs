@@ -163,6 +163,13 @@
 //! There're theming examples using
 //! [Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
 //! and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
+//!
+//! ## Features Flags
+//!
+//! - `random`: Enabled by default, this flag uses `rand` and `getrandom` to generate a random
+//!   class name. Disabling this flag will opt for a class name that is counter-based.
+//! - `yew_integration`: This flag enables yew integration, which implements [`Classes`](::yew::html::Classes) for
+//!   [`Style`] and provides a [`GlobalStyle`](yew::GlobalStyle) component for applying global styles.
 
 #[doc(hidden)]
 mod bindings;

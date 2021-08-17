@@ -95,8 +95,8 @@ impl Parser {
                     preceded(opt(Parser::cmt), preceded(opt(Parser::sp), is_not(";{}"))),
                 ),
                 move |p: (&str, &str)| StyleAttribute {
-                    key: String::from(p.0.trim()),
-                    value: String::from(p.1.trim()),
+                    key: p.0.trim().to_string().into(),
+                    value: p.1.trim().to_string().into(),
                 },
             )),
         )(i);
@@ -207,7 +207,7 @@ impl Parser {
                 |p: (Vec<Selector>, Vec<StyleAttribute>)| {
                     ScopeContent::Block(Block {
                         condition: p.0.into(),
-                        style_attributes: p.1,
+                        style_attributes: p.1.into(),
                     })
                 },
             )),
@@ -265,8 +265,8 @@ impl Parser {
                     }
 
                     Ok(ScopeContent::Rule(Rule {
-                        condition: p.0.trim().to_string(),
-                        content: p.1,
+                        condition: p.0.trim().to_string().into(),
+                        content: p.1.into(),
                     }))
                 },
             )),
@@ -287,7 +287,9 @@ impl Parser {
 
         let result = context(
             "StyleRuleString",
-            Self::trimmed(map(is_not("{}"), |p| RuleContent::String(String::from(p)))),
+            Self::trimmed(map(is_not("{}"), |p: &str| {
+                RuleContent::String(p.to_string().into())
+            })),
         )(i);
 
         #[cfg(test)]
@@ -342,8 +344,8 @@ impl Parser {
                 ),
                 move |p: (&str, &str)| -> StyleAttribute {
                     StyleAttribute {
-                        key: p.0.trim().to_string(),
-                        value: p.1.trim().to_string(),
+                        key: p.0.trim().to_string().into(),
+                        value: p.1.trim().to_string().into(),
                     }
                 },
             )),
@@ -387,7 +389,7 @@ impl Parser {
                 |attr: Vec<StyleAttribute>| {
                     ScopeContent::Block(Block {
                         condition: Cow::Borrowed(&[]),
-                        style_attributes: attr,
+                        style_attributes: attr.into(),
                     })
                 },
             )),
@@ -463,7 +465,7 @@ impl Parser {
                 // Map Results into a scope
                 |mut p: (&str, Vec<ScopeContent>)| {
                     ScopeContent::Rule(Rule {
-                        condition: p.0.trim().to_string(),
+                        condition: p.0.trim().to_string().into(),
                         content: p.1.drain(..).map(|i| i.into()).collect(),
                     })
                 },
@@ -488,7 +490,7 @@ impl Parser {
             "StyleSheet",
             // Drop trailing whitespaces.
             Self::trimmed(map(many0(contents), |p: Vec<Vec<ScopeContent>>| {
-                Sheet(p.into_iter().flatten().collect())
+                Sheet::from(p.into_iter().flatten().collect::<Vec<ScopeContent>>())
             })),
         )(i);
 
@@ -536,7 +538,6 @@ mod tests {
         let test_str = r#""#;
         assert!(Parser::parse(test_str)
             .expect("Failed to Parse Style")
-            .0
             .is_empty());
     }
 
@@ -552,26 +553,28 @@ mod tests {
             }"#;
         let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
 
-        let expected = Sheet(vec![
+        let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
-                    key: "background-color".to_string(),
-                    value: "red".to_string(),
-                }],
+                    key: "background-color".into(),
+                    value: "red".into(),
+                }]
+                .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![".nested".into()].into(),
                 style_attributes: vec![
                     StyleAttribute {
-                        key: "background-color".to_string(),
-                        value: "blue".to_string(),
+                        key: "background-color".into(),
+                        value: "blue".into(),
                     },
                     StyleAttribute {
-                        key: "width".to_string(),
-                        value: "100px".to_string(),
+                        key: "width".into(),
+                        value: "100px".into(),
                     },
-                ],
+                ]
+                .into(),
             }),
         ]);
         assert_eq!(parsed, expected);
@@ -590,26 +593,28 @@ mod tests {
             }"#;
         let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
 
-        let expected = Sheet(vec![
+        let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
-                    key: "background-color".to_string(),
-                    value: "red".to_string(),
-                }],
+                    key: "background-color".into(),
+                    value: "red".into(),
+                }]
+                .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![r#"[placeholder="someone@example.com"]"#.into()].into(),
                 style_attributes: vec![
                     StyleAttribute {
-                        key: "background-color".to_string(),
-                        value: "blue".to_string(),
+                        key: "background-color".into(),
+                        value: "blue".into(),
                     },
                     StyleAttribute {
-                        key: "width".to_string(),
-                        value: "100px".to_string(),
+                        key: "width".into(),
+                        value: "100px".into(),
                     },
-                ],
+                ]
+                .into(),
             }),
         ]);
         assert_eq!(parsed, expected);
@@ -626,18 +631,19 @@ mod tests {
             }"#;
         let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
 
-        let expected = Sheet(vec![ScopeContent::Block(Block {
+        let expected = Sheet::from(vec![ScopeContent::Block(Block {
             condition: vec![r#"[placeholder="\" {}"]"#.into()].into(),
             style_attributes: vec![
                 StyleAttribute {
-                    key: "background-color".to_string(),
-                    value: "blue".to_string(),
+                    key: "background-color".into(),
+                    value: "blue".into(),
                 },
                 StyleAttribute {
-                    key: "width".to_string(),
-                    value: "100px".to_string(),
+                    key: "width".into(),
+                    value: "100px".into(),
                 },
-            ],
+            ]
+            .into(),
         })]);
         assert_eq!(parsed, expected);
     }
@@ -651,12 +657,13 @@ mod tests {
             }"#;
         let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
 
-        let expected = Sheet(vec![ScopeContent::Block(Block {
+        let expected = Sheet::from(vec![ScopeContent::Block(Block {
             condition: vec!["&:hover".into()].into(),
             style_attributes: vec![StyleAttribute {
-                key: "background-color".to_string(),
-                value: "#d0d0d9".to_string(),
-            }],
+                key: "background-color".into(),
+                value: "#d0d0d9".into(),
+            }]
+            .into(),
         })]);
         assert_eq!(parsed, expected);
     }
@@ -677,7 +684,7 @@ mod tests {
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = Sheet(vec![
+        let expected = Sheet::from(vec![
             ScopeContent::Rule(Rule {
                 condition: "@media screen and (max-width: 500px)".into(),
                 content: vec![RuleContent::Block(Block {
@@ -685,8 +692,10 @@ mod tests {
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "red".into(),
-                    }],
-                })],
+                    }]
+                    .into(),
+                })]
+                .into(),
             }),
             ScopeContent::Rule(Rule {
                 condition: "@media screen and (max-width: 200px)".into(),
@@ -695,8 +704,10 @@ mod tests {
                     style_attributes: vec![StyleAttribute {
                         key: "color".into(),
                         value: "yellow".into(),
-                    }],
-                })],
+                    }]
+                    .into(),
+                })]
+                .into(),
             }),
         ]);
 
@@ -721,7 +732,7 @@ mod tests {
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = Sheet(vec![
+        let expected = Sheet::from(vec![
             ScopeContent::Rule(Rule {
                 condition: "@media screen and (max-width: 500px)".into(),
                 content: vec![RuleContent::Block(Block {
@@ -729,15 +740,18 @@ mod tests {
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "red".into(),
-                    }],
-                })],
+                    }]
+                    .into(),
+                })]
+                .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![".some-class2".into()].into(),
                 style_attributes: vec![StyleAttribute {
                     key: "color".into(),
                     value: "yellow".into(),
-                }],
+                }]
+                .into(),
             }),
         ]);
 
@@ -758,12 +772,13 @@ mod tests {
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = Sheet(vec![ScopeContent::Block(Block {
+        let expected = Sheet::from(vec![ScopeContent::Block(Block {
             condition: vec!["div".into(), "span".into()].into(),
             style_attributes: vec![StyleAttribute {
                 key: "color".into(),
                 value: "yellow".into(),
-            }],
+            }]
+            .into(),
         })]);
 
         assert_eq!(parsed, expected);
@@ -789,7 +804,7 @@ mod tests {
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = Sheet(vec![
+        let expected = Sheet::from(vec![
             ScopeContent::Rule(Rule {
                 condition:
                     "@supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))"
@@ -809,8 +824,8 @@ mod tests {
                             key: "background-color".into(),
                             value: "rgb(0, 0, 0, 0.7)".into(),
                         }
-                    ],
-                })],
+                    ].into(),
+                })].into(),
             }),
 
             ScopeContent::Rule(Rule {
@@ -822,8 +837,8 @@ mod tests {
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "rgb(25, 25, 25)".into(),
-                    }],
-                })],
+                    }].into(),
+                })].into(),
             }),
         ]);
 

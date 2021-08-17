@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use once_cell::sync::Lazy;
 
-#[cfg(feature = "rand")]
+#[cfg(feature = "random")]
 pub fn get_rand_str() -> String {
     use rand::{distributions::Alphanumeric, rngs::SmallRng, Rng, SeedableRng};
 
@@ -17,7 +17,7 @@ pub fn get_rand_str() -> String {
         .collect()
 }
 
-#[cfg(any(test, not(feature = "rand")))]
+#[cfg(any(test, not(feature = "random")))]
 pub fn get_next_style_id() -> String {
     static CTR: Lazy<Arc<Mutex<u64>>> = Lazy::new(Arc::default);
     let mut ctr = CTR.lock().expect("Failed to lock Rng.");
@@ -27,9 +27,9 @@ pub fn get_next_style_id() -> String {
 }
 
 pub(crate) fn get_entropy() -> String {
-    #[cfg(feature = "rand")]
+    #[cfg(feature = "random")]
     let entropy = get_rand_str();
-    #[cfg(not(feature = "rand"))]
+    #[cfg(not(feature = "random"))]
     let entropy = get_next_style_id();
 
     entropy

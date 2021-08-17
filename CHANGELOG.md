@@ -13,7 +13,7 @@
 - Added a `<GlobalStyle />` Component for global styling.
 - Supported `@supports` CSS at-rule.
 - Added an alternative counter-based class name on the style when
-  feature `rand` is disabled.
+  feature `random` is disabled.
 - Moved AST and Parser logic to a new crate `stylist_core`.
 - AST has been exposed under `stylist::ast`.
 - Improved performance for look ups for cached styles.
