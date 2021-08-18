@@ -4,6 +4,7 @@ members = [
     "packages/stylist-core",
     "examples/benchmarks",
     "examples/yew-integration",
+    "examples/yew-shadow",
     "examples/yew-theme-agent",
     "examples/yew-theme-yewdux",
 ]

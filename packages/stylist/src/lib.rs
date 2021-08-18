@@ -107,10 +107,8 @@
 //! }
 //!
 //! impl Component {
-//!     fn print_style(&self) -> Self {
+//!     fn print_style(&self) {
 //!         println!("{}", self.style().get_class_name());
-//!
-//!         unimplemented!();
 //!     }
 //! }
 //!
@@ -177,7 +175,10 @@ mod bindings;
 #[cfg(target_arch = "wasm32")]
 #[path = "arch_wasm.rs"]
 mod arch;
-mod registry;
+
+pub mod manager;
+pub mod registry;
+
 mod style;
 mod utils;
 mod yield_style;
