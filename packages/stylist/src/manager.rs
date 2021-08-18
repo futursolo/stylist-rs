@@ -1,44 +1,111 @@
+//! Customise behaviour of Styles.
+//!
+//! This module contains [`StyleManager`] which can be used for customising
+//! mounting point / mounting behaviour for styles (when rendering contents into a ShadowRoot or an <iframe />).
+//!
+//! This is an advanced feature and most of time you don't need to use it.
+
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::fmt;
 use std::rc::Rc;
 
-use once_cell::unsync::{Lazy, OnceCell};
+use once_cell::unsync::Lazy;
 use web_sys::Node;
 
-use crate::arch::doc_head;
 use crate::registry::StyleRegistry;
 pub use crate::style::StyleId;
 use crate::{Result, Style};
 
-/// A trait to customise behaviour of [`Style`].
-///
-/// This is an advanced trait and is mostly used for customising mounting point /
-/// mounting behaviour for styles (when rendering contents into a `ShadowRoot` or an `<iframe />`).
-pub trait StyleManager: fmt::Debug {
-    /// The default prefix used by the managed [`Style`] instances.
-    fn prefix(&self) -> Cow<'static, str> {
-        "stylist".into()
+#[derive(Debug, Clone)]
+pub struct StyleManagerBuilder {
+    registry: Rc<RefCell<StyleRegistry>>,
+
+    prefix: Cow<'static, str>,
+    container: Option<Node>,
+
+    append: bool,
+}
+
+impl Default for StyleManagerBuilder {
+    fn default() -> Self {
+        Self {
+            registry: Rc::default(),
+            prefix: "stylist".into(),
+            container: None,
+            append: true,
+        }
+    }
+}
+
+impl StyleManagerBuilder {
+    /// Creates a builder for to build StyleManager.
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    /// Returns an [`Rc<RefCell<StyleRegistry>>`] of [`StyleRegistry`].
-    fn get_registry(&self) -> Rc<RefCell<StyleRegistry>>;
+    /// Set the prefix.
+    pub fn prefix(mut self, value: Cow<'static, str>) -> Self {
+        self.prefix = value;
 
-    /// Returns the container element of all styles managed by this StyleManager.
-    /// By default, this method returns the `<head />` element.
-    fn get_container(&self) -> Result<Node> {
-        let head = doc_head()?;
-        Ok(head.into())
+        self
+    }
+
+    /// Set the container [`Node`] for all style elements.
+    pub fn container(mut self, value: Node) -> Self {
+        self.container = Some(value);
+
+        self
+    }
+
+    /// Build the StyleManager.
+    pub fn build(self) -> Result<StyleManager> {
+        #[cfg(target_arch = "wasm32")]
+        if self.container.is_none() {
+            use crate::arch::doc_head;
+            self.container = Some(doc_head()?.into());
+        }
+
+        Ok(StyleManager {
+            inner: Rc::new(self),
+        })
+    }
+}
+
+/// A struct to customise behaviour of [`Style`].
+#[derive(Debug, Clone)]
+pub struct StyleManager {
+    inner: Rc<StyleManagerBuilder>,
+}
+
+impl StyleManager {
+    /// Creates a builder for to build StyleManager.
+    pub fn builder() -> StyleManagerBuilder {
+        StyleManagerBuilder::new()
+    }
+
+    /// The default prefix used by the managed [`Style`] instances.
+    pub fn prefix(&self) -> Cow<'static, str> {
+        self.inner.prefix.clone()
+    }
+
+    /// The container [`Node`] for all style elements managed by this manager.
+    pub fn container(&self) -> Option<Node> {
+        self.inner.container.clone()
+    }
+
+    /// Get the Registry instance.
+    pub(crate) fn get_registry(&self) -> Rc<RefCell<StyleRegistry>> {
+        self.inner.registry.clone()
     }
 
     /// Mount the [`Style`] into the DOM tree.
     #[cfg(target_arch = "wasm32")]
-    fn mount(&self, style: &Style) -> Result<()> {
+    pub(crate) fn mount(&self, style: &Style) -> Result<()> {
         use crate::arch::document;
         use crate::Error;
 
         let document = document()?;
-        let container = self.get_container()?;
+        let container = self.container().ok_or(Error::Web(None))?;
 
         (|| {
             let style_element = document.create_element("style")?;
@@ -53,7 +120,7 @@ pub trait StyleManager: fmt::Debug {
 
     /// Unmount the [`Style`] from the DOM tree.
     #[cfg(target_arch = "wasm32")]
-    fn unmount(&self, id: &StyleId) -> Result<()> {
+    pub(crate) fn unmount(&self, id: &StyleId) -> Result<()> {
         use crate::arch::document;
         use crate::Error;
 
@@ -73,56 +140,30 @@ pub trait StyleManager: fmt::Debug {
     /// Mount the [`Style`] in to the DOM tree.
     #[cfg(not(target_arch = "wasm32"))]
     #[allow(unused_variables)]
-    fn mount(&self, style: &Style) -> Result<()> {
+    pub(crate) fn mount(&self, style: &Style) -> Result<()> {
         Ok(())
     }
 
     /// Unmount the [`Style`] from the DOM tree.
     #[cfg(not(target_arch = "wasm32"))]
     #[allow(unused_variables)]
-    fn unmount(&self, id: &StyleId) -> Result<()> {
+    pub(crate) fn unmount(&self, id: &StyleId) -> Result<()> {
         Ok(())
     }
 }
 
-#[derive(Debug, Default)]
-struct ManagerInner {
-    registry: Rc<RefCell<StyleRegistry>>,
-    container: OnceCell<Node>,
-}
-
-/// The default Style Manager.
-#[derive(Debug)]
-pub(crate) struct DefaultManager {
-    inner: Rc<ManagerInner>,
-}
-
-impl StyleManager for DefaultManager {
-    fn get_registry(&self) -> Rc<RefCell<StyleRegistry>> {
-        self.inner.registry.clone()
-    }
-
-    fn get_container(&self) -> Result<Node> {
-        self.inner
-            .container
-            .get_or_try_init(|| {
-                let head = doc_head()?;
-                Ok(head.into())
-            })
-            .map(|m| m.clone())
+impl AsRef<StyleManager> for StyleManager {
+    fn as_ref(&self) -> &StyleManager {
+        self
     }
 }
 
-impl Default for DefaultManager {
+impl Default for StyleManager {
     fn default() -> Self {
         thread_local! {
-            static MGR_INNER: Lazy<Rc<ManagerInner>> = Lazy::new(|| {
-                Rc::default()
-            });
+            static MGR: Lazy<StyleManager> = Lazy::new(|| StyleManager::builder().build().expect("Failed to create default manager."));
         }
 
-        DefaultManager {
-            inner: MGR_INNER.with(|m| (*m).clone()),
-        }
+        MGR.with(|m| (*m).clone())
     }
 }

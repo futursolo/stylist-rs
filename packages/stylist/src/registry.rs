@@ -40,14 +40,14 @@ mod tests {
     use std::rc::Rc;
 
     use super::*;
-    use crate::manager::{DefaultManager, StyleManager};
+    use crate::manager::StyleManager;
 
     fn sample_scopes() -> Sheet {
         "color: red;".parse().expect("Failed to Parse style.")
     }
 
     fn get_registry() -> Rc<RefCell<StyleRegistry>> {
-        DefaultManager::default().get_registry()
+        StyleManager::default().get_registry()
     }
 
     fn init() {

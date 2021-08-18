@@ -1,36 +1,12 @@
-use once_cell::sync::Lazy;
 use std::borrow::Cow;
-use std::cell::RefCell;
-use std::rc::Rc;
 
 use stylist::manager::StyleManager;
-use stylist::registry::StyleRegistry;
 use stylist::yew::GlobalStyle;
-use stylist::{Result, Style, YieldStyle};
-use web_sys::{window, Element, Node, ShadowRootInit, ShadowRootMode};
+use stylist::{Style, YieldStyle};
+use web_sys::{window, Element, ShadowRootInit, ShadowRootMode};
 use yew::prelude::*;
 
 use log::Level;
-
-/// The default Style Manager.
-#[derive(Clone, Debug)]
-pub(crate) struct ShadowManager {
-    node: Node,
-}
-
-impl StyleManager for ShadowManager {
-    fn get_registry(&self) -> Rc<RefCell<StyleRegistry>> {
-        thread_local! {
-            static REGISTRY: Lazy<Rc<RefCell<StyleRegistry>>> = Lazy::new(Rc::default);
-        }
-
-        REGISTRY.with(|m| (*m).clone())
-    }
-
-    fn get_container(&self) -> Result<Node> {
-        Ok(self.node.clone())
-    }
-}
 
 pub struct ShadowRoot {
     root_ref: NodeRef,
@@ -50,9 +26,10 @@ impl Component for ShadowRoot {
         if first_render {
             if let Some(m) = self.root_ref.cast::<Element>() {
                 if let Ok(root) = m.attach_shadow(&ShadowRootInit::new(ShadowRootMode::Open)) {
-                    let mgr = ShadowManager {
-                        node: root.clone().into(),
-                    };
+                    let mgr = StyleManager::builder()
+                        .container(root.clone().into())
+                        .build()
+                        .expect("Failed to create manager.");
 
                     let style = Style::new_with_manager(
                         r#"

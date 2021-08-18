@@ -6,13 +6,14 @@ use std::rc::Rc;
 use std::str::FromStr;
 
 use crate::ast::{IntoSheet, Sheet, ToStyleStr};
-use crate::manager::{DefaultManager, StyleManager};
+use crate::manager::StyleManager;
 use crate::registry::StyleKey;
 use crate::{Error, Result};
 
 use crate::utils::get_entropy;
 
-/// The Unique Identifier of a Style
+/// The Unique Identifier of a Style.
+///
 /// This is currently the same as the class name of a style.
 /// But this may change in the future.
 ///
@@ -44,7 +45,7 @@ struct StyleContent {
 
     id: OnceCell<StyleId>,
 
-    manager: Box<dyn StyleManager>,
+    manager: StyleManager,
 }
 
 impl StyleContent {
@@ -62,7 +63,6 @@ impl StyleContent {
             .get_or_init(|| self.key.ast.to_style_str(self.get_class_name()))
     }
 
-    #[cfg(target_arch = "wasm32")]
     fn unmount(&self) -> Result<()> {
         self.manager().unmount(self.id())
     }
@@ -71,12 +71,11 @@ impl StyleContent {
         self.key.clone()
     }
 
-    fn manager(&self) -> &dyn StyleManager {
-        &*self.manager
+    fn manager(&self) -> &StyleManager {
+        &self.manager
     }
 }
 
-#[cfg(target_arch = "wasm32")]
 impl Drop for StyleContent {
     /// Unmounts the style from the HTML head web-sys style
     fn drop(&mut self) {
@@ -149,10 +148,10 @@ pub struct Style {
 impl Style {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_impl<M: StyleManager + 'static>(
+    fn create_impl(
         class_prefix: Cow<'static, str>,
         css: Cow<'_, Sheet>,
-        manager: M,
+        manager: StyleManager,
     ) -> Result<Self> {
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
@@ -180,13 +179,12 @@ impl Style {
                 class_name: format!("{}-{}", key.prefix, get_entropy()),
                 style_str: OnceCell::new(),
                 id: OnceCell::new(),
-                manager: Box::new(manager) as Box<dyn StyleManager>,
+                manager,
                 key: Rc::new(key),
             }
             .into(),
         };
 
-        #[cfg(target_arch = "wasm32")]
         new_style.inner.manager().mount(&new_style)?;
 
         // Register the created Style.
@@ -228,7 +226,7 @@ impl Style {
         Css: IntoSheet<'a>,
     {
         let css = css.into_sheet()?;
-        Self::create_impl(class_prefix.into(), css, DefaultManager::default())
+        Self::create_impl(class_prefix.into(), css, StyleManager::default())
     }
 
     /// Creates a new style from some parsable css with a default prefix using a custom
@@ -237,10 +235,11 @@ impl Style {
     pub fn new_with_manager<'a, Css, M>(css: Css, manager: M) -> Result<Self>
     where
         Css: IntoSheet<'a>,
-        M: StyleManager + 'static,
+        M: AsRef<StyleManager>,
     {
         let css = css.into_sheet()?;
-        Self::create_impl(manager.prefix(), css, manager)
+        let mgr = manager.as_ref();
+        Self::create_impl(mgr.prefix(), css, mgr.clone())
     }
 
     /// Creates a new style with a custom class prefix from some parsable css using a custom
@@ -250,10 +249,10 @@ impl Style {
     where
         N: Into<Cow<'static, str>>,
         Css: IntoSheet<'a>,
-        M: StyleManager + 'static,
+        M: AsRef<StyleManager>,
     {
         let css = css.into_sheet()?;
-        Self::create_impl(class_prefix.into(), css, manager)
+        Self::create_impl(class_prefix.into(), css, manager.as_ref().clone())
     }
 
     /// Returns the class name for current style

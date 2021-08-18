@@ -172,22 +172,12 @@
 #[doc(hidden)]
 mod bindings;
 
+#[cfg(target_arch = "wasm32")]
 #[path = "arch_wasm.rs"]
 mod arch;
 
-#[cfg_attr(documenting, doc(cfg(feature = "style_manager")))]
-#[cfg(feature = "style_manager")]
 pub mod manager;
-
-#[cfg(not(feature = "style_manager"))]
-mod manager;
-
-#[cfg_attr(documenting, doc(cfg(feature = "style_manager")))]
-#[cfg(feature = "style_manager")]
 pub mod registry;
-
-#[cfg(not(feature = "style_manager"))]
-mod registry;
 
 mod style;
 mod utils;
