@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 use super::{RuleContent, ToStyleStr};
@@ -17,10 +18,10 @@ use super::{RuleContent, ToStyleStr};
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Rule {
-    pub condition: String,
+    pub condition: Cow<'static, str>,
     /// Note that not all At-Rules allow arbitrary other At-Rules to appear
     /// inside them, or arbitrary blocks. No safeguards at this point!
-    pub content: Vec<RuleContent>,
+    pub content: Cow<'static, [RuleContent]>,
 }
 
 impl ToStyleStr for Rule {

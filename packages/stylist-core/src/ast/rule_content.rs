@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fmt;
 
 use super::{Block, Rule, ScopeContent, ToStyleStr};
@@ -8,18 +9,18 @@ pub enum RuleContent {
     /// A block
     Block(Block),
     /// A nested rule
-    Rule(Rule),
+    Rule(Box<Rule>),
     /// A raw string literal, i.e. something that wasn't parsed.
     /// This is an escape-hatch and may get removed in the future
     /// for a more meaningful alternative
-    String(String),
+    String(Cow<'static, str>),
 }
 
 impl From<ScopeContent> for RuleContent {
     fn from(scope: ScopeContent) -> Self {
         match scope {
             ScopeContent::Block(b) => RuleContent::Block(b),
-            ScopeContent::Rule(r) => RuleContent::Rule(r),
+            ScopeContent::Rule(r) => RuleContent::Rule(r.into()),
         }
     }
 }
@@ -36,6 +37,18 @@ impl ToStyleStr for RuleContent {
 
 impl From<String> for RuleContent {
     fn from(s: String) -> Self {
+        Self::String(s.into())
+    }
+}
+
+impl From<&'static str> for RuleContent {
+    fn from(s: &'static str) -> Self {
+        Self::String(s.into())
+    }
+}
+
+impl From<Cow<'static, str>> for RuleContent {
+    fn from(s: Cow<'static, str>) -> Self {
         Self::String(s)
     }
 }

@@ -1,4 +1,6 @@
+use std::borrow::Cow;
 use std::fmt;
+use std::ops::Deref;
 use std::str::FromStr;
 
 use crate::parser::Parser;
@@ -7,7 +9,7 @@ use super::{ScopeContent, ToStyleStr};
 
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Sheet(pub Vec<ScopeContent>);
+pub struct Sheet(Cow<'static, [ScopeContent]>);
 
 impl FromStr for Sheet {
     type Err = crate::Error;
@@ -17,9 +19,35 @@ impl FromStr for Sheet {
     }
 }
 
+impl Deref for Sheet {
+    type Target = [ScopeContent];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Sheet {
     pub fn new() -> Self {
-        Self(Vec::new())
+        Self(Cow::Borrowed(&[]))
+    }
+}
+
+impl From<Vec<ScopeContent>> for Sheet {
+    fn from(v: Vec<ScopeContent>) -> Self {
+        Self(v.into())
+    }
+}
+
+impl From<&'static [ScopeContent]> for Sheet {
+    fn from(v: &'static [ScopeContent]) -> Self {
+        Self(v.into())
+    }
+}
+
+impl From<Cow<'static, [ScopeContent]>> for Sheet {
+    fn from(v: Cow<'static, [ScopeContent]>) -> Self {
+        Self(v)
     }
 }
 
