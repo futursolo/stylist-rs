@@ -152,16 +152,14 @@ impl Parser {
         #[cfg(test)]
         trace!("Selector: {}", i);
 
-        Self::expect_non_empty(i)?;
-
         let result = context(
             "Selector",
             Self::trimmed(map(
                 recognize(preceded(
                     none_of(",}@{"),
-                    many1(alt((is_not(" \t\r\n,\"{"), Self::string))),
+                    many0(alt((is_not(",\"{"), Self::string))),
                 )),
-                |p: &str| p.to_owned().into(),
+                |p: &str| p.trim().to_owned().into(),
             )),
         )(i);
 
@@ -769,17 +767,31 @@ mod tests {
                     color: yellow;
                 }
 
+                &, & input {
+                    color: pink;
+                }
+
             "#;
         let parsed = Parser::parse(test_str)?;
 
-        let expected = Sheet::from(vec![ScopeContent::Block(Block {
-            condition: vec!["div".into(), "span".into()].into(),
-            style_attributes: vec![StyleAttribute {
-                key: "color".into(),
-                value: "yellow".into(),
-            }]
-            .into(),
-        })]);
+        let expected = Sheet::from(vec![
+            ScopeContent::Block(Block {
+                condition: vec!["div".into(), "span".into()].into(),
+                style_attributes: vec![StyleAttribute {
+                    key: "color".into(),
+                    value: "yellow".into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec!["&".into(), "& input".into()].into(),
+                style_attributes: vec![StyleAttribute {
+                    key: "color".into(),
+                    value: "pink".into(),
+                }]
+                .into(),
+            }),
+        ]);
 
         assert_eq!(parsed, expected);
 
@@ -845,5 +857,19 @@ mod tests {
         assert_eq!(parsed, expected);
 
         Ok(())
+    }
+
+    #[test]
+    fn test_selectors_list_2() {
+        assert_eq!(
+            Parser::selector("&").map(|m| m.1),
+            Ok(Selector { inner: "&".into() })
+        );
+        assert_eq!(
+            Parser::selector("& input").map(|m| m.1),
+            Ok(Selector {
+                inner: "& input".into()
+            })
+        );
     }
 }

@@ -58,7 +58,8 @@ impl StyleManagerBuilder {
     }
 
     /// Build the StyleManager.
-    pub fn build(self) -> Result<StyleManager> {
+    #[allow(unused_mut)]
+    pub fn build(mut self) -> Result<StyleManager> {
         #[cfg(target_arch = "wasm32")]
         if self.container.is_none() {
             use crate::arch::doc_head;
