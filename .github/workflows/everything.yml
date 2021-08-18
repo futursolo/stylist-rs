@@ -34,12 +34,16 @@ jobs:
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          RUSTFLAGS: "--cfg releasing"
 
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all-features --all
+        env:
+          RUSTFLAGS: "--cfg releasing"
 
       - name: Setup trunk
         uses: jetli/trunk-action@v0.1.0
@@ -58,6 +62,8 @@ jobs:
         with:
           command: build
           args: --all-features --all --target=wasm32-unknown-unknown
+        env:
+          RUSTFLAGS: "--cfg releasing"
 
   publish:
     name: Publish to crates.io
