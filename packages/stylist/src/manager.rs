@@ -57,6 +57,17 @@ impl StyleManagerBuilder {
         self
     }
 
+    /// Set the way how `<style />` tags are added to the container.
+    ///
+    /// When set to `false`, stylist will prepend the style tags to the container.
+    ///
+    /// Default: `true`
+    pub fn append(mut self, value: bool) -> Self {
+        self.append = value;
+
+        self
+    }
+
     /// Build the StyleManager.
     #[allow(unused_mut)]
     pub fn build(mut self) -> Result<StyleManager> {
@@ -113,6 +124,13 @@ impl StyleManager {
             style_element.set_attribute("data-style", style.id())?;
             style_element.set_text_content(Some(style.get_style_str()));
 
+            // Prepend element
+            if !self.inner.append {
+                if let Some(m) = container.first_child() {
+                    return m.insert_before(&style_element, Some(&m)).map(|_m| ());
+                }
+            }
+
             container.append_child(&style_element)?;
             Ok(())
         })()
@@ -142,6 +160,7 @@ impl StyleManager {
     #[cfg(not(target_arch = "wasm32"))]
     #[allow(unused_variables)]
     pub(crate) fn mount(&self, style: &Style) -> Result<()> {
+        // Does nothing on non-wasm targets.
         Ok(())
     }
 
@@ -149,6 +168,7 @@ impl StyleManager {
     #[cfg(not(target_arch = "wasm32"))]
     #[allow(unused_variables)]
     pub(crate) fn unmount(&self, id: &StyleId) -> Result<()> {
+        // Does nothing on non-wasm targets.
         Ok(())
     }
 }

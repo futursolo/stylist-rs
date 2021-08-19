@@ -8,12 +8,14 @@
 `stylist::ast::Sheet` and everything that implements `AsRef<str>`.
 - Feature `yew` has been renamed back to `yew_integration`.
 - Selectors list now gets a class name added for each selector.
+- `Style` is now `!Send` and `!Sync`.
 
 ### Other Changes:
 - Added a `<GlobalStyle />` Component for global styling.
 - Supported `@supports` CSS at-rule.
 - Added an alternative counter-based class name on the style when
   feature `random` is disabled.
+- Added a `StyleManager` type to manage the behaviour of styles.
 - Moved AST and Parser logic to a new crate `stylist_core`.
 - AST has been exposed under `stylist::ast`.
 - Improved performance for look ups for cached styles.

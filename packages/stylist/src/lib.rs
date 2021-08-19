@@ -47,14 +47,35 @@
 //! ).expect("Failed to create style");
 //! ```
 //!
+//! ### YieldStyle API
+//!
+//! Alternatively, any struct that implements [`YieldStyle`] trait can call
+//! `self.style()` to get a [`Style`] instance.
+//!
+//! ```rust
+//! use std::borrow::Cow;
+//! use stylist::YieldStyle;
+//!
+//! pub struct Component;
+//!
+//! impl YieldStyle for Component {
+//!     fn style_str(&self) -> Cow<'static, str> {
+//!         "color: red;".into()
+//!     }
+//! }
+//!
+//! impl Component {
+//!     fn print_style(&self) {
+//!         println!("{}", self.style().get_class_name());
+//!     }
+//! }
+//!
+//! ```
+//!
 //! Everything that is not in a conditioned block will be applied to the Component
 //! the class of this style is applied to.
 //!
-//! The Style you put in will get parsed and converted to actual CSS and automatically appended
-//! to the head of your HTML document.
-//!
-//! You may also use the `&` identifier in order to use CSS selectors or pseudo
-//! classes on the styled element:
+//! You may also use Current Selector (`&`) in CSS selectors to denote the container element:
 //!
 //! ```css
 //! &:hover {
@@ -62,7 +83,7 @@
 //! }
 //! ```
 //!
-//! You can also use other CSS rules, e.g. keyframes:
+//! You can also use other CSS rules(such as: keyframes, supports and media):
 //!
 //! ```css
 //! @keyframes mymove {
@@ -89,29 +110,10 @@
 //! }
 //! ```
 //!
-//! ### YieldStyle API
-//!
-//! Alternatively, any struct that implements [`YieldStyle`] trait can call
-//! `self.style()` to get a [`Style`] instance.
-//!
-//! ```rust
-//! use std::borrow::Cow;
-//! use stylist::YieldStyle;
-//!
-//! pub struct Component;
-//!
-//! impl YieldStyle for Component {
-//!     fn style_str(&self) -> Cow<'static, str> {
-//!         "color: red;".into()
-//!     }
+//! ```css
+//! @supports (backdrop-filter: blur(5px)) {
+//!   backdrop-filter: blur(5px);
 //! }
-//!
-//! impl Component {
-//!     fn print_style(&self) {
-//!         println!("{}", self.style().get_class_name());
-//!     }
-//! }
-//!
 //! ```
 //!
 //! ## Yew Integration

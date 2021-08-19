@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use crate::manager::StyleManager;
 use crate::{Result, Style};
 
 /// A trait to create Style
@@ -55,7 +56,7 @@ pub trait YieldStyle {
     ///
     /// By default, the prefix is `stylist`.
     fn prefix(&self) -> Cow<'static, str> {
-        "stylist".into()
+        self.manager().prefix()
     }
 
     /// Returns the raw style string.
@@ -65,7 +66,7 @@ pub trait YieldStyle {
     ///
     /// Returns [`Err(Error)`](crate::Error) when failed to create a style.
     fn try_style(&self) -> Result<Style> {
-        Style::new(self.style_str())
+        Style::new_with_manager(self.style_str(), self.manager())
     }
 
     /// Returns the generated style.
@@ -91,5 +92,10 @@ pub trait YieldStyle {
     /// Panics if [`try_style_class`](YieldStyle::try_style) returns [`Err(Error)`](crate::Error).
     fn style_class(&self) -> String {
         self.try_style_class().expect("Failed to create style.")
+    }
+
+    /// The [`StyleManager`] to use.
+    fn manager(&self) -> StyleManager {
+        StyleManager::default()
     }
 }
