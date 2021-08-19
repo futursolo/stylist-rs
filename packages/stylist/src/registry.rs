@@ -5,6 +5,10 @@ use std::rc::Rc;
 use crate::ast::Sheet;
 use crate::Style;
 
+/// A [`StyleKey`].
+///
+/// Every Style that has the same [`StyleKey`] will be considered as the same style in the
+/// registry.
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub(crate) struct StyleKey<'a> {
     pub prefix: Cow<'static, str>,
@@ -13,7 +17,7 @@ pub(crate) struct StyleKey<'a> {
 
 /// The style registry is a registry that keeps an instance of all styles for current manager.
 #[derive(Debug, Default)]
-pub struct StyleRegistry {
+pub(crate) struct StyleRegistry {
     styles: HashMap<Rc<StyleKey<'static>>, Style>,
 }
 

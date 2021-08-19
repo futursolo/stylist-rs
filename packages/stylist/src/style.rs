@@ -235,10 +235,10 @@ impl Style {
     pub fn new_with_manager<'a, Css, M>(css: Css, manager: M) -> Result<Self>
     where
         Css: IntoSheet<'a>,
-        M: AsRef<StyleManager>,
+        M: Into<StyleManager>,
     {
         let css = css.into_sheet()?;
-        let mgr = manager.as_ref();
+        let mgr = manager.into();
         Self::create_impl(mgr.prefix(), css, mgr.clone())
     }
 
@@ -249,10 +249,10 @@ impl Style {
     where
         N: Into<Cow<'static, str>>,
         Css: IntoSheet<'a>,
-        M: AsRef<StyleManager>,
+        M: Into<StyleManager>,
     {
         let css = css.into_sheet()?;
-        Self::create_impl(class_prefix.into(), css, manager.as_ref().clone())
+        Self::create_impl(class_prefix.into(), css, manager.into())
     }
 
     /// Returns the class name for current style

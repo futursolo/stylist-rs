@@ -1,7 +1,7 @@
 //! Customise behaviour of Styles.
 //!
 //! This module contains [`StyleManager`] which can be used for customising
-//! mounting point / mounting behaviour for styles (when rendering contents into a ShadowRoot or an <iframe />).
+//! mounting point / mounting behaviour for styles (when rendering contents into a `ShadowRoot` or an `<iframe />`).
 //!
 //! This is an advanced feature and most of time you don't need to use it.
 
@@ -16,6 +16,7 @@ use crate::registry::StyleRegistry;
 pub use crate::style::StyleId;
 use crate::{Result, Style};
 
+/// A builder for [`StyleManager`].
 #[derive(Debug, Clone)]
 pub struct StyleManagerBuilder {
     registry: Rc<RefCell<StyleRegistry>>,
@@ -50,7 +51,7 @@ impl StyleManagerBuilder {
         self
     }
 
-    /// Set the container [`Node`] for all style elements.
+    /// Set the container [`Node`] for all style elements managed by this manager.
     pub fn container(mut self, value: Node) -> Self {
         self.container = Some(value);
 
@@ -68,7 +69,7 @@ impl StyleManagerBuilder {
         self
     }
 
-    /// Build the StyleManager.
+    /// Build the [`StyleManager`].
     #[allow(unused_mut)]
     pub fn build(mut self) -> Result<StyleManager> {
         #[cfg(target_arch = "wasm32")]
@@ -173,9 +174,9 @@ impl StyleManager {
     }
 }
 
-impl AsRef<StyleManager> for StyleManager {
-    fn as_ref(&self) -> &StyleManager {
-        self
+impl From<&Self> for StyleManager {
+    fn from(m: &Self) -> Self {
+        m.clone()
     }
 }
 

@@ -171,7 +171,6 @@
 //! - `yew_integration`: This flag enables yew integration, which implements [`Classes`](::yew::html::Classes) for
 //!   [`Style`] and provides a [`GlobalStyle`](yew::GlobalStyle) component for applying global styles.
 
-#[doc(hidden)]
 mod bindings;
 
 #[cfg(target_arch = "wasm32")]
@@ -179,7 +178,7 @@ mod bindings;
 mod arch;
 
 pub mod manager;
-pub mod registry;
+mod registry;
 
 mod style;
 mod utils;
