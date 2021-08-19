@@ -113,15 +113,18 @@ impl Drop for StyleContent {
 ///   apply:
 /// - If a selector contains a Current Selector(`&`), the current selector will be substituted with
 ///   the generated class name.
-/// - If a selector does not contain a Current Selector, it will be prefixed with the generated
-///   class name.
-///
+/// - If a selectors starts with a pseudo-class selector, it will be applied to the root element.
+/// - For other selectors, it will be prefixed with the generated class name.
 ///
 ///   Example, original style:
 ///
 ///   ```css
 ///   &.invalid input, input:invalid {
 ///       color: red;
+///   }
+///
+///   :hover {
+///       background-color: pink;
 ///   }
 ///
 ///   .hint {
@@ -136,10 +139,18 @@ impl Drop for StyleContent {
 ///       color: red;
 ///   }
 ///
+///   .stylist-uSu9NZZu:hover {
+///       background-color: pink;
+///   }
+///
 ///   .stylist-uSu9NZZu .hint {
 ///       font-size: 0.9rem;
 ///   }
 ///   ```
+///
+///   ## Note:
+///
+///   Root pseudo class (`:root`) will also be treated like a Current Selector.
 #[derive(Debug, Clone)]
 pub struct Style {
     inner: Rc<StyleContent>,
@@ -231,7 +242,6 @@ impl Style {
 
     /// Creates a new style from some parsable css with a default prefix using a custom
     /// manager.
-    #[cfg_attr(documenting, doc(cfg(feature = "style_manager")))]
     pub fn new_with_manager<'a, Css, M>(css: Css, manager: M) -> Result<Self>
     where
         Css: IntoSheet<'a>,
@@ -244,7 +254,6 @@ impl Style {
 
     /// Creates a new style with a custom class prefix from some parsable css using a custom
     /// manager.
-    #[cfg_attr(documenting, doc(cfg(feature = "style_manager")))]
     pub fn create_with_manager<'a, N, Css, M>(class_prefix: N, css: Css, manager: M) -> Result<Self>
     where
         N: Into<Cow<'static, str>>,

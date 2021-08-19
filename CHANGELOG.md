@@ -9,6 +9,8 @@
 - Feature `yew` has been renamed back to `yew_integration`.
 - Selectors list now gets a class name added for each selector.
 - `Style` is now `!Send` and `!Sync`.
+- Stylist now treats pseudo class selectors (e.g.:`:hover`) like emotion
+  and styled-components.
 
 ### Other Changes:
 - Added a `<GlobalStyle />` Component for global styling.
