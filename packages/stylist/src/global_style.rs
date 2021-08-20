@@ -72,7 +72,7 @@ impl GlobalStyle {
         Ok(new_style)
     }
 
-    /// Creates a new style from some parsable css with a default prefix.
+    /// Creates a new style from some parsable css.
     ///
     /// # Examples
     ///

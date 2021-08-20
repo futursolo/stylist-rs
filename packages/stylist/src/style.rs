@@ -219,7 +219,7 @@ impl Style {
     where
         Css: IntoSheet<'a>,
     {
-        Self::create("stylist", css)
+        Self::create(StyleManager::default().prefix(), css)
     }
 
     /// Creates a new style with a custom class prefix from some parsable css.
