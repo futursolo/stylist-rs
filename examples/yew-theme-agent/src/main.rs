@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use stylist::yew::GlobalStyle;
+use stylist::yew::Global;
 use stylist::YieldStyle;
 use yew::{html, Bridge, Component, ComponentLink, Html, ShouldRender};
 use yewtil::store::{Bridgeable, ReadOnly, StoreWrapper};
@@ -152,9 +152,9 @@ impl Component for App {
         html! {
             <>
                 // Global Styles can be applied with <GlobalStyle /> component.
-                <GlobalStyle css=format!(
+                <Global css=format!(
                     r#"
-                        &, & body {{
+                        html, body {{
                             font-family: sans-serif;
 
                             padding: 0;

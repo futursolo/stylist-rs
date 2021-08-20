@@ -19,7 +19,7 @@ use crate::utils::get_entropy;
 ///
 /// This is primarily used by [`StyleManager`] to track the mounted instance of [`Style`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct StyleId(String);
+pub struct StyleId(pub(crate) String);
 
 impl Deref for StyleId {
     type Target = str;
@@ -35,43 +35,42 @@ impl fmt::Display for StyleId {
 }
 
 #[derive(Debug)]
-struct StyleContent {
-    key: Rc<StyleKey<'static>>,
+pub(crate) struct StyleContent {
+    pub is_global: bool,
 
-    /// The designated class name of this style
-    class_name: String,
+    pub id: StyleId,
 
-    style_str: OnceCell<String>,
+    pub key: Rc<StyleKey<'static>>,
 
-    id: OnceCell<StyleId>,
+    pub style_str: OnceCell<String>,
 
-    manager: StyleManager,
+    pub manager: StyleManager,
 }
 
 impl StyleContent {
-    fn id(&self) -> &StyleId {
-        self.id
-            .get_or_init(|| StyleId(self.get_class_name().to_owned()))
+    pub fn id(&self) -> &StyleId {
+        &self.id
     }
 
-    fn get_class_name(&self) -> &str {
-        &self.class_name
+    pub fn get_style_str(&self) -> &str {
+        self.style_str.get_or_init(|| {
+            self.key.ast.to_style_str(if self.is_global {
+                None
+            } else {
+                Some(&*self.id())
+            })
+        })
     }
 
-    fn get_style_str(&self) -> &str {
-        self.style_str
-            .get_or_init(|| self.key.ast.to_style_str(self.get_class_name()))
-    }
-
-    fn unmount(&self) -> Result<()> {
+    pub fn unmount(&self) -> Result<()> {
         self.manager().unmount(self.id())
     }
 
-    fn key(&self) -> Rc<StyleKey<'static>> {
+    pub fn key(&self) -> Rc<StyleKey<'static>> {
         self.key.clone()
     }
 
-    fn manager(&self) -> &StyleManager {
+    pub fn manager(&self) -> &StyleManager {
         &self.manager
     }
 }
@@ -87,7 +86,7 @@ impl Drop for StyleContent {
 ///
 /// # Style Scoping and Substitution Rule for Current Selector(`&`):
 ///
-/// Currently, Stylist processes selectors follow the following rules:
+/// Currently, Stylist processes selectors with the following rules:
 ///
 /// If a style attribute is not in any block (dangling style attribute), it will be scoped with
 ///   the generated class name. (Applied to the element where the generated class name is applied
@@ -113,7 +112,7 @@ impl Drop for StyleContent {
 ///   apply:
 /// - If a selector contains a Current Selector(`&`), the current selector will be substituted with
 ///   the generated class name.
-/// - If a selectors starts with a pseudo-class selector, it will be applied to the root element.
+/// - If a selector starts with a pseudo-class selector, it will be applied to the root element.
 /// - For other selectors, it will be prefixed with the generated class name.
 ///
 ///   Example, original style:
@@ -166,6 +165,7 @@ impl Style {
     ) -> Result<Self> {
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
+            is_global: false,
             prefix: class_prefix,
             ast: css,
         };
@@ -174,10 +174,11 @@ impl Style {
         let mut reg = reg.borrow_mut();
 
         if let Some(m) = reg.get(&key) {
-            return Ok(m);
+            return Ok(Style { inner: m });
         }
 
         let key = StyleKey {
+            is_global: false,
             prefix: key.prefix,
             // I don't think there's a way to turn a Cow<'_, Sheet> to a Cow<'static, Sheet>
             // if inner is &'static Sheet without cloning.
@@ -187,19 +188,19 @@ impl Style {
 
         let new_style = Self {
             inner: StyleContent {
-                class_name: format!("{}-{}", key.prefix, get_entropy()),
+                is_global: false,
+                id: StyleId(format!("{}-{}", key.prefix, get_entropy())),
                 style_str: OnceCell::new(),
-                id: OnceCell::new(),
                 manager,
                 key: Rc::new(key),
             }
             .into(),
         };
 
-        new_style.inner.manager().mount(&new_style)?;
+        new_style.inner.manager().mount(&new_style.inner)?;
 
         // Register the created Style.
-        reg.register(new_style.clone());
+        reg.register(new_style.inner.clone());
 
         Ok(new_style)
     }
@@ -280,7 +281,7 @@ impl Style {
     /// # Ok::<(), stylist::Error>(())
     /// ```
     pub fn get_class_name(&self) -> &str {
-        self.inner.get_class_name()
+        self.inner.id()
     }
 
     /// Get the parsed and generated style in `&str`.

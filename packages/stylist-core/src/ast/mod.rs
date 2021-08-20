@@ -4,7 +4,7 @@
 //! struct Sheet
 //! └── Vec<enum ScopeContent>
 //!     ├── struct Block
-//!     │   ├── selector: String
+//!     │   ├── selector: Vec<Selector>
 //!     │   └── Vec<struct StyleAttribute>
 //!     │       ├── key: String
 //!     │       └── value: String
@@ -75,7 +75,7 @@ width: 200px;
             }),
         ]);
         assert_eq!(
-            test_block.to_style_str("test"),
+            test_block.to_style_str(Some("test")),
             r#".test {
 width: 100vw;
 }
@@ -133,7 +133,7 @@ width: 200px;
             .into(),
         })]);
         assert_eq!(
-            test_block.to_style_str("test"),
+            test_block.to_style_str(Some("test")),
             r#"@media only screen and (min-width: 1000px) {
 .test {
 width: 100vw;

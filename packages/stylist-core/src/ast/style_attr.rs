@@ -14,7 +14,7 @@ pub struct StyleAttribute {
 }
 
 impl ToStyleStr for StyleAttribute {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, _class_name: &str) -> fmt::Result {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, _class_name: Option<&str>) -> fmt::Result {
         write!(w, "{}: {};", self.key, self.value)
     }
 }

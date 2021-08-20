@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use stylist::manager::StyleManager;
-use stylist::yew::GlobalStyle;
+use stylist::yew::Global;
 use stylist::{Style, YieldStyle};
 use web_sys::{window, Element, ShadowRootInit, ShadowRootMode};
 use yew::prelude::*;
@@ -104,8 +104,8 @@ impl Component for App {
     fn view(&self) -> Html {
         html! {
             <>
-                <GlobalStyle css=r#"
-                    &, & body {
+                <Global css=r#"
+                    html, body {
                         font-family: sans-serif;
 
                         padding: 0;

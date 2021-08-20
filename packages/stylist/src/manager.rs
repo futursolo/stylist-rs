@@ -13,8 +13,9 @@ use once_cell::unsync::Lazy;
 use web_sys::Node;
 
 use crate::registry::StyleRegistry;
+use crate::style::StyleContent;
 pub use crate::style::StyleId;
-use crate::{Result, Style};
+use crate::Result;
 
 /// A builder for [`StyleManager`].
 #[derive(Debug, Clone)]
@@ -84,7 +85,7 @@ impl StyleManagerBuilder {
     }
 }
 
-/// A struct to customise behaviour of [`Style`].
+/// A struct to customise behaviour of [`Style`](crate::Style).
 #[derive(Debug, Clone)]
 pub struct StyleManager {
     inner: Rc<StyleManagerBuilder>,
@@ -96,7 +97,7 @@ impl StyleManager {
         StyleManagerBuilder::new()
     }
 
-    /// The default prefix used by the managed [`Style`] instances.
+    /// The default prefix used by the managed [`Style`](crate::Style) instances.
     pub fn prefix(&self) -> Cow<'static, str> {
         self.inner.prefix.clone()
     }
@@ -111,9 +112,9 @@ impl StyleManager {
         self.inner.registry.clone()
     }
 
-    /// Mount the [`Style`] into the DOM tree.
+    /// Mount the [`Style`](crate::Style) into the DOM tree.
     #[cfg(target_arch = "wasm32")]
-    pub(crate) fn mount(&self, style: &Style) -> Result<()> {
+    pub(crate) fn mount(&self, content: &StyleContent) -> Result<()> {
         use crate::arch::document;
         use crate::Error;
 
@@ -122,8 +123,8 @@ impl StyleManager {
 
         (|| {
             let style_element = document.create_element("style")?;
-            style_element.set_attribute("data-style", style.id())?;
-            style_element.set_text_content(Some(style.get_style_str()));
+            style_element.set_attribute("data-style", content.id())?;
+            style_element.set_text_content(Some(content.get_style_str()));
 
             // Prepend element
             if !self.inner.append {
@@ -138,7 +139,7 @@ impl StyleManager {
         .map_err(|e| Error::Web(Some(e)))
     }
 
-    /// Unmount the [`Style`] from the DOM tree.
+    /// Unmount the [`Style`](crate::Style) from the DOM tree.
     #[cfg(target_arch = "wasm32")]
     pub(crate) fn unmount(&self, id: &StyleId) -> Result<()> {
         use crate::arch::document;
@@ -160,7 +161,7 @@ impl StyleManager {
     /// Mount the [`Style`] in to the DOM tree.
     #[cfg(not(target_arch = "wasm32"))]
     #[allow(unused_variables)]
-    pub(crate) fn mount(&self, style: &Style) -> Result<()> {
+    pub(crate) fn mount(&self, content: &StyleContent) -> Result<()> {
         // Does nothing on non-wasm targets.
         Ok(())
     }

@@ -13,7 +13,8 @@
   and styled-components.
 
 ### Other Changes:
-- Added a `<GlobalStyle />` Component for global styling.
+- Added a `GlobalStyle` struct to register global styles.
+- Added a `<Global />` Component for global styling for yew applications.
 - Supported `@supports` CSS at-rule.
 - Added an alternative counter-based class name on the style when
   feature `random` is disabled.

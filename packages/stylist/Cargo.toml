@@ -50,7 +50,7 @@ env_logger = "0.9"
 [features]
 random = ["rand", "getrandom"]
 default = ["random"]
-yew_integration = ["yew"]
+yew_integration = ["yew", "stylist-core/yew_integration"]
 
 [package.metadata.docs.rs]
 features = ["yew_integration"]

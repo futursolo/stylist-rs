@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use gloo::timers::callback::Timeout;
-use stylist::yew::GlobalStyle;
+use stylist::yew::Global;
 use stylist::YieldStyle;
 use yew::prelude::*;
 
@@ -11,7 +11,7 @@ mod benchmarks;
 mod utils;
 
 static GLOBAL_STYLE: &str = r#"
-    html&, body {
+    html, body {
         margin: 0;
         padding: 0;
         font-family: sans-serif;
@@ -256,7 +256,7 @@ impl Component for App {
     fn view(&self) -> Html {
         html! {
             <>
-                <GlobalStyle css=GLOBAL_STYLE />
+                <Global css=GLOBAL_STYLE />
                 <div class=self.style()>
                     <h1>{"Stylist Benchmark"}</h1>
                     {

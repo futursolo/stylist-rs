@@ -23,7 +23,7 @@ pub struct Block {
 }
 
 impl ToStyleStr for Block {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> fmt::Result {
         if !self.condition.is_empty() {
             for (index, sel) in self.condition.iter().enumerate() {
                 sel.write_style(w, class_name)?;
@@ -32,8 +32,11 @@ impl ToStyleStr for Block {
                 }
                 write!(w, " ")?;
             }
+        } else if let Some(m) = class_name {
+            write!(w, ".{} ", m)?;
         } else {
-            write!(w, ".{} ", class_name)?;
+            // Generates global style for dangling block.
+            write!(w, "html ")?;
         }
 
         writeln!(w, "{{")?;

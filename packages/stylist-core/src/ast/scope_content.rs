@@ -31,7 +31,7 @@ pub enum ScopeContent {
 }
 
 impl ToStyleStr for ScopeContent {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> fmt::Result {
         match self {
             ScopeContent::Block(ref b) => b.write_style(w, class_name),
             ScopeContent::Rule(ref r) => r.write_style(w, class_name),

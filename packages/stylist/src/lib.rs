@@ -29,24 +29,6 @@
 //! ).expect("Failed to create style");
 //! ```
 //!
-//! If you want to use a custom prefix for your class name,
-//! you can use [`Style::create`].
-//!
-//! ```rust
-//! use stylist::Style;
-//!
-//! let style = Style::create(
-//!     "my-component",
-//!     r#"
-//!     background-color: red;
-//!
-//!     .nested {
-//!         background-color: blue;
-//!         width: 100px
-//!     }"#,
-//! ).expect("Failed to create style");
-//! ```
-//!
 //! ### YieldStyle API
 //!
 //! Alternatively, any struct that implements [`YieldStyle`] trait can call
@@ -169,9 +151,7 @@
 //! - `random`: Enabled by default, this flag uses `rand` crate to generate a random
 //!   class name. Disabling this flag will opt for a class name that is counter-based.
 //! - `yew_integration`: This flag enables yew integration, which implements [`Classes`](::yew::html::Classes) for
-//!   [`Style`] and provides a [`GlobalStyle`](yew::GlobalStyle) component for applying global styles.
-
-mod bindings;
+//!   [`Style`] and provides a [`Global`](yew::Global) component for applying global styles.
 
 #[cfg(target_arch = "wasm32")]
 #[path = "arch_wasm.rs"]
@@ -180,16 +160,18 @@ mod arch;
 pub mod manager;
 mod registry;
 
+mod global_style;
 mod style;
 mod utils;
 mod yield_style;
 
+pub use global_style::GlobalStyle;
 pub use style::Style;
 pub use yield_style::YieldStyle;
 
 #[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
 #[cfg(feature = "yew_integration")]
-pub use bindings::yew;
+pub mod yew;
 
 #[doc(inline)]
 pub use stylist_core::ast;

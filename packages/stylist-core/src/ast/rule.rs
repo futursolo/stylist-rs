@@ -25,7 +25,7 @@ pub struct Rule {
 }
 
 impl ToStyleStr for Rule {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> fmt::Result {
         writeln!(w, "{} {{", self.condition)?;
 
         for i in self.content.iter() {

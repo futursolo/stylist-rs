@@ -15,26 +15,35 @@ pub struct Selector {
 }
 
 impl ToStyleStr for Selector {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: &str) -> fmt::Result {
-        // If contains current selector or root pseudo class, replace them with class name.
-        if self.inner.contains('&') || self.inner.contains(":root") {
-            let scoped_class = format!(".{}", class_name);
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> fmt::Result {
+        if let Some(m) = class_name {
+            // If contains current selector or root pseudo class, replace them with class name.
+            if self.inner.contains('&') || self.inner.contains(":root") {
+                let scoped_class = format!(".{}", m);
 
-            write!(
-                w,
-                "{}",
-                self.inner
-                    .replace("&", scoped_class.as_str())
-                    .replace(":root", scoped_class.as_str())
-            )?;
+                write!(
+                    w,
+                    "{}",
+                    self.inner
+                        .replace("&", scoped_class.as_str())
+                        .replace(":root", scoped_class.as_str())
+                )?;
 
-        // If selector starts with a pseudo-class, apply it to the root element.
-        } else if self.inner.starts_with(':') {
-            write!(w, ".{}{}", class_name, self.inner)?;
+            // If selector starts with a pseudo-class, apply it to the root element.
+            } else if self.inner.starts_with(':') {
+                write!(w, ".{}{}", m, self.inner)?;
 
-        // For other selectors, scope it to be the children of the root element.
+            // For other selectors, scope it to be the children of the root element.
+            } else {
+                write!(w, ".{} {}", m, self.inner)?;
+            }
+
+        // For global styles, if it contains &, it will be replaced with html.
+        } else if self.inner.contains('&') {
+            write!(w, "{}", self.inner.replace("&", "html"))?;
+        // For other styles, it will be written as is.
         } else {
-            write!(w, ".{} {}", class_name, self.inner)?;
+            write!(w, "{}", self.inner)?;
         }
 
         Ok(())
@@ -55,7 +64,10 @@ mod tests {
     fn test_selector_gen_simple() {
         let s: Selector = ".abc".into();
 
-        assert_eq!(s.to_style_str("stylist-abcdefgh"), ".stylist-abcdefgh .abc");
+        assert_eq!(
+            s.to_style_str(Some("stylist-abcdefgh")),
+            ".stylist-abcdefgh .abc"
+        );
     }
 
     #[test]
@@ -63,7 +75,7 @@ mod tests {
         let s: Selector = ":hover".into();
 
         assert_eq!(
-            s.to_style_str("stylist-abcdefgh"),
+            s.to_style_str(Some("stylist-abcdefgh")),
             ".stylist-abcdefgh:hover"
         );
     }
@@ -72,13 +84,19 @@ mod tests {
     fn test_selector_root_pseduo() {
         let s: Selector = ":root.big".into();
 
-        assert_eq!(s.to_style_str("stylist-abcdefgh"), ".stylist-abcdefgh.big");
+        assert_eq!(
+            s.to_style_str(Some("stylist-abcdefgh")),
+            ".stylist-abcdefgh.big"
+        );
     }
 
     #[test]
     fn test_selector_gen_current() {
         let s: Selector = "&.big".into();
 
-        assert_eq!(s.to_style_str("stylist-abcdefgh"), ".stylist-abcdefgh.big");
+        assert_eq!(
+            s.to_style_str(Some("stylist-abcdefgh")),
+            ".stylist-abcdefgh.big"
+        );
     }
 }

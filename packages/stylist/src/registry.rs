@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use crate::ast::Sheet;
-use crate::Style;
+use crate::style::StyleContent;
 
 /// A [`StyleKey`].
 ///
@@ -11,6 +11,7 @@ use crate::Style;
 /// registry.
 #[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub(crate) struct StyleKey<'a> {
+    pub is_global: bool,
     pub prefix: Cow<'static, str>,
     pub ast: Cow<'a, Sheet>,
 }
@@ -18,13 +19,13 @@ pub(crate) struct StyleKey<'a> {
 /// The style registry is a registry that keeps an instance of all styles for current manager.
 #[derive(Debug, Default)]
 pub(crate) struct StyleRegistry {
-    styles: HashMap<Rc<StyleKey<'static>>, Style>,
+    styles: HashMap<Rc<StyleKey<'static>>, Rc<StyleContent>>,
 }
 
 impl StyleRegistry {
-    pub(crate) fn register(&mut self, style: Style) {
-        let key = style.key().clone();
-        if self.styles.insert(key, style).is_some() {
+    pub(crate) fn register(&mut self, content: Rc<StyleContent>) {
+        let key = content.key().clone();
+        if self.styles.insert(key, content).is_some() {
             panic!("A Style with this StyleKey has already been created.");
         }
     }
@@ -33,7 +34,7 @@ impl StyleRegistry {
         self.styles.remove(&key);
     }
 
-    pub(crate) fn get(&self, key: &StyleKey<'_>) -> Option<Style> {
+    pub(crate) fn get(&self, key: &StyleKey<'_>) -> Option<Rc<StyleContent>> {
         self.styles.get(key).cloned()
     }
 }
@@ -45,6 +46,7 @@ mod tests {
 
     use super::*;
     use crate::manager::StyleManager;
+    use crate::*;
 
     fn sample_scopes() -> Sheet {
         "color: red;".parse().expect("Failed to Parse style.")
