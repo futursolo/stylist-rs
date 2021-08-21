@@ -88,7 +88,7 @@ To enable yew integration. Enable feature `yew_integration` in `Cargo.toml`.
 Then create a style and use it with yew like this:
 
 ```rust
-use stylist::YieldStyle;
+use stylist::css;
 
 struct MyStyledComponent {}
 
@@ -109,13 +109,7 @@ impl Component for MyStyledComponent {
     }
 
     fn view(&self) -> Html {
-        html! {<div class=self.style()>{"Hello World!"}</div>}
-    }
-}
-
-impl YieldStyle for MyStyledComponent {
-    fn style_str(&self) -> Cow<'static, str> {
-        "color: red;".into()
+        html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
     }
 }
 ```

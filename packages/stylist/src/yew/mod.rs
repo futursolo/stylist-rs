@@ -61,7 +61,7 @@ impl IntoPropValue<IntoStyle> for &'static str {
 
 impl IntoPropValue<IntoStyle> for Cow<'static, str> {
     fn into_prop_value(self) -> IntoStyle {
-        IntoStyle::String(self.into())
+        IntoStyle::String(self)
     }
 }
 
