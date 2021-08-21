@@ -1,7 +1,5 @@
-use std::borrow::Cow;
-
 use stylist::yew::Global;
-use stylist::{Style, YieldStyle};
+use stylist::{IntoStyle, Style, YieldStyle};
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
 use log::Level;
@@ -37,7 +35,7 @@ impl Component for Inside {
 impl YieldStyle for Inside {
     // Every `.style()` is called, this method will also be called.
     // So you can create style dynamically (theming).
-    fn style_str(&self) -> Cow<'static, str> {
+    fn style_from(&self) -> IntoStyle {
         r#"
             width: 200px;
             height: 200px;

@@ -63,14 +63,13 @@ Alternatively, any struct that implements `YieldStyle` trait can call
 `self.style()` to get a `Style` instance.
 
 ```rust
-use std::borrow::Cow;
-use stylist::YieldStyle;
+use stylist::{css, IntoStyle, YieldStyle};
 
 pub struct Component;
 
 impl YieldStyle for Component {
-    fn style_str(&self) -> Cow<'static, str> {
-        "color: red;".into()
+    fn style_from(&self) -> IntoStyle {
+        css!("color: red;")
     }
 }
 

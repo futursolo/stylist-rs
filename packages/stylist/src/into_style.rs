@@ -39,3 +39,39 @@ impl IntoStyle {
         }
     }
 }
+
+impl From<String> for IntoStyle {
+    fn from(other: String) -> IntoStyle {
+        IntoStyle::String(other.into())
+    }
+}
+
+impl From<&'static str> for IntoStyle {
+    fn from(other: &'static str) -> IntoStyle {
+        IntoStyle::String(other.into())
+    }
+}
+
+impl From<Cow<'static, str>> for IntoStyle {
+    fn from(other: Cow<'static, str>) -> IntoStyle {
+        IntoStyle::String(other)
+    }
+}
+
+impl From<Sheet> for IntoStyle {
+    fn from(other: Sheet) -> IntoStyle {
+        IntoStyle::Sheet(Cow::Owned(other))
+    }
+}
+
+impl From<&'static Sheet> for IntoStyle {
+    fn from(other: &'static Sheet) -> IntoStyle {
+        IntoStyle::Sheet(Cow::Borrowed(other))
+    }
+}
+
+impl From<Cow<'static, Sheet>> for IntoStyle {
+    fn from(other: Cow<'static, Sheet>) -> IntoStyle {
+        IntoStyle::Sheet(other)
+    }
+}

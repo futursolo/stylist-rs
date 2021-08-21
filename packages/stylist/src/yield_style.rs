@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::manager::StyleManager;
-use crate::{Result, Style};
+use crate::{IntoStyle, Result, Style};
 
 /// A trait to create [`Style`].
 ///
@@ -60,13 +60,22 @@ pub trait YieldStyle {
     }
 
     /// Returns the raw style string.
-    fn style_str(&self) -> Cow<'static, str>;
+    #[deprecated(since = "0.9.0", note = "use style_from() instead")]
+    fn style_str(&self) -> Cow<'static, str> {
+        unimplemented!("Not Implemented!")
+    }
+
+    /// Returns a type that can be turned into a [`Style`].
+    #[allow(deprecated)]
+    fn style_from(&self) -> IntoStyle {
+        self.style_str().into()
+    }
 
     /// Returns the generated style.
     ///
     /// Returns [`Err(Error)`](crate::Error) when failed to create a style.
     fn try_style(&self) -> Result<Style> {
-        Style::new_with_manager(self.style_str(), self.manager())
+        Style::new_with_manager(self.style_from().to_sheet().as_ref(), self.manager())
     }
 
     /// Returns the generated style.
