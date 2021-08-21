@@ -1,7 +1,5 @@
-use std::borrow::Cow;
-
 use stylist::yew::Global;
-use stylist::YieldStyle;
+use stylist::{IntoStyle, YieldStyle};
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 use yewdux::prelude::*;
 use yewtil::NeqAssign;
@@ -57,7 +55,7 @@ impl Component for BaseInside {
 }
 
 impl YieldStyle for BaseInside {
-    fn style_str(&self) -> Cow<'static, str> {
+    fn style_from(&self) -> IntoStyle {
         r#"
             button {
                 color: white;
@@ -138,7 +136,7 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_str(&self) -> Cow<'static, str> {
+    fn style_from(&self) -> IntoStyle {
         let theme = self.dispatch.state().theme.current();
 
         format!(

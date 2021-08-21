@@ -235,6 +235,9 @@ pub use stylist_macros::global_style;
 /// let rendered = html! {<div class=css!("color: red;") />};
 /// let rendered_global = html! {<Global css=css!("color: red;") />};
 /// ```
+#[doc(inline)]
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
 pub use stylist_macros::css;
 
 #[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]

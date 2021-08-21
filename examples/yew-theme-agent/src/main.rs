@@ -1,8 +1,7 @@
-use std::borrow::Cow;
 use std::sync::Arc;
 
 use stylist::yew::Global;
-use stylist::YieldStyle;
+use stylist::{IntoStyle, YieldStyle};
 use yew::{html, Bridge, Component, ComponentLink, Html, ShouldRender};
 use yewtil::store::{Bridgeable, ReadOnly, StoreWrapper};
 
@@ -81,7 +80,7 @@ impl Component for Inside {
 }
 
 impl YieldStyle for Inside {
-    fn style_str(&self) -> Cow<'static, str> {
+    fn style_from(&self) -> IntoStyle {
         r#"
             button {
                 color: white;
@@ -195,7 +194,7 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_str(&self) -> Cow<'static, str> {
+    fn style_from(&self) -> IntoStyle {
         if let Some(ref m) = self.theme {
             format!(
                 r#"

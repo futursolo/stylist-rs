@@ -7,7 +7,7 @@ use crate::{IntoStyle, Result, Style};
 ///
 /// Any struct that implements this trait can call [`self.style()`](YieldStyle::style) to get a style class.
 ///
-/// [`prefix()`](YieldStyle::prefix) and [`style_str()`](YieldStyle::style_str) will be called everytime
+/// [`prefix()`](YieldStyle::prefix) and [`style_from()`](YieldStyle::style_from) will be called everytime
 /// [`self.style()`](YieldStyle::style) is called.
 ///
 /// You can use this to achieve dynamic theming.
@@ -18,7 +18,7 @@ use crate::{IntoStyle, Result, Style};
 /// use yew::prelude::*;
 ///
 /// use std::borrow::Cow;
-/// use stylist::YieldStyle;
+/// use stylist::{css, IntoStyle, YieldStyle};
 ///
 /// struct MyStyledComponent {}
 ///
@@ -44,8 +44,8 @@ use crate::{IntoStyle, Result, Style};
 /// }
 ///
 /// impl YieldStyle for MyStyledComponent {
-///     fn style_str(&self) -> Cow<'static, str> {
-///         "color: red;".into()
+///     fn style_from(&self) -> IntoStyle {
+///         css!("color: red;")
 ///     }
 /// }
 /// ```
@@ -66,6 +66,8 @@ pub trait YieldStyle {
     }
 
     /// Returns a type that can be turned into a [`Style`].
+    ///
+    /// Override this method to customise the style.
     #[allow(deprecated)]
     fn style_from(&self) -> IntoStyle {
         self.style_str().into()

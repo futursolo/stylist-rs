@@ -1,8 +1,6 @@
-use std::borrow::Cow;
-
 use stylist::manager::StyleManager;
 use stylist::yew::Global;
-use stylist::{Style, YieldStyle};
+use stylist::{IntoStyle, Style, YieldStyle};
 use web_sys::{window, Element, ShadowRootInit, ShadowRootMode};
 use yew::prelude::*;
 
@@ -135,7 +133,7 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_str(&self) -> Cow<'static, str> {
+    fn style_from(&self) -> IntoStyle {
         r#"
             box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
             height: 500px;
