@@ -109,14 +109,15 @@ jobs:
         run: sleep 30s
         shell: bash
 
-      - name: Run cargo publish --dry-run for stylist-macros
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --dry-run --manifest-path packages/stylist-macros/Cargo.toml
-        env:
-          RUSTFLAGS: "--cfg releasing"
+      # Not possible if stylist-core does not have a compatible version on crates.io
+      # - name: Run cargo publish --dry-run for stylist-macros
+      #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: publish
+      #     args: --dry-run --manifest-path packages/stylist-macros/Cargo.toml
+      #   env:
+      #     RUSTFLAGS: "--cfg releasing"
 
       - name: Run cargo publish for stylist-macros
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -131,7 +132,7 @@ jobs:
         run: sleep 30s
         shell: bash
 
-      # Not possible if stylist-core or stylist-macros are not having a compatible API on crates.io
+      # Not possible if stylist-core or stylist-macros do not have a compatible version on crates.io
       # - name: Run cargo publish --dry-run for stylist
       #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
       #   uses: actions-rs/cargo@v1
