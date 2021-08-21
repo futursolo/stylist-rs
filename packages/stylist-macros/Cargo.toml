@@ -1,0 +1,30 @@
+[package]
+name = "stylist-macros"
+version = "0.9.0"
+edition = "2018"
+license = "MIT"
+repository = "https://github.com/futursolo/stylist-rs"
+authors = [
+    "Kaede Hoshiakwa <futursolo@icloud.com>",
+]
+description = "Stylist is a CSS-in-Rust styling solution for WebAssembly Applications."
+keywords = [
+    "CSS",
+    "web",
+    "css-in-rust",
+    "yew"
+]
+categories = ["wasm", "web-programming"]
+readme = "README.md"
+homepage = "https://github.com/futursolo/stylist-rs"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+stylist-core = { path = "../stylist-core", version = "0.9.0", features = ["proc_macros"] }
+
+litrs = "0.2.3"
+proc-macro-error = "1.0.4"
+proc-macro2 = "1.0.28"
+quote = "1.0.9"

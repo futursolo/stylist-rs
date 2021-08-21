@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use crate::manager::StyleManager;
 use crate::{Result, Style};
 
-/// A trait to create Style
+/// A trait to create [`Style`].
 ///
 /// Any struct that implements this trait can call [`self.style()`](YieldStyle::style) to get a style class.
 ///

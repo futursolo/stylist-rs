@@ -18,6 +18,25 @@ stylist = "0.8"
 
 ## Usage
 
+### Procedural Macros
+
+To create a stylesheet, you can use [`style!`]:
+
+```rust
+use stylist::style;
+
+let style = style!(
+   // A CSS string literal
+   r#"
+       background-color: red;
+
+       .nested {
+           background-color: blue;
+           width: 100px
+       }
+   "#
+);
+```
 ### Style API
 
 To create a stylesheet, use `Style::new`:
@@ -28,12 +47,13 @@ use stylist::Style;
 let style = Style::new(
     // The actual css
     r#"
-    background-color: red;
+        background-color: red;
 
-    .nested {
-        background-color: blue;
-        width: 100px
-    }"#,
+        .nested {
+            background-color: blue;
+            width: 100px
+        }
+    "#,
 ).expect("Failed to create style");
 ```
 
@@ -59,12 +79,11 @@ impl Component {
         println!("{}", self.style().get_class_name());
     }
 }
-
 ```
 
 ## Yew Integration
 
-To enable yew integration. Enable feature `yew` in `Cargo.toml`.
+To enable yew integration. Enable feature `yew_integration` in `Cargo.toml`.
 
 Then create a style and use it with yew like this:
 

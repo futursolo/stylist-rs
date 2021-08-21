@@ -2,7 +2,10 @@
 members = [
     "packages/stylist",
     "packages/stylist-core",
+    "packages/stylist-macros",
+
     "examples/benchmarks",
+    "examples/proc-macros",
     "examples/yew-integration",
     "examples/yew-shadow",
     "examples/yew-theme-agent",

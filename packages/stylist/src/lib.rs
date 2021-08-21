@@ -9,7 +9,24 @@
 //!
 //! ## Usage
 //!
-//! There're two APIs that you can use to style your components.
+//! ### Procedural Macros
+//!
+//! To create a stylesheet, you can use [`style!`]:
+//!
+//! ```
+//! use stylist::style;
+//!
+//! let style = style!(
+//!     r#"
+//!         background-color: red;
+//!
+//!         .nested {
+//!             background-color: blue;
+//!             width: 100px
+//!         }
+//!     "#
+//! );
+//! ```
 //!
 //! ### Style API
 //!
@@ -20,19 +37,20 @@
 //!
 //! let style = Style::new(
 //!     r#"
-//!     background-color: red;
+//!         background-color: red;
 //!
-//!     .nested {
-//!         background-color: blue;
-//!         width: 100px
-//!     }"#,
+//!         .nested {
+//!             background-color: blue;
+//!             width: 100px
+//!         }
+//!     "#,
 //! ).expect("Failed to create style");
 //! ```
 //!
 //! ### YieldStyle API
 //!
 //! Alternatively, any struct that implements [`YieldStyle`] trait can call
-//! `self.style()` to get a [`Style`] instance.
+//! [`self.style()`](YieldStyle::style) to get a [`Style`] instance.
 //!
 //! ```rust
 //! use std::borrow::Cow;
@@ -100,7 +118,7 @@
 //!
 //! ## Yew Integration
 //!
-//! To enable yew integration. Enable feature `yew` in `Cargo.toml`.
+//! To enable yew integration. Enable feature `yew_integration` in `Cargo.toml`.
 //!
 //! Then create a style and use it with yew like this:
 //!
@@ -148,6 +166,7 @@
 //!
 //! ## Features Flags
 //!
+//! - `macros`: Enabled by default, this flag enables procedural macro support.
 //! - `random`: Enabled by default, this flag uses `rand` crate to generate a random
 //!   class name. Disabling this flag will opt for a class name that is counter-based.
 //! - `yew_integration`: This flag enables yew integration, which implements [`Classes`](::yew::html::Classes) for
@@ -160,6 +179,7 @@ mod arch;
 pub mod manager;
 mod registry;
 
+pub mod ast;
 mod global_style;
 mod style;
 mod utils;
@@ -169,11 +189,28 @@ pub use global_style::GlobalStyle;
 pub use style::Style;
 pub use yield_style::YieldStyle;
 
+/// A procedural macro that parses a string literal into a [`Style`].
+///
+/// # Panics
+///
+/// This macro will panic at runtime if [`Style`] fails to mount.
+///
+/// # Example
+///
+/// ```
+/// use stylist::style;
+///
+/// // Returns a Style instance.
+/// let style = style!("color: red;");
+/// ```
+#[doc(inline)]
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::style;
+
 #[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
 #[cfg(feature = "yew_integration")]
 pub mod yew;
 
-#[doc(inline)]
-pub use stylist_core::ast;
 #[doc(inline)]
 pub use stylist_core::{Error, Result};
