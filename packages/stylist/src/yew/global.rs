@@ -1,51 +1,18 @@
-//! This module contains yew specific features.
-
-use std::borrow::Cow;
-
-use crate::ast::Sheet;
-use yew::html::Classes;
-use yew::html::IntoPropValue;
 use yew::prelude::*;
 
-use crate::Style;
-
+use crate::yew::IntoStyle;
 use crate::GlobalStyle;
-
-impl From<Style> for Classes {
-    fn from(style: Style) -> Self {
-        let mut classes = Self::new();
-        classes.push(style.get_class_name().to_string());
-        classes
-    }
-}
-
-impl IntoPropValue<Style> for String {
-    fn into_prop_value(self) -> Style {
-        self.parse().expect("Failed to parse style.")
-    }
-}
-
-impl IntoPropValue<Style> for &str {
-    fn into_prop_value(self) -> Style {
-        self.parse().expect("Failed to parse style.")
-    }
-}
-
-impl IntoPropValue<Style> for Cow<'_, str> {
-    fn into_prop_value(self) -> Style {
-        self.parse().expect("Failed to parse style.")
-    }
-}
 
 /// The properties for [`Global`] Component, please see its documentation for usage.
 #[derive(Properties, Clone, Debug)]
 pub struct GlobalProps {
-    pub css: Sheet,
+    pub css: IntoStyle,
 }
 
 /// A Global Style that will be applied to `<html />` tag, inspired by [emotion](https://emotion.sh).
 ///
-/// The `css` attribute accepts anything that implements [`IntoPropValue<Sheet>`] and
+/// The `css` attribute accepts anything that implements
+/// [`IntoPropValue<IntoStyle>`](yew::html::IntoPropValue) and
 /// panics if the string failed to be parsed into a stylesheet.
 ///
 /// # Example:
@@ -131,7 +98,8 @@ impl Global {
             m.unregister();
         }
 
-        self.global_style =
-            Some(GlobalStyle::new(&self.props.css).expect("Failed to parse style."));
+        self.global_style = Some(
+            GlobalStyle::new(self.props.css.to_sheet().as_ref()).expect("Failed to parse style."),
+        );
     }
 }

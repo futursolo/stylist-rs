@@ -20,7 +20,7 @@ stylist = "0.8"
 
 ### Procedural Macros
 
-To create a stylesheet, you can use [`style!`]:
+To create a stylesheet, you can use `style!`:
 
 ```rust
 use stylist::style;
@@ -39,13 +39,13 @@ let style = style!(
 ```
 ### Style API
 
-To create a stylesheet, use `Style::new`:
+If you want to parse a string into a style at runtime, you can use `Style::new`:
 
 ```rust
 use stylist::Style;
 
 let style = Style::new(
-    // The actual css
+    // A CSS string
     r#"
         background-color: red;
 

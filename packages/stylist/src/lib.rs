@@ -30,7 +30,7 @@
 //!
 //! ### Style API
 //!
-//! To create a stylesheet, you can use [`Style::new`]:
+//! If you want to parse a string into a style at runtime, you can use [`Style::new`]:
 //!
 //! ```rust
 //! use stylist::Style;
@@ -126,7 +126,7 @@
 //! use std::borrow::Cow;
 //!
 //! use yew::prelude::*;
-//! use stylist::YieldStyle;
+//! use stylist::css;
 //!
 //! struct MyStyledComponent {}
 //!
@@ -147,13 +147,7 @@
 //!     }
 //!
 //!     fn view(&self) -> Html {
-//!         html! {<div class=self.style()>{"Hello World!"}</div>}
-//!     }
-//! }
-//!
-//! impl YieldStyle for MyStyledComponent {
-//!     fn style_str(&self) -> Cow<'static, str> {
-//!         "color: red;".into()
+//!         html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
 //!     }
 //! }
 //! ```
@@ -181,11 +175,13 @@ mod registry;
 
 pub mod ast;
 mod global_style;
+mod into_style;
 mod style;
 mod utils;
 mod yield_style;
 
 pub use global_style::GlobalStyle;
+pub use into_style::IntoStyle;
 pub use style::Style;
 pub use yield_style::YieldStyle;
 
@@ -207,6 +203,39 @@ pub use yield_style::YieldStyle;
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::style;
+
+/// A procedural macro that parses a string literal into a [`GlobalStyle`].
+///
+/// # Panics
+///
+/// This macro will panic at runtime if [`GlobalStyle`] fails to mount.
+///
+/// # Example
+///
+/// ```
+/// use stylist::global_style;
+///
+/// // Returns a GlobalStyle instance.
+/// let style = global_style!("color: red;");
+/// ```
+#[doc(inline)]
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::global_style;
+
+/// A procedural macro that parses a string literal into a [`IntoStyle`].
+///
+/// # Example
+///
+/// ```
+/// use stylist::css;
+/// use stylist::yew::Global;
+/// use yew::prelude::*;
+///
+/// let rendered = html! {<div class=css!("color: red;") />};
+/// let rendered_global = html! {<Global css=css!("color: red;") />};
+/// ```
+pub use stylist_macros::css;
 
 #[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
 #[cfg(feature = "yew_integration")]

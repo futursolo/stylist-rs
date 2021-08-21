@@ -1,5 +1,4 @@
-use stylist::ast::sheet;
-use stylist::style;
+use stylist::css;
 use stylist::yew::Global;
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
@@ -25,7 +24,7 @@ impl Component for Inside {
 
     fn view(&self) -> Html {
         html! {
-            <div class=style!(r#"
+            <div class=css!(r#"
                 width: 200px;
                 height: 200px;
                 border-radius: 5px;
@@ -65,8 +64,7 @@ impl Component for App {
     fn view(&self) -> Html {
         html! {
             <>
-                // Global Styles can be applied with <GlobalStyle /> component.
-                <Global css=sheet!(r#"
+                <Global css=css!(r#"
                     html, body {
                         font-family: sans-serif;
 
@@ -82,8 +80,8 @@ impl Component for App {
                         background-color: rgb(237, 244, 255);
                     }
                 "#) />
-                <h1>{"Yew Integration"}</h1>
-                <div class=style!(r#"
+                <h1>{"Procedural Macro Example"}</h1>
+                <div class=css!(r#"
                     box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
                     height: 500px;
                     width: 500px;

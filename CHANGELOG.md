@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9
+
+Other Changes:
+- Added a Procedural Macro API that parses the Stylesheet at the compile
+  time.
+
 ## v0.8
 
 ### Breaking Changes:
