@@ -1,4 +1,8 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+
+use once_cell::sync::Lazy;
 
 use crate::ast::{
     Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StringKind,
@@ -11,10 +15,12 @@ use nom::{
     character::complete::{alpha1, alphanumeric1, anychar, none_of, one_of},
     combinator::{map, map_res, opt, recognize},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
-    multi::{fold_many0, many0, many1, separated_list0},
+    multi::{many0, many1, separated_list0},
     sequence::{delimited, pair, preceded, separated_pair, terminated},
     IResult,
 };
+
+static CACHED_SHEETS: Lazy<Arc<Mutex<HashMap<String, Sheet>>>> = Lazy::new(Arc::default);
 
 #[cfg(test)]
 use log::trace;
@@ -312,9 +318,8 @@ impl Parser {
         let string_or_curlies = alt((Parser::rule_curly_braces, string_as_contents));
         let result = context(
             "RuleContents",
-            fold_many0(string_or_curlies, Vec::new(), |mut acc, item| {
-                acc.extend(item);
-                acc
+            map(many0(string_or_curlies), |p: Vec<Vec<RuleContent>>| {
+                p.into_iter().flatten().collect()
             }),
         )(i)?;
 
@@ -649,7 +654,7 @@ impl Parser {
     }
 
     /// The parse the style and returns a `Result<Sheet>`.
-    pub(crate) fn parse(css: &str) -> Result<Sheet> {
+    fn parse_impl(css: &str) -> Result<Sheet> {
         match Self::sheet(css) {
             // Converting to String, primarily due to lifetime requirements.
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => Err(Error::Parse {
@@ -667,6 +672,22 @@ impl Parser {
                 source: None,
             }),
             Ok((_, res)) => Ok(res),
+        }
+    }
+
+    pub(crate) fn parse(css: &str) -> Result<Sheet> {
+        let cache = CACHED_SHEETS.clone();
+
+        let mut cache = cache.lock().unwrap();
+
+        if let Some(m) = cache.get(css) {
+            Ok(m.clone())
+        } else {
+            let m = Self::parse_impl(css)?;
+
+            cache.insert(css.to_string(), m.clone());
+
+            Ok(m)
         }
     }
 }

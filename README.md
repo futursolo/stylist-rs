@@ -74,7 +74,7 @@ impl YieldStyle for Component {
 }
 
 impl Component {
-    fn print_style(&self) -> Self {
+    fn print_style_class(&self) {
         println!("{}", self.style().get_class_name());
     }
 }

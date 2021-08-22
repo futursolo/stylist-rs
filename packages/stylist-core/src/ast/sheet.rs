@@ -1,13 +1,8 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
 use std::fmt;
 use std::ops::Deref;
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
-
-use once_cell::sync::Lazy;
-
-static CACHED_SHEETS: Lazy<Arc<Mutex<HashMap<String, Sheet>>>> = Lazy::new(Arc::default);
+use std::sync::Arc;
 
 use super::{ScopeContent, ToStyleStr};
 use crate::parser::Parser;
@@ -21,18 +16,9 @@ impl FromStr for Sheet {
     type Err = crate::Error;
 
     fn from_str(s: &str) -> crate::Result<Self> {
-        let cache = CACHED_SHEETS.clone();
-        let mut cache = cache.lock().unwrap();
+        let m = Parser::parse(s)?;
 
-        if let Some(m) = cache.get(s) {
-            Ok(m.clone())
-        } else {
-            let m = Parser::parse(s)?;
-
-            cache.insert(s.to_string(), m.clone());
-
-            Ok(m)
-        }
+        Ok(m)
     }
 }
 
