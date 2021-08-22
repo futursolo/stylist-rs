@@ -1,8 +1,6 @@
-use std::borrow::Cow;
-
 use gloo::timers::callback::Timeout;
 use stylist::yew::Global;
-use stylist::YieldStyle;
+use stylist::{IntoStyle, YieldStyle};
 use yew::prelude::*;
 
 use log::Level;
@@ -24,7 +22,9 @@ static GLOBAL_STYLE: &str = r#"
 
 pub enum BenchMsg {
     ParseSimpleFinish(f64),
+    ParseSimpleNoCacheFinish(f64),
     ParseComplexFinish(f64),
+    ParseComplexNoCacheFinish(f64),
     CachedLookupFinish(f64),
     CachedLookupBigSheetFinish(f64),
     MountingFinish(f64),
@@ -35,7 +35,9 @@ pub struct Benchmarks {
     finished: bool,
 
     parse_simple: Option<f64>,
+    parse_simple_no_cache: Option<f64>,
     parse_complex: Option<f64>,
+    parse_complex_no_cache: Option<f64>,
 
     cached_lookup: Option<f64>,
     cached_lookup_big_sheet: Option<f64>,
@@ -52,7 +54,9 @@ impl Component for Benchmarks {
             link,
             finished: false,
             parse_simple: None,
+            parse_simple_no_cache: None,
             parse_complex: None,
+            parse_complex_no_cache: None,
             cached_lookup: None,
             cached_lookup_big_sheet: None,
             mounting: None,
@@ -72,14 +76,32 @@ impl Component for Benchmarks {
         match msg {
             BenchMsg::ParseSimpleFinish(m) => {
                 self.parse_simple = Some(m);
+                let cb = self.link.callback(|_| {
+                    BenchMsg::ParseSimpleNoCacheFinish(benchmarks::bench_parse_simple_no_cache())
+                });
+
+                Timeout::new(100, move || cb.emit(())).forget();
+            }
+            BenchMsg::ParseSimpleNoCacheFinish(m) => {
+                self.parse_simple_no_cache = Some(m);
                 let cb = self
                     .link
                     .callback(|_| BenchMsg::ParseComplexFinish(benchmarks::bench_parse_complex()));
 
                 Timeout::new(100, move || cb.emit(())).forget();
             }
+
             BenchMsg::ParseComplexFinish(m) => {
                 self.parse_complex = Some(m);
+
+                let cb = self.link.callback(|_| {
+                    BenchMsg::ParseComplexNoCacheFinish(benchmarks::bench_parse_complex_no_cache())
+                });
+
+                Timeout::new(100, move || cb.emit(())).forget();
+            }
+            BenchMsg::ParseComplexNoCacheFinish(m) => {
+                self.parse_complex_no_cache = Some(m);
 
                 let cb = self
                     .link
@@ -143,13 +165,20 @@ impl Component for Benchmarks {
                     </thead>
                     <tbody>
                         <tr>
-                            <th>{"Parse Simple (100,000 iterations): "}</th>
+                            <th>{"Parse Simple (1,000,000 iterations): "}</th>
                             <th>{self.parse_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
-
                         <tr>
-                            <th>{"Parse Complex (10,000 iterations): "}</th>
+                            <th>{"Parse Simple, No Cache (100,000 iterations): "}</th>
+                            <th>{self.parse_simple_no_cache.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+                        <tr>
+                            <th>{"Parse Complex (100,000 iterations): "}</th>
                             <th>{self.parse_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+                        <tr>
+                            <th>{"Parse Complex, No Cache (100,000 iterations): "}</th>
+                            <th>{self.parse_complex_no_cache.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
                             <th>{"Cached Lookup (1,000,000 iterations): "}</th>
@@ -171,7 +200,7 @@ impl Component for Benchmarks {
 }
 
 impl YieldStyle for Benchmarks {
-    fn style_str(&self) -> Cow<'static, str> {
+    fn style_from(&self) -> IntoStyle {
         r#"
             display: flex;
             justify-content: center;
@@ -280,7 +309,7 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_str(&self) -> Cow<'static, str> {
+    fn style_from(&self) -> IntoStyle {
         r#"
             display: flex;
             justify-content: center;

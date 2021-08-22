@@ -1,22 +1,38 @@
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::fmt;
 use std::ops::Deref;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 
-use crate::parser::Parser;
+use once_cell::sync::Lazy;
+
+static CACHED_SHEETS: Lazy<Arc<Mutex<HashMap<String, Sheet>>>> = Lazy::new(Arc::default);
 
 use super::{ScopeContent, ToStyleStr};
+use crate::parser::Parser;
 use crate::Result;
 
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Sheet(Cow<'static, [ScopeContent]>);
+pub struct Sheet(Arc<Cow<'static, [ScopeContent]>>);
 
 impl FromStr for Sheet {
     type Err = crate::Error;
 
     fn from_str(s: &str) -> crate::Result<Self> {
-        Parser::parse(s)
+        let cache = CACHED_SHEETS.clone();
+        let mut cache = cache.lock().unwrap();
+
+        if let Some(m) = cache.get(s) {
+            Ok(m.clone())
+        } else {
+            let m = Parser::parse(s)?;
+
+            cache.insert(s.to_string(), m.clone());
+
+            Ok(m)
+        }
     }
 }
 
@@ -30,25 +46,25 @@ impl Deref for Sheet {
 
 impl Sheet {
     pub fn new() -> Self {
-        Self(Cow::Borrowed(&[]))
+        Self(Arc::new(Cow::Borrowed(&[])))
     }
 }
 
 impl From<Vec<ScopeContent>> for Sheet {
     fn from(v: Vec<ScopeContent>) -> Self {
-        Self(v.into())
+        Self(Arc::new(v.into()))
     }
 }
 
 impl From<&'static [ScopeContent]> for Sheet {
     fn from(v: &'static [ScopeContent]) -> Self {
-        Self(v.into())
+        Self(Arc::new(v.into()))
     }
 }
 
 impl From<Cow<'static, [ScopeContent]>> for Sheet {
     fn from(v: Cow<'static, [ScopeContent]>) -> Self {
-        Self(v)
+        Self(Arc::new(v))
     }
 }
 
