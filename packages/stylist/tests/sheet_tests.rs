@@ -10,7 +10,7 @@ fn test_sheet_interpolation() {
 
             .nested, ${var_a} {
                 background-color: blue;
-                width: ${size}px
+                width: ${size}px;
             }
 
             @keyframes myframe {
