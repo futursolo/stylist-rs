@@ -1,11 +1,13 @@
 use std::borrow::Cow;
 
-use crate::ast::{Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StyleAttribute};
+use crate::ast::{
+    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringKind, StyleAttribute,
+};
 use crate::{Error, Result};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while},
-    character::complete::{anychar, none_of, one_of},
+    character::complete::{alpha1, alphanumeric1, anychar, none_of, one_of},
     combinator::{map, map_res, opt, recognize},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
     multi::{fold_many0, many0, many1, separated_list0},
@@ -147,6 +149,35 @@ impl Parser {
         result
     }
 
+    /// Parse a selector interpolation.
+    fn selector_interpolation(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Selector Interpolation: {}", i);
+
+        let result = context(
+            "SelectorInterpolation",
+            Self::trimmed(map(
+                delimited(
+                    tag("${"),
+                    Self::trimmed(recognize(preceded(
+                        alpha1,
+                        many0(alt((alphanumeric1, tag("_")))),
+                    ))),
+                    tag("}"),
+                ),
+                |p: &str| Selector {
+                    inner: p.trim().to_owned().into(),
+                    kind: StringKind::Interpolation,
+                },
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Selector Interpolation: {:#?}", result);
+
+        result
+    }
+
     /// Parse a selector.
     fn selector(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
         #[cfg(test)]
@@ -156,7 +187,7 @@ impl Parser {
             "Selector",
             Self::trimmed(map(
                 recognize(preceded(
-                    none_of(",}@{"),
+                    none_of("$,}@{"),
                     many0(alt((is_not(",\"{"), Self::string))),
                 )),
                 |p: &str| p.trim().to_owned().into(),
@@ -178,7 +209,10 @@ impl Parser {
 
         let result = context(
             "Condition",
-            Self::trimmed(many1(terminated(Self::selector, opt(tag(","))))),
+            Self::trimmed(many1(terminated(
+                alt((Self::selector, Self::selector_interpolation)),
+                opt(tag(",")),
+            ))),
         )(i);
 
         #[cfg(test)]
@@ -316,7 +350,7 @@ impl Parser {
         result
     }
 
-    /// Parse a style attribute such as "width: 10px"
+    /// Parse a style attribute such as "width: 10px;"
     fn dangling_attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Dangling Attribute: {}", i);
@@ -861,15 +895,57 @@ mod tests {
 
     #[test]
     fn test_selectors_list_2() {
-        assert_eq!(
-            Parser::selector("&").map(|m| m.1),
-            Ok(Selector { inner: "&".into() })
-        );
+        init();
+        assert_eq!(Parser::selector("&").map(|m| m.1), Ok("&".into()));
         assert_eq!(
             Parser::selector("& input").map(|m| m.1),
-            Ok(Selector {
-                inner: "& input".into()
-            })
+            Ok("& input".into())
         );
+    }
+
+    #[test]
+    fn test_interpolation() {
+        init();
+        let test_str = r#"
+            background-color: red;
+
+            .nested, ${var_a} {
+                background-color: blue;
+                width: 100px
+            }"#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![
+            ScopeContent::Block(Block {
+                condition: Cow::Borrowed(&[]),
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".into(),
+                    value: "red".into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec![
+                    ".nested".into(),
+                    Selector {
+                        inner: "var_a".into(),
+                        kind: StringKind::Interpolation,
+                    },
+                ]
+                .into(),
+                style_attributes: vec![
+                    StyleAttribute {
+                        key: "background-color".into(),
+                        value: "blue".into(),
+                    },
+                    StyleAttribute {
+                        key: "width".into(),
+                        value: "100px".into(),
+                    },
+                ]
+                .into(),
+            }),
+        ]);
+        assert_eq!(parsed, expected);
     }
 }

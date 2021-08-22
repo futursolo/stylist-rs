@@ -1,4 +1,3 @@
-use once_cell::unsync::OnceCell;
 use std::borrow::Cow;
 use std::fmt;
 use std::ops::Deref;
@@ -13,9 +12,6 @@ use crate::{Error, Result};
 use crate::utils::get_entropy;
 
 /// The Unique Identifier of a Style.
-///
-/// This is currently the same as the class name of a style.
-/// But this may change in the future.
 ///
 /// This is primarily used by [`StyleManager`] to track the mounted instance of [`Style`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -42,7 +38,7 @@ pub(crate) struct StyleContent {
 
     pub key: Rc<StyleKey<'static>>,
 
-    pub style_str: OnceCell<String>,
+    pub style_str: String,
 
     pub manager: StyleManager,
 }
@@ -53,13 +49,7 @@ impl StyleContent {
     }
 
     pub fn get_style_str(&self) -> &str {
-        self.style_str.get_or_init(|| {
-            self.key.ast.to_style_str(if self.is_global {
-                None
-            } else {
-                Some(&*self.id())
-            })
-        })
+        &self.style_str
     }
 
     pub fn unmount(&self) -> Result<()> {
@@ -186,11 +176,20 @@ impl Style {
             ast: Cow::Owned(key.ast.into_owned()),
         };
 
+        let id = StyleId(format!("{}-{}", key.prefix, get_entropy()));
+
+        let style_str = key.ast.to_style_str(Some(&id))?;
+
+        // We parse the style str again in debug mode to ensure that interpolated values are
+        // not corrupting the stylesheet.
+        #[cfg(debug_assertions)]
+        style_str.parse::<Sheet>()?;
+
         let new_style = Self {
             inner: StyleContent {
                 is_global: false,
-                id: StyleId(format!("{}-{}", key.prefix, get_entropy())),
-                style_str: OnceCell::new(),
+                id,
+                style_str,
                 manager,
                 key: Rc::new(key),
             }

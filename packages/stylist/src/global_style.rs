@@ -2,10 +2,7 @@ use std::borrow::Cow;
 use std::rc::Rc;
 use std::str::FromStr;
 
-use once_cell::unsync::OnceCell;
-
-use crate::ast::IntoSheet;
-use crate::ast::Sheet;
+use crate::ast::{IntoSheet, Sheet, ToStyleStr};
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
 use crate::style::StyleContent;
@@ -53,11 +50,13 @@ impl GlobalStyle {
             ast: Cow::Owned(key.ast.into_owned()),
         };
 
+        let style_str = key.ast.to_style_str(None)?;
+
         let new_style = Self {
             inner: StyleContent {
                 is_global: true,
                 id: StyleId(format!("{}-{}", key.prefix, get_entropy())),
-                style_str: OnceCell::new(),
+                style_str,
                 manager,
                 key: Rc::new(key),
             }

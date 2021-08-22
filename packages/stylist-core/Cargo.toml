@@ -34,6 +34,3 @@ wasm-bindgen-test = "0.3.24"
 
 [features]
 yew_integration = ["yew"]
-
-# Used by stylist-macros
-proc_macros = []

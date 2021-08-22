@@ -24,19 +24,22 @@ impl Component for Inside {
 
     fn view(&self) -> Html {
         html! {
-            <div class=css!(r#"
-                width: 200px;
-                height: 200px;
-                border-radius: 5px;
+            <div class=css!(
+                r#"
+                    width: 200px;
+                    height: 200px;
+                    border-radius: 5px;
 
-                background: black;
+                    background: black;
 
-                padding: 15px;
-                box-sizing: border-box;
+                    padding: 15px;
+                    box-sizing: border-box;
 
-                box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
-                color: white;
-            "#)>
+                    box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+                    color: white;
+                "#,
+                abc = abc.alone(),
+            )>
                 {"The quick brown fox jumps over the lazy dog"}
             </div>
         }

@@ -5,6 +5,8 @@
 Other Changes:
 - Added a Procedural Macro API that parses the Stylesheet at the compile
   time.
+- `style_str` method in `YieldStyle` is now deprecated, use `style_from`
+  instead.
 
 ## v0.8
 

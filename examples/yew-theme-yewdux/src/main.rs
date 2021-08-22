@@ -103,7 +103,7 @@ impl Component for App {
 
         html! {
             <>
-                // Global Styles can be applied with <GlobalStyle /> component.
+                // Global Styles can be applied with <Global /> component.
                 <Global css=format!(
                     r#"
                         html, body {{

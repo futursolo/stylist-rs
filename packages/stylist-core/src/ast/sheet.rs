@@ -6,6 +6,7 @@ use std::str::FromStr;
 use crate::parser::Parser;
 
 use super::{ScopeContent, ToStyleStr};
+use crate::Result;
 
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -58,7 +59,7 @@ impl Default for Sheet {
 }
 
 impl ToStyleStr for Sheet {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> fmt::Result {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
         for scope in self.0.iter() {
             scope.write_style(w, class_name)?;
             writeln!(w)?;

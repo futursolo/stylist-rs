@@ -22,7 +22,7 @@ homepage = "https://github.com/futursolo/stylist-rs"
 proc-macro = true
 
 [dependencies]
-stylist-core = { path = "../stylist-core", version = "0.9.0", features = ["proc_macros"] }
+stylist-core = { path = "../stylist-core", version = "0.9.0" }
 
 litrs = "0.2.3"
 proc-macro-error = "1.0.4"

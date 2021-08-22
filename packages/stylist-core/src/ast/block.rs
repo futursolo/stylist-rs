@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fmt;
 
 use super::{Selector, StyleAttribute, ToStyleStr};
+use crate::Result;
 
 /// A block is a set of css properties that apply to elements that
 /// match the condition. The CSS standard calls these "Qualified rules".
@@ -23,7 +24,7 @@ pub struct Block {
 }
 
 impl ToStyleStr for Block {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> fmt::Result {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
         if !self.condition.is_empty() {
             for (index, sel) in self.condition.iter().enumerate() {
                 sel.write_style(w, class_name)?;
@@ -46,6 +47,8 @@ impl ToStyleStr for Block {
             writeln!(w)?;
         }
 
-        write!(w, "}}")
+        write!(w, "}}")?;
+
+        Ok(())
     }
 }

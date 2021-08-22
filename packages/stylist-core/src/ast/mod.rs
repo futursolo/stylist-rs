@@ -26,6 +26,8 @@ mod sheet;
 mod style_attr;
 mod to_style_str;
 
+mod str_kind;
+
 pub use block::Block;
 pub use into_sheet::IntoSheet;
 pub use rule::Rule;
@@ -36,13 +38,16 @@ pub use sheet::Sheet;
 pub use style_attr::StyleAttribute;
 pub use to_style_str::ToStyleStr;
 
+pub use str_kind::StringKind;
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::*;
     use std::borrow::Cow;
 
     #[test]
-    fn test_scope_building_without_condition() {
+    fn test_scope_building_without_condition() -> Result<()> {
         let test_block = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
@@ -75,7 +80,7 @@ width: 200px;
             }),
         ]);
         assert_eq!(
-            test_block.to_style_str(Some("test")),
+            test_block.to_style_str(Some("test"))?,
             r#".test {
 width: 100vw;
 }
@@ -92,10 +97,12 @@ width: 200px;
 }
 "#
         );
+
+        Ok(())
     }
 
     #[test]
-    fn test_scope_building_with_condition() {
+    fn test_scope_building_with_condition() -> Result<()> {
         let test_block = Sheet::from(vec![ScopeContent::Rule(Rule {
             condition: "@media only screen and (min-width: 1000px)".into(),
             content: vec![
@@ -133,7 +140,7 @@ width: 200px;
             .into(),
         })]);
         assert_eq!(
-            test_block.to_style_str(Some("test")),
+            test_block.to_style_str(Some("test"))?,
             r#"@media only screen and (min-width: 1000px) {
 .test {
 width: 100vw;
@@ -152,5 +159,7 @@ width: 200px;
 }
 "#
         );
+
+        Ok(())
     }
 }

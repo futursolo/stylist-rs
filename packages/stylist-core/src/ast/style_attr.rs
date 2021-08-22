@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fmt;
 
 use super::ToStyleStr;
+use crate::Result;
 
 /// A simple CSS property in the form of a key value pair. Mirrors what would
 /// be called a "Declaration" in the CSS standard.
@@ -14,7 +15,9 @@ pub struct StyleAttribute {
 }
 
 impl ToStyleStr for StyleAttribute {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, _class_name: Option<&str>) -> fmt::Result {
-        write!(w, "{}: {};", self.key, self.value)
+    fn write_style<W: fmt::Write>(&self, w: &mut W, _class_name: Option<&str>) -> Result<()> {
+        write!(w, "{}: {};", self.key, self.value)?;
+
+        Ok(())
     }
 }

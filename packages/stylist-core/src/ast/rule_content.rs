@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fmt;
 
 use super::{Block, Rule, ScopeContent, ToStyleStr};
+use crate::Result;
 
 /// Everything that can be inside a rule.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -26,12 +27,14 @@ impl From<ScopeContent> for RuleContent {
 }
 
 impl ToStyleStr for RuleContent {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> fmt::Result {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
         match self {
-            RuleContent::Block(ref b) => b.write_style(w, class_name),
-            RuleContent::Rule(ref r) => r.write_style(w, class_name),
-            RuleContent::String(ref s) => write!(w, "{}", s),
+            RuleContent::Block(ref b) => b.write_style(w, class_name)?,
+            RuleContent::Rule(ref r) => r.write_style(w, class_name)?,
+            RuleContent::String(ref s) => write!(w, "{}", s)?,
         }
+
+        Ok(())
     }
 }
 
