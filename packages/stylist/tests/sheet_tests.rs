@@ -10,7 +10,7 @@ fn test_sheet_interpolation() {
 
             .nested, ${var_a} {
                 background-color: blue;
-                width: 100px
+                width: ${size}px
             }
 
             @keyframes myframe {
@@ -28,6 +28,7 @@ fn test_sheet_interpolation() {
         "#,
         var_a = ".some-selector",
         breakpoint = "(max-width: 500px)",
+        size = 100,
     );
 
     let expected = Sheet::from(vec![
@@ -35,7 +36,7 @@ fn test_sheet_interpolation() {
             condition: Cow::Borrowed(&[]),
             style_attributes: vec![StyleAttribute {
                 key: "background-color".into(),
-                value: "red".into(),
+                value: vec!["red".into()].into(),
             }]
             .into(),
         }),
@@ -44,11 +45,11 @@ fn test_sheet_interpolation() {
             style_attributes: vec![
                 StyleAttribute {
                     key: "background-color".into(),
-                    value: "blue".into(),
+                    value: vec!["blue".into()].into(),
                 },
                 StyleAttribute {
                     key: "width".into(),
-                    value: "100px".into(),
+                    value: vec!["100".into(), "px".into()].into(),
                 },
             ]
             .into(),
@@ -78,7 +79,7 @@ fn test_sheet_interpolation() {
                 condition: vec![].into(),
                 style_attributes: vec![StyleAttribute {
                     key: "background-color".into(),
-                    value: "brown".into(),
+                    value: vec!["brown".into()].into(),
                 }]
                 .into(),
             })]

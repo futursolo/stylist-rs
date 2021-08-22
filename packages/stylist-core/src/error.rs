@@ -18,9 +18,13 @@ pub enum Error {
     #[error("Failed to Interact with Web API. Are you running in Browser?")]
     Web(Option<wasm_bindgen::JsValue>),
 
+    /// Interpolation Syntax found at runtime.
+    ///
+    /// Interpolation syntax can only be used with macros and are not allowed in runtime APIs.
     #[error("String interpolations are not allowed at runtime, found: {}", .name)]
     Interpolation { name: String },
 
+    /// Format error when writing Styles.
     #[error("Failed to write style!")]
     Fmt(#[from] fmt::Error),
 }

@@ -187,6 +187,9 @@ pub use yield_style::YieldStyle;
 
 /// A procedural macro that parses a string literal into a [`Style`].
 ///
+/// This macro supports string interpolation, please see documentation of [`css!`] macro for it's
+/// usage.
+///
 /// # Panics
 ///
 /// This macro will panic at runtime if [`Style`] fails to mount.
@@ -205,6 +208,9 @@ pub use yield_style::YieldStyle;
 pub use stylist_macros::style;
 
 /// A procedural macro that parses a string literal into a [`GlobalStyle`].
+///
+/// This macro supports string interpolation, please see documentation of [`css!`] macro for it's
+/// usage.
 ///
 /// # Panics
 ///
@@ -234,6 +240,57 @@ pub use stylist_macros::global_style;
 ///
 /// let rendered = html! {<div class=css!("color: red;") />};
 /// let rendered_global = html! {<Global css=css!("color: red;") />};
+/// ```
+///
+/// # String Interpolation
+///
+/// This macro supports string interpolation on values of style attributes, selectors, `@supports` and `@media` rules.
+///
+/// Selectors are limited to an entire selector in a selectors list, this limitation is imposed to
+/// reduce complexity on selector parsing logic. You can also use Current Selector (`&`) in the
+/// interpolated selectors.
+///
+/// Interpolated strings are denoted with `${ident}` and any type that implements [`std::fmt::Display`] can be
+/// used as value. Only named argument are supported at this moment.
+///
+/// # Example
+///
+/// ```
+/// use stylist::css;
+/// use yew::prelude::*;
+///
+/// let s = css!(
+///     r#"
+///         color: ${color};
+///
+///         span, ${sel_div} {
+///             background-color: blue;
+///         }
+///
+///         @media screen and ${breakpoint} {
+///             display: flex;
+///         }
+///     "#,
+///     color = "red",
+///     sel_div = "div.selected",
+///     breakpoint = "(max-width: 500px)",
+/// );
+///
+/// let style = s.to_style();
+///
+/// // Example Output:
+/// // .stylist-fIEWv6EP {
+/// // color: red;
+/// // }
+/// // stylist-fIEWv6EP span, .stylist-fIEWv6EP div.selected {
+/// // background-color: blue;
+/// // }
+/// // @media screen and (max-width: 500px) {
+/// // .stylist-fIEWv6EP {
+/// // display: flex;
+/// // }
+/// // }
+/// println!("{}", style.get_style_str());
 /// ```
 #[doc(inline)]
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]

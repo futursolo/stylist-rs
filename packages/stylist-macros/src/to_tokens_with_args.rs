@@ -58,12 +58,19 @@ impl ToTokensWithArgs for Selector {
 impl ToTokensWithArgs for StyleAttribute {
     fn to_tokens_with_args(
         &self,
-        _args: &HashMap<String, Argument>,
-        _args_used: &mut HashSet<String>,
+        args: &HashMap<String, Argument>,
+        args_used: &mut HashSet<String>,
     ) -> TokenStream {
         let key_s = Literal::string(&self.key);
-        let value_s = Literal::string(&self.value);
-        quote! { ::stylist::ast::StyleAttribute{ key: #key_s.into(), value: #value_s.into() } }
+
+        let mut val_tokens = TokenStream::new();
+
+        for i in self.value.iter() {
+            let current_tokens = i.to_tokens_with_args(args, args_used);
+
+            val_tokens.extend(quote! {#current_tokens ,});
+        }
+        quote! { ::stylist::ast::StyleAttribute{ key: #key_s.into(), value: vec![#val_tokens].into() } }
     }
 }
 

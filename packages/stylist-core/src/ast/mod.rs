@@ -52,7 +52,7 @@ mod tests {
                 condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
                     key: "width".into(),
-                    value: "100vw".into(),
+                    value: vec!["100vw".into()].into(),
                 }]
                 .into(),
             }),
@@ -60,7 +60,7 @@ mod tests {
                 condition: vec![".inner".into()].into(),
                 style_attributes: vec![StyleAttribute {
                     key: "background-color".into(),
-                    value: "red".into(),
+                    value: vec!["red".into()].into(),
                 }]
                 .into(),
             }),
@@ -109,7 +109,7 @@ width: 200px;
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "width".into(),
-                        value: "100vw".into(),
+                        value: vec!["100vw".into()].into(),
                     }]
                     .into(),
                 }),
@@ -117,7 +117,7 @@ width: 200px;
                     condition: vec![".inner".into()].into(),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
-                        value: "red".into(),
+                        value: vec!["red".into()].into(),
                     }]
                     .into(),
                 }),

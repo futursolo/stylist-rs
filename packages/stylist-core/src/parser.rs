@@ -95,11 +95,32 @@ impl Parser {
                         preceded(opt(Parser::sp), is_not(" \t\r\n:{")),
                     ),
                     preceded(opt(Parser::cmt), preceded(opt(Parser::sp), tag(":"))),
-                    preceded(opt(Parser::cmt), preceded(opt(Parser::sp), is_not(";{}"))),
+                    preceded(
+                        opt(Parser::cmt),
+                        preceded(
+                            opt(Parser::sp),
+                            many1(alt((
+                                map(is_not("$;{}"), |m: &str| StringFragment {
+                                    inner: m.to_string().into(),
+                                    kind: StringKind::Literal,
+                                }),
+                                Self::string_interpolation,
+                            ))),
+                        ),
+                    ),
                 ),
-                move |p: (&str, &str)| StyleAttribute {
-                    key: p.0.trim().to_string().into(),
-                    value: p.1.trim().to_string().into(),
+                move |p: (&str, Vec<StringFragment>)| {
+                    let mut value = p.1;
+
+                    // Remove trailing spaces for last item
+                    if let Some(mut m) = value.last_mut() {
+                        m.inner = m.inner.trim_end().to_string().into();
+                    }
+
+                    StyleAttribute {
+                        key: p.0.trim().to_string().into(),
+                        value: value.into(),
+                    }
                 },
             )),
         )(i);
@@ -392,8 +413,6 @@ impl Parser {
         #[cfg(test)]
         trace!("Dangling Attribute: {}", i);
 
-        Self::expect_non_empty(i)?;
-
         let result = context(
             "StyleAttribute",
             Self::trimmed(map(
@@ -408,13 +427,32 @@ impl Parser {
                     // Value
                     preceded(
                         opt(Parser::cmt),
-                        preceded(opt(Parser::sp), terminated(is_not(";{}"), tag(";"))),
+                        preceded(
+                            opt(Parser::sp),
+                            terminated(
+                                many1(alt((
+                                    map(is_not("$;{}"), |m: &str| StringFragment {
+                                        inner: m.to_string().into(),
+                                        kind: StringKind::Literal,
+                                    }),
+                                    Self::string_interpolation,
+                                ))),
+                                tag(";"),
+                            ),
+                        ),
                     ),
                 ),
-                move |p: (&str, &str)| -> StyleAttribute {
+                move |p: (&str, Vec<StringFragment>)| -> StyleAttribute {
+                    let mut value = p.1;
+
+                    // Remove trailing spaces for last item
+                    if let Some(mut m) = value.last_mut() {
+                        m.inner = m.inner.trim_end().to_string().into();
+                    }
+
                     StyleAttribute {
                         key: p.0.trim().to_string().into(),
-                        value: p.1.trim().to_string().into(),
+                        value: value.into(),
                     }
                 },
             )),
@@ -668,7 +706,7 @@ mod tests {
                 condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
                     key: "background-color".into(),
-                    value: "red".into(),
+                    value: vec!["red".into()].into(),
                 }]
                 .into(),
             }),
@@ -677,11 +715,11 @@ mod tests {
                 style_attributes: vec![
                     StyleAttribute {
                         key: "background-color".into(),
-                        value: "blue".into(),
+                        value: vec!["blue".into()].into(),
                     },
                     StyleAttribute {
                         key: "width".into(),
-                        value: "100px".into(),
+                        value: vec!["100px".into()].into(),
                     },
                 ]
                 .into(),
@@ -708,7 +746,7 @@ mod tests {
                 condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
                     key: "background-color".into(),
-                    value: "red".into(),
+                    value: vec!["red".into()].into(),
                 }]
                 .into(),
             }),
@@ -717,11 +755,11 @@ mod tests {
                 style_attributes: vec![
                     StyleAttribute {
                         key: "background-color".into(),
-                        value: "blue".into(),
+                        value: vec!["blue".into()].into(),
                     },
                     StyleAttribute {
                         key: "width".into(),
-                        value: "100px".into(),
+                        value: vec!["100px".into()].into(),
                     },
                 ]
                 .into(),
@@ -746,11 +784,11 @@ mod tests {
             style_attributes: vec![
                 StyleAttribute {
                     key: "background-color".into(),
-                    value: "blue".into(),
+                    value: vec!["blue".into()].into(),
                 },
                 StyleAttribute {
                     key: "width".into(),
-                    value: "100px".into(),
+                    value: vec!["100px".into()].into(),
                 },
             ]
             .into(),
@@ -771,7 +809,7 @@ mod tests {
             condition: vec!["&:hover".into()].into(),
             style_attributes: vec![StyleAttribute {
                 key: "background-color".into(),
-                value: "#d0d0d9".into(),
+                value: vec!["#d0d0d9".into()].into(),
             }]
             .into(),
         })]);
@@ -801,7 +839,7 @@ mod tests {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
-                        value: "red".into(),
+                        value: vec!["red".into()].into(),
                     }]
                     .into(),
                 })]
@@ -813,7 +851,7 @@ mod tests {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "color".into(),
-                        value: "yellow".into(),
+                        value: vec!["yellow".into()].into(),
                     }]
                     .into(),
                 })]
@@ -849,7 +887,7 @@ mod tests {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
-                        value: "red".into(),
+                        value: vec!["red".into()].into(),
                     }]
                     .into(),
                 })]
@@ -859,7 +897,7 @@ mod tests {
                 condition: vec![".some-class2".into()].into(),
                 style_attributes: vec![StyleAttribute {
                     key: "color".into(),
-                    value: "yellow".into(),
+                    value: vec!["yellow".into()].into(),
                 }]
                 .into(),
             }),
@@ -891,7 +929,7 @@ mod tests {
                 condition: vec!["div".into(), "span".into()].into(),
                 style_attributes: vec![StyleAttribute {
                     key: "color".into(),
-                    value: "yellow".into(),
+                    value: vec!["yellow".into()].into(),
                 }]
                 .into(),
             }),
@@ -899,7 +937,7 @@ mod tests {
                 condition: vec!["&".into(), "& input".into()].into(),
                 style_attributes: vec![StyleAttribute {
                     key: "color".into(),
-                    value: "pink".into(),
+                    value: vec!["pink".into()].into(),
                 }]
                 .into(),
             }),
@@ -940,15 +978,15 @@ mod tests {
                     style_attributes: vec![
                         StyleAttribute {
                             key: "backdrop-filter".into(),
-                            value: "blur(2px)".into(),
+                            value: vec!["blur(2px)".into()].into(),
                         },
                         StyleAttribute {
                             key: "-webkit-backdrop-filter".into(),
-                            value: "blur(2px)".into(),
+                            value: vec!["blur(2px)".into()].into(),
                         },
                         StyleAttribute {
                             key: "background-color".into(),
-                            value: "rgb(0, 0, 0, 0.7)".into(),
+                            value: vec!["rgb(0, 0, 0, 0.7)".into()].into(),
                         },
                     ]
                     .into(),
@@ -966,7 +1004,7 @@ mod tests {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
-                        value: "rgb(25, 25, 25)".into(),
+                        value: vec!["rgb(25, 25, 25)".into()].into(),
                     }]
                     .into(),
                 })]
@@ -1006,7 +1044,7 @@ mod tests {
                 condition: Cow::Borrowed(&[]),
                 style_attributes: vec![StyleAttribute {
                     key: "background-color".into(),
-                    value: "red".into(),
+                    value: vec!["red".into()].into(),
                 }]
                 .into(),
             }),
@@ -1022,11 +1060,11 @@ mod tests {
                 style_attributes: vec![
                     StyleAttribute {
                         key: "background-color".into(),
-                        value: "blue".into(),
+                        value: vec!["blue".into()].into(),
                     },
                     StyleAttribute {
                         key: "width".into(),
-                        value: "100px".into(),
+                        value: vec!["100px".into()].into(),
                     },
                 ]
                 .into(),

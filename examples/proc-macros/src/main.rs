@@ -26,8 +26,8 @@ impl Component for Inside {
         html! {
             <div class=css!(
                 r#"
-                    width: 200px;
-                    height: 200px;
+                    width: ${size}px;
+                    height: ${size}px;
                     border-radius: 5px;
 
                     background: black;
@@ -37,7 +37,8 @@ impl Component for Inside {
 
                     box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
                     color: white;
-                "#
+                "#,
+                size = 200,
             )>
                 {"The quick brown fox jumps over the lazy dog"}
             </div>
