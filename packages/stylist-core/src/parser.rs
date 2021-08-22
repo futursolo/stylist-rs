@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 
 use crate::ast::{
-    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringKind, StyleAttribute,
+    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StringKind,
+    StyleAttribute,
 };
 use crate::{Error, Result};
 use nom::{
@@ -11,7 +12,7 @@ use nom::{
     combinator::{map, map_res, opt, recognize},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
     multi::{fold_many0, many0, many1, separated_list0},
-    sequence::{delimited, preceded, separated_pair, terminated},
+    sequence::{delimited, pair, preceded, separated_pair, terminated},
     IResult,
 };
 
@@ -145,6 +146,35 @@ impl Parser {
 
         #[cfg(test)]
         trace!("String: {:#?}", result);
+
+        result
+    }
+
+    /// Parse a selector interpolation.
+    fn string_interpolation(i: &str) -> IResult<&str, StringFragment, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("String Interpolation: {}", i);
+
+        let result = context(
+            "StringInterpolation",
+            Self::trimmed(map(
+                delimited(
+                    tag("${"),
+                    Self::trimmed(recognize(preceded(
+                        alpha1,
+                        many0(alt((alphanumeric1, tag("_")))),
+                    ))),
+                    tag("}"),
+                ),
+                |p: &str| StringFragment {
+                    inner: p.trim().to_owned().into(),
+                    kind: StringKind::Interpolation,
+                },
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("String Interpolation: {:#?}", result);
 
         result
     }
@@ -297,7 +327,7 @@ impl Parser {
                     }
 
                     Ok(ScopeContent::Rule(Rule {
-                        condition: p.0.trim().to_string().into(),
+                        condition: vec![p.0.trim().to_string().into()].into(),
                         content: p.1.into(),
                     }))
                 },
@@ -320,7 +350,7 @@ impl Parser {
         let result = context(
             "StyleRuleString",
             Self::trimmed(map(is_not("{}"), |p: &str| {
-                RuleContent::String(p.to_string().into())
+                RuleContent::String(p.trim().to_string().into())
             })),
         )(i);
 
@@ -341,7 +371,14 @@ impl Parser {
 
         let result = context(
             "StyleRuleCurlyBraces",
-            Self::trimmed(delimited(tag("{"), Self::rule_contents, tag("}"))),
+            Self::trimmed(map(
+                delimited(tag("{"), Self::rule_contents, tag("}")),
+                |mut m: Vec<RuleContent>| {
+                    m.insert(0, RuleContent::String("{".to_string().into()));
+                    m.push(RuleContent::String("}".to_string().into()));
+                    m
+                },
+            )),
         )(i);
 
         #[cfg(test)]
@@ -417,7 +454,7 @@ impl Parser {
         let result = context(
             "StyleDanglingBlock",
             Self::trimmed(map(
-                Parser::dangling_attributes,
+                Self::dangling_attributes,
                 |attr: Vec<StyleAttribute>| {
                     ScopeContent::Block(Block {
                         condition: Cow::Borrowed(&[]),
@@ -473,6 +510,50 @@ impl Parser {
         result
     }
 
+    fn at_rule_condition(i: &str) -> IResult<&str, Vec<StringFragment>, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("At Rule: {}", i);
+
+        // Cannot accept empty rule.
+        Self::expect_non_empty(i)?;
+
+        let result = context(
+            "AtRule",
+            Self::trimmed(map(
+                pair(
+                    alt((tag("@supports "), tag("@media "))),
+                    many1(alt((
+                        map(is_not("${"), |m: &str| StringFragment {
+                            inner: m.to_string().into(),
+                            kind: StringKind::Literal,
+                        }),
+                        Self::string_interpolation,
+                    ))),
+                ),
+                |p: (&str, Vec<StringFragment>)| {
+                    let mut v = vec![StringFragment {
+                        inner: p.0.to_string().into(),
+                        kind: StringKind::Literal,
+                    }];
+
+                    v.extend_from_slice(&p.1);
+
+                    // Remove trailing spaces for last item
+                    if let Some(mut m) = v.last_mut() {
+                        m.inner = m.inner.trim_end().to_string().into();
+                    }
+
+                    v
+                },
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("At Rule: {:#?}", result);
+
+        result
+    }
+
     /// Parse `@supports` and `@media`
     fn at_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
@@ -486,18 +567,15 @@ impl Parser {
             Self::trimmed(map(
                 separated_pair(
                     // Collect at Rules.
-                    recognize(preceded(
-                        alt((tag("@supports "), tag("@media "))),
-                        is_not("{"),
-                    )),
+                    Self::at_rule_condition,
                     tag("{"),
-                    // Collect contents with-in supports rules.
+                    // Collect contents with-in rules.
                     terminated(Parser::scope_contents, tag("}")),
                 ),
                 // Map Results into a scope
-                |mut p: (&str, Vec<ScopeContent>)| {
+                |mut p: (Vec<StringFragment>, Vec<ScopeContent>)| {
                     ScopeContent::Rule(Rule {
-                        condition: p.0.trim().to_string().into(),
+                        condition: p.0.into(),
                         content: p.1.drain(..).map(|i| i.into()).collect(),
                     })
                 },
@@ -718,7 +796,7 @@ mod tests {
 
         let expected = Sheet::from(vec![
             ScopeContent::Rule(Rule {
-                condition: "@media screen and (max-width: 500px)".into(),
+                condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
@@ -730,7 +808,7 @@ mod tests {
                 .into(),
             }),
             ScopeContent::Rule(Rule {
-                condition: "@media screen and (max-width: 200px)".into(),
+                condition: vec!["@media ".into(), "screen and (max-width: 200px)".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
@@ -766,7 +844,7 @@ mod tests {
 
         let expected = Sheet::from(vec![
             ScopeContent::Rule(Rule {
-                condition: "@media screen and (max-width: 500px)".into(),
+                condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
@@ -852,9 +930,11 @@ mod tests {
 
         let expected = Sheet::from(vec![
             ScopeContent::Rule(Rule {
-                condition:
-                    "@supports (backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))"
-                        .into(),
+                condition: vec![
+                    "@supports ".into(),
+                    "(backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))".into(),
+                ]
+                .into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![
@@ -869,22 +949,28 @@ mod tests {
                         StyleAttribute {
                             key: "background-color".into(),
                             value: "rgb(0, 0, 0, 0.7)".into(),
-                        }
-                    ].into(),
-                })].into(),
+                        },
+                    ]
+                    .into(),
+                })]
+                .into(),
             }),
-
             ScopeContent::Rule(Rule {
-                condition:
-                    "@supports not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)))"
+                condition: vec![
+                    "@supports ".into(),
+                    "not ((backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px)))"
                         .into(),
+                ]
+                .into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: "rgb(25, 25, 25)".into(),
-                    }].into(),
-                })].into(),
+                    }]
+                    .into(),
+                })]
+                .into(),
             }),
         ]);
 

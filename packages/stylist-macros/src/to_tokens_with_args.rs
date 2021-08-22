@@ -123,13 +123,57 @@ impl ToTokensWithArgs for RuleContent {
     }
 }
 
+impl ToTokensWithArgs for StringFragment {
+    fn to_tokens_with_args(
+        &self,
+        args: &HashMap<String, Argument>,
+        args_used: &mut HashSet<String>,
+    ) -> TokenStream {
+        match &self.kind {
+            StringKind::Literal => {
+                let s = Literal::string(&self.inner);
+                quote! {
+                    ::stylist::ast::StringFragment {
+                        inner: #s.into(),
+                        kind: ::stylist::ast::StringKind::Literal,
+                    }
+                }
+            }
+
+            StringKind::Interpolation => {
+                let arg = match args.get(self.inner.as_ref()) {
+                    Some(m) => m,
+                    None => abort_call_site!("missing argument: {}", self.inner),
+                };
+
+                let tokens = arg.tokens.clone();
+
+                args_used.insert(arg.name.clone());
+
+                quote! {
+                    ::stylist::ast::StringFragment {
+                        inner: #tokens.to_string().into(),
+                        kind: ::stylist::ast::StringKind::Literal,
+                    }
+                }
+            }
+        }
+    }
+}
+
 impl ToTokensWithArgs for Rule {
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> TokenStream {
-        let cond_s = Literal::string(&self.condition);
+        let mut cond_tokens = TokenStream::new();
+
+        for i in self.condition.iter() {
+            let current_tokens = i.to_tokens_with_args(args, args_used);
+
+            cond_tokens.extend(quote! {#current_tokens ,});
+        }
 
         let mut content_tokens = TokenStream::new();
 
@@ -141,7 +185,7 @@ impl ToTokensWithArgs for Rule {
 
         quote! {
             ::stylist::ast::Rule {
-                condition: ::std::borrow::Cow::Borrowed(#cond_s),
+                condition: ::std::borrow::Cow::Owned(vec![#cond_tokens]),
                 content: ::std::borrow::Cow::Owned(vec![#content_tokens])
             }
         }

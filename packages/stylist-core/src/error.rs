@@ -2,7 +2,7 @@ use std::fmt;
 
 use thiserror::Error;
 
-#[derive(Debug, Error)]
+#[derive(Debug, Error, PartialEq)]
 pub enum Error {
     /// Failed to parse CSS.
     #[error("Failed to Parse CSS, due to:\n{}", .reason)]

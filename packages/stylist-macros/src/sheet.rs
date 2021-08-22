@@ -65,20 +65,23 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
             None => break 'outer,
         };
 
-        let name = match name_token {
-            TokenTree::Ident(ref m) => m.to_string(),
+        let name_ident = match name_token {
+            TokenTree::Ident(ref m) => m,
             _ => abort!(name_token, "expected ident, got: {}", name_token),
         };
 
+        let name = name_ident.to_string();
+
         let mut arg = Argument {
             name,
+            name_token: name_ident.clone(),
             tokens: TokenStream::new(),
         };
 
         if !tokens.next().map(|m| is_equal(&m)).unwrap_or(false) {
             abort!(
                 name_token,
-                "expected = at the end of this ident, only named args are allowed at this moment";
+                "expected = at the end of this ident, only named arguments are allowed at this moment";
                 hint = format!("try: {name} = {name}", name = arg.name),
             );
         }
@@ -87,13 +90,17 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
             let next_token = match tokens.next() {
                 Some(m) => m,
                 None => {
-                    args.insert(arg.name.clone(), arg);
+                    if args.insert(arg.name.clone(), arg).is_some() {
+                        abort!(name_token, "duplicate named argument");
+                    }
                     break 'outer;
                 }
             };
 
             if is_comma(&next_token) {
-                args.insert(arg.name.clone(), arg);
+                if args.insert(arg.name.clone(), arg).is_some() {
+                    abort!(name_token, "duplicate named argument");
+                }
                 comma_read = true;
                 break 'inner;
             }
@@ -104,5 +111,17 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
 
     let mut args_used = HashSet::with_capacity(args.len());
 
-    sheet.to_tokens_with_args(&args, &mut args_used)
+    let stream = sheet.to_tokens_with_args(&args, &mut args_used);
+
+    for (k, v) in args.iter() {
+        if !args_used.contains(k) {
+            abort!(
+                v.name_token,
+                "Argument {} is not used, arguments must be used",
+                k
+            );
+        }
+    }
+
+    stream
 }

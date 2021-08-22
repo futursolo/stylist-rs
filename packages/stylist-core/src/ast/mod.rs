@@ -23,10 +23,9 @@ mod rule_content;
 mod scope_content;
 mod selector;
 mod sheet;
+mod str_frag;
 mod style_attr;
 mod to_style_str;
-
-mod str_kind;
 
 pub use block::Block;
 pub use into_sheet::IntoSheet;
@@ -38,7 +37,7 @@ pub use sheet::Sheet;
 pub use style_attr::StyleAttribute;
 pub use to_style_str::ToStyleStr;
 
-pub use str_kind::StringKind;
+pub use str_frag::{StringFragment, StringKind};
 
 #[cfg(test)]
 mod tests {
@@ -66,7 +65,7 @@ mod tests {
                 .into(),
             }),
             ScopeContent::Rule(Rule {
-                condition: "@keyframes move".into(),
+                condition: vec!["@keyframes move".into()].into(),
                 content: vec![String::from(
                     r#"from {
 width: 100px;
@@ -104,7 +103,7 @@ width: 200px;
     #[test]
     fn test_scope_building_with_condition() -> Result<()> {
         let test_block = Sheet::from(vec![ScopeContent::Rule(Rule {
-            condition: "@media only screen and (min-width: 1000px)".into(),
+            condition: vec!["@media only screen and (min-width: 1000px)".into()].into(),
             content: vec![
                 RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
@@ -124,7 +123,7 @@ width: 200px;
                 }),
                 RuleContent::Rule(
                     Rule {
-                        condition: "@keyframes move".into(),
+                        condition: vec!["@keyframes move".into()].into(),
                         content: vec![r#"from {
 width: 100px;
 }

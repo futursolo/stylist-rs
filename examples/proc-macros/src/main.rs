@@ -37,8 +37,7 @@ impl Component for Inside {
 
                     box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
                     color: white;
-                "#,
-                abc = abc.alone(),
+                "#
             )>
                 {"The quick brown fox jumps over the lazy dog"}
             </div>
