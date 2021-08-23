@@ -2,8 +2,6 @@
 #![deny(unsafe_code)]
 #![deny(non_snake_case)]
 #![deny(missing_debug_implementations)]
-#![deny(unsafe_code)]
-#![deny(non_snake_case)]
 #![deny(clippy::cognitive_complexity)]
 #![cfg_attr(documenting, feature(doc_cfg))]
 #![cfg_attr(any(releasing, not(debug_assertions)), deny(dead_code, unused_imports))]
@@ -52,10 +50,24 @@ mod test {
     }
 
     #[test]
+    fn test_parse() {
+        init();
+        let input = r#"
+            .outer {
+                .inner {
+                    background-color: red;
+                }
+            }
+        "#;
+        let output = super::sheet::macro_fn(input.parse().unwrap());
+        debug!("{}", output);
+    }
+
+    #[test]
     fn test_macro_invokation() {
         init();
         let color_red = "red";
-        let css = stylist::css! {
+        let style = stylist::css! {
             ${"&:has()"} {
 
             }
@@ -69,8 +81,8 @@ mod test {
             }
             @-webkit-keyframes {
             }
-        };
-        let style = stylist::Style::new(css).unwrap();
+        }
+        .to_style();
         debug!("{}", style.get_style_str())
     }
 }

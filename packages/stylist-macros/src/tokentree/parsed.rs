@@ -1,4 +1,9 @@
 use super::css_name::{Identifier, PunctuatedName};
+use super::output::{
+    OutputAtRule, OutputAttribute, OutputQualifiedRule, OutputQualifier, OutputSheet, Reify,
+};
+use crate::tokentree::output::OutputRuleContent;
+use crate::tokentree::output::OutputScopeContent;
 use itertools::Itertools;
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
@@ -19,14 +24,14 @@ pub struct CssRootNode {
 }
 
 #[derive(Debug, Clone)]
-struct InjectedExpression {
+pub struct InjectedExpression {
     dollar: token::Dollar,
     braces: token::Brace,
     expr: Box<Expr>,
 }
 
 #[derive(Debug, Clone)]
-enum CssComponentValue {
+pub enum CssComponentValue {
     Identifier(PunctuatedName),
     InjectedExpr(InjectedExpression),
     ResultClass(token::And),
@@ -38,42 +43,42 @@ enum CssComponentValue {
 }
 
 #[derive(Debug, Clone)]
-struct CssScopeQualifier {
+pub struct CssScopeQualifier {
     qualifiers: Punctuated<CssComponentValue, Token![,]>,
 }
 
 #[derive(Debug)]
-struct CssScope {
+pub struct CssScope {
     brace: token::Brace,
     contents: Vec<CssScopeContent>,
 }
 
 #[derive(Debug)]
-struct CssQualifiedRule {
+pub struct CssQualifiedRule {
     qualifier: CssScopeQualifier,
     scope: CssScope,
 }
 
 #[derive(Debug)]
-enum CssScopeContent {
+pub enum CssScopeContent {
     Attribute(CssAttribute),
     AtRule(CssAtRule),
     Nested(CssQualifiedRule),
 }
 
 #[derive(Debug)]
-enum CssAttributeName {
+pub enum CssAttributeName {
     Identifier(Identifier),
     InjectedExpr(InjectedExpression),
 }
 
 #[derive(Debug)]
-struct CssAttributeValue {
+pub struct CssAttributeValue {
     values: Punctuated<CssComponentValue, Token![,]>,
 }
 
 #[derive(Debug)]
-struct CssAttribute {
+pub struct CssAttribute {
     name: CssAttributeName,
     colon: token::Colon,
     value: CssAttributeValue,
@@ -81,13 +86,13 @@ struct CssAttribute {
 }
 
 #[derive(Debug)]
-enum CssAtRuleContent {
+pub enum CssAtRuleContent {
     Scope(CssScope),
     Empty(token::Semi),
 }
 
 #[derive(Debug)]
-struct CssAtRule {
+pub struct CssAtRule {
     at: token::At,
     name: Identifier,
     prelude: Vec<CssComponentValue>,
@@ -261,295 +266,6 @@ impl Parse for CssAtRule {
         })
     }
 }
-// =====================================================================
-// =====================================================================
-// Output structs
-// =====================================================================
-// =====================================================================
-#[derive(Debug)]
-pub struct OutputSheet {
-    contents: Vec<OutputSheetContent>,
-}
-#[derive(Debug)]
-enum OutputSheetContent {
-    AtRule(OutputAtRule),
-    QualifiedRule(OutputQualifiedRule),
-}
-#[derive(Debug)]
-struct OutputAtRule {
-    name: Identifier,
-    prelude: Vec<CssComponentValue>,
-    contents: Vec<OutputSheetContent>,
-}
-#[derive(Debug)]
-struct OutputQualifiedRule {
-    qualifier: CssScopeQualifier,
-    attributes: Vec<CssAttribute>,
-}
-
-impl OutputSheet {
-    pub fn into_token_stream(self) -> TokenStream {
-        let Self { contents } = self;
-        let ident_stylesheet = Ident::new("stylesheet", Span::mixed_site());
-        let ident_part = Ident::new("part", Span::mixed_site());
-
-        let blocks = contents.into_iter().map(|c| {
-            let scope_tokens = match c {
-                OutputSheetContent::QualifiedRule(block) => block.into_scope_content(),
-                OutputSheetContent::AtRule(rule) => rule.into_scope_content(),
-            };
-            quote! {
-                let #ident_part = { #scope_tokens };
-                #ident_stylesheet.0.push( #ident_part );
-            }
-        });
-
-        quote! {
-            {
-                let mut #ident_stylesheet = ::stylist::ast::Sheet::new();
-                #( #blocks )*
-                #ident_stylesheet
-            }
-        }
-    }
-}
-
-impl OutputAtRule {
-    fn into_token_stream(self) -> TokenStream {
-        let ident_condition = Ident::new("at_condition", Span::mixed_site());
-        let ident_attributes = Ident::new("attributes", Span::mixed_site());
-        let name_tokens = self.name.quote_at_rule();
-        let prelude_tokens = self.prelude.into_iter().map(|p| {
-            let write_component = p.write_component(&ident_condition);
-            quote! {
-                ::std::write!(&mut #ident_condition, " ").expect("");
-                #write_component
-            }
-        });
-        let content_tokens = self.contents.into_iter().map(|c| {
-            let scope_tokens = match c {
-                OutputSheetContent::QualifiedRule(block) => block.into_rule_content(),
-                OutputSheetContent::AtRule(rule) => rule.into_rule_content(),
-            };
-            quote! {
-                let part = { #scope_tokens };
-                #ident_attributes.push(part);
-            }
-        });
-
-        quote! {
-            {
-                use ::std::fmt::Write;
-                let mut #ident_condition = ::std::string::String::new();
-                ::std::write!(&mut #ident_condition, "@{}", #name_tokens).expect("");
-                #( #prelude_tokens )*
-
-                let mut #ident_attributes = ::std::vec::Vec::new();
-                #( #content_tokens )*
-                ::stylist::ast::Rule {
-                    condition: #ident_condition,
-                    content: #ident_attributes,
-                }
-            }
-        }
-    }
-    pub fn into_scope_content(self) -> TokenStream {
-        let block_tokens = self.into_token_stream();
-        quote! {
-            ::stylist::ast::ScopeContent::Rule( #block_tokens )
-        }
-    }
-    pub fn into_rule_content(self) -> TokenStream {
-        let block_tokens = self.into_token_stream();
-        quote! {
-            ::stylist::ast::RuleContent::Rule( #block_tokens )
-        }
-    }
-}
-
-impl OutputQualifiedRule {
-    fn into_token_stream(self) -> TokenStream {
-        let ident_attributes = Ident::new("attributes", Span::mixed_site());
-        let ident_attr = Ident::new("attr", Span::mixed_site());
-        let condition = self.qualifier.into_token_stream();
-        let attr_tokens = self.attributes.into_iter().map(|attr| {
-            let attr_tokens = attr.into_token_stream();
-            quote! {
-                let #ident_attr = { #attr_tokens };
-                #ident_attributes.push( #ident_attr );
-            }
-        });
-
-        quote! {
-            {
-                let mut #ident_attributes = ::std::vec::Vec::new();
-                #( #attr_tokens )*
-
-                ::stylist::ast::Block {
-                    condition: ::std::option::Option::Some(#condition),
-                    style_attributes: #ident_attributes,
-                }
-            }
-        }
-    }
-
-    pub fn into_scope_content(self) -> TokenStream {
-        let block_tokens = self.into_token_stream();
-        quote! {
-            ::stylist::ast::ScopeContent::Block( #block_tokens )
-        }
-    }
-    pub fn into_rule_content(self) -> TokenStream {
-        let block_tokens = self.into_token_stream();
-        quote! {
-            ::stylist::ast::RuleContent::Block( #block_tokens )
-        }
-    }
-}
-
-impl CssAttribute {
-    fn into_token_stream(self) -> TokenStream {
-        let ident_writable_name = Ident::new("writer_name", Span::mixed_site());
-        let ident_writable_value = Ident::new("writer_value", Span::mixed_site());
-        let name_tokens = self.name.write_qualifier(&ident_writable_name);
-        let value_tokens = self.value.write_value(&ident_writable_value);
-
-        quote! {
-            {
-                use ::std::fmt::Write;
-                let mut #ident_writable_name = ::std::string::String::new();
-                #name_tokens
-                let mut #ident_writable_value = ::std::string::String::new();
-                #value_tokens
-
-                ::stylist::ast::StyleAttribute {
-                    key: #ident_writable_name,
-                    value: #ident_writable_value,
-                }
-            }
-        }
-    }
-}
-
-impl CssScopeQualifier {
-    fn into_token_stream(self) -> TokenStream {
-        let ident_qualifier = Ident::new("writer", Span::mixed_site());
-        let items = self
-            .qualifiers
-            .into_pairs()
-            .map(|p| p.into_value().write_component(&ident_qualifier));
-
-        let items = Itertools::intersperse(
-            items,
-            quote! {
-                ::std::write!(#ident_qualifier, ", ").expect("");
-            },
-        );
-
-        quote! {
-            {
-                use ::std::fmt::Write;
-                let mut #ident_qualifier = ::std::string::String::new();
-                #( #items )*
-                #ident_qualifier
-            }
-        }
-    }
-}
-
-impl CssComponentValue {
-    pub fn write_component(self, writable: &Ident) -> TokenStream {
-        match self {
-            Self::Identifier(name) => {
-                let name_toks = name.quote();
-                quote! {
-                    ::std::write!(&mut #writable, "{}", #name_toks).expect("");
-                }
-            }
-            Self::InjectedExpr(expr) => {
-                let injected = *expr.expr;
-                quote_spanned! {expr.braces.span=>
-                    {
-                        fn write_expr<V: ::std::fmt::Display>(w: &mut String, v: V) {
-                            ::std::write!(w, "{}", v).expect("");
-                        }
-                        let expr = { #injected };
-                        write_expr(&mut #writable, expr);
-                    }
-                }
-            }
-            Self::ResultClass(_) => {
-                quote! {
-                    ::std::write!(&mut #writable, "&").expect("");
-                }
-            }
-            Self::Function { name, args, .. } => {
-                let name_toks = name.quote();
-                let write_args = args.into_iter().map(|arg| arg.write_component(writable));
-                let write_args = Itertools::intersperse(
-                    write_args,
-                    quote! {
-                        ::std::write!(&mut #writable, ", ").expect("");
-                    },
-                );
-                quote! {
-                    ::std::write!(&mut #writable, "{}(", #name_toks).expect("");
-                    #( #write_args )*
-                    ::std::write!(&mut #writable, ")").expect("");
-                }
-            }
-        }
-    }
-}
-
-impl CssAttributeName {
-    pub fn write_qualifier(self, writable: &Ident) -> TokenStream {
-        match self {
-            Self::Identifier(name) => {
-                let name_toks = name.quote_attribute();
-                quote! {
-                    ::std::write!(&mut #writable, "{}", #name_toks).expect("");
-                }
-            }
-            Self::InjectedExpr(expr) => {
-                let injected = *expr.expr;
-                quote_spanned! {expr.braces.span=>
-                    {
-                        fn write_expr<V: ::std::fmt::Display>(w: &mut str, v: V) {
-                            ::std::write!(w, "{}", v).expect("");
-                        }
-                        let expr = { #injected };
-                        write_expr(&mut #writable, expr);
-                    }
-                }
-            }
-        }
-    }
-}
-
-impl CssAttributeValue {
-    pub fn write_value(self, writable: &Ident) -> TokenStream {
-        let values = self
-            .values
-            .into_pairs()
-            .map(|p| p.into_value().write_component(writable));
-        let values = Itertools::intersperse(
-            values,
-            quote! {
-                ::std::write!(&mut #writable, ", ").expect("");
-            },
-        );
-
-        quote! {
-            #( #values )*
-        }
-    }
-}
-// =====================================================================
-// =====================================================================
-// Convert into output
-// =====================================================================
-// =====================================================================
 impl ToTokens for InjectedExpression {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         self.dollar.to_tokens(tokens);
@@ -588,6 +304,11 @@ impl Default for CssScopeQualifier {
         }
     }
 }
+// =====================================================================
+// =====================================================================
+// Convert into output
+// =====================================================================
+// =====================================================================
 
 enum CollectTokenError<T> {
     Result(T),
@@ -627,14 +348,9 @@ where
     }
 }
 
-impl TryInto<OutputSheet> for CssRootNode {
-    type Error = TokenStream;
-    fn try_into(self) -> Result<OutputSheet, TokenStream> {
-        let contents = fold_tokens(self.root_contents, &CssScopeQualifier::default())
-            .collect::<CollectTokenError<_>>()
-            .into_error()?;
-        Ok(OutputSheet { contents })
-    }
+enum OutputSheetContent {
+    AtRule(OutputAtRule),
+    QualifiedRule(OutputQualifiedRule),
 }
 
 fn fold_tokens<'it>(
@@ -642,9 +358,9 @@ fn fold_tokens<'it>(
     context: &'it CssScopeQualifier,
 ) -> impl 'it + Iterator<Item = Result<OutputSheetContent, TokenStream>> {
     // Step one: collect attributes into blocks, flatten and lift nested blocks
-    struct Wrapper<'a, I: Iterator> {
+    struct Wrapper<I: Iterator> {
         it: Peekable<I>,
-        context: &'a CssScopeQualifier,
+        qualifier: OutputQualifier,
     }
 
     enum WrappedCase {
@@ -653,7 +369,7 @@ fn fold_tokens<'it>(
         Qualified(CssQualifiedRule),
     }
 
-    impl<'a, I: Iterator<Item = CssScopeContent>> Iterator for Wrapper<'a, I> {
+    impl<I: Iterator<Item = CssScopeContent>> Iterator for Wrapper<I> {
         type Item = WrappedCase;
         fn next(&mut self) -> Option<Self::Item> {
             match self.it.peek() {
@@ -664,10 +380,11 @@ fn fold_tokens<'it>(
                         .it
                         .next_if(|i| matches!(i, CssScopeContent::Attribute(_)))
                     {
-                        attributes.push(attr)
+                        let output_attr = attr.into_output();
+                        attributes.push(output_attr.reify());
                     }
                     let replacement = OutputQualifiedRule {
-                        qualifier: self.context.clone(),
+                        qualifier: self.qualifier.clone().reify(),
                         attributes,
                     };
                     return Some(WrappedCase::AttributeCollection(replacement));
@@ -682,9 +399,17 @@ fn fold_tokens<'it>(
         }
     }
 
+    let context_conditions = context
+        .clone()
+        .qualifiers
+        .into_pairs()
+        .flat_map(|p| p.into_value().reify())
+        .collect();
     Wrapper {
         it: it.into_iter().peekable(),
-        context,
+        qualifier: OutputQualifier {
+            selectors: context_conditions,
+        },
     }
     .flat_map(move |w| match w {
         WrappedCase::AttributeCollection(attrs) => {
@@ -700,6 +425,24 @@ fn fold_tokens<'it>(
     })
 }
 
+impl TryInto<OutputSheet> for CssRootNode {
+    type Error = TokenStream;
+    fn try_into(self) -> Result<OutputSheet, TokenStream> {
+        let contents = fold_tokens(self.root_contents, &CssScopeQualifier::default())
+            .map(|contents| {
+                contents.map(|c| match c {
+                    OutputSheetContent::QualifiedRule(block) => {
+                        OutputScopeContent::Block(block).reify()
+                    }
+                    OutputSheetContent::AtRule(rule) => OutputScopeContent::AtRule(rule).reify(),
+                })
+            })
+            .collect::<CollectTokenError<_>>()
+            .into_error()?;
+        Ok(OutputSheet { contents })
+    }
+}
+
 impl CssQualifiedRule {
     fn try_into_ctx(
         self,
@@ -709,9 +452,7 @@ impl CssQualifiedRule {
         if !own_ctx.qualifiers.is_empty() && !ctx.qualifiers.is_empty() {
             // TODO: figure out how to combine contexts
             let err = quote_spanned! {own_ctx.span()=>
-                {
-                    ::std::compile_error!("Can not nest qualified blocks (yet)")
-                }
+                ::std::compile_error!("Can not nest qualified blocks (yet)")
             };
             return Box::new(std::iter::once(Err(err)));
         }
@@ -733,13 +474,120 @@ impl CssAtRule {
         let contents = match self.contents {
             CssAtRuleContent::Empty(_) => Vec::new(),
             CssAtRuleContent::Scope(scope) => fold_tokens(scope.contents, ctx)
+                .map(|contents| {
+                    contents.map(|c| match c {
+                        OutputSheetContent::QualifiedRule(block) => {
+                            OutputRuleContent::Block(block).reify()
+                        }
+                        OutputSheetContent::AtRule(rule) => OutputRuleContent::AtRule(rule).reify(),
+                    })
+                })
                 .collect::<CollectTokenError<Vec<_>>>()
                 .into_error()?,
         };
         Ok(OutputSheetContent::AtRule(OutputAtRule {
-            name: self.name,
-            prelude: self.prelude,
+            name: self.name.quote_at_rule(),
+            prelude: self.prelude.into_iter().flat_map(|p| p.reify()).collect(),
             contents,
         }))
+    }
+}
+
+impl CssAttribute {
+    fn into_output(self) -> Result<OutputAttribute, TokenStream> {
+        let key_tokens = self.name.reify();
+        let value_tokens = Itertools::intersperse(
+            self.value
+                .values
+                .into_pairs()
+                .flat_map(|p| p.into_value().reify()),
+            quote! {
+                ", ".into()
+            },
+        )
+        .collect();
+
+        Ok(OutputAttribute {
+            key: key_tokens,
+            values: value_tokens,
+        })
+    }
+}
+
+// =====================================================================
+// =====================================================================
+// Output structs + quoting
+// =====================================================================
+// =====================================================================
+
+impl CssComponentValue {
+    // Reifies into a Vec of TokenStreams of type
+    // for<I: Into<Cow<'static, str>>> T: From<I>
+    // including ::stylist::ast::Selector and ::stylist::ast::StringFragment
+    pub fn reify(self) -> Vec<TokenStream> {
+        match self {
+            Self::Identifier(name) => {
+                let quoted_literal = name.quote();
+                vec![quote! { #quoted_literal.into() }]
+            }
+            Self::InjectedExpr(expr) => {
+                let injected = *expr.expr;
+                let ident_result = Ident::new("expr", Span::mixed_site());
+                let fragment = quote_spanned! {expr.braces.span=>
+                    {
+                        fn write_expr<V: ::std::fmt::Display>(w: &mut String, v: V) {
+                            use ::std::fmt::Write;
+                            ::std::write!(w, "{}", v).expect("");
+                        }
+                        let mut #ident_result = ::std::string::String::new();
+                        write_expr(&mut #ident_result, #injected);
+                        #ident_result.into()
+                    }
+                };
+                vec![fragment]
+            }
+            Self::ResultClass(_) => {
+                vec![quote! {
+                    "&".into()
+                }]
+            }
+            Self::Function { name, args, .. } => {
+                let name_toks = name.quote();
+                let mut write_args = Itertools::intersperse(
+                    args.into_iter().flat_map(|arg| arg.reify()),
+                    quote! {
+                        ", ".into()
+                    },
+                )
+                .collect::<Vec<_>>();
+                write_args.insert(0, quote! { #name_toks.into() });
+                write_args.insert(1, quote! { "(".into() });
+                write_args.push(quote! { ")".into() });
+                write_args
+            }
+        }
+    }
+}
+
+impl CssAttributeName {
+    pub fn reify(self) -> TokenStream {
+        match self {
+            Self::Identifier(name) => name.quote_attribute(),
+            Self::InjectedExpr(expr) => {
+                let injected = *expr.expr;
+                let ident_result = Ident::new("expr", Span::mixed_site());
+                quote_spanned! {expr.braces.span=>
+                    {
+                        fn write_expr<V: ::std::fmt::Display>(w: &mut str, v: V) {
+                            use ::std::fmt::Write;
+                            ::std::write!(w, "{}", v).expect("");
+                        }
+                        let mut #ident_result = ::std::string::String::new();
+                        write_expr(&mut #ident_result, #injected);
+                        #ident_result.into()
+                    }
+                }
+            }
+        }
     }
 }

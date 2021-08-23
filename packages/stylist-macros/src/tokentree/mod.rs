@@ -1,8 +1,10 @@
 mod css_name;
-mod css_tree;
+mod output;
+mod parsed;
 
-use css_tree::{CssRootNode, OutputSheet};
 use log::debug;
+use output::{OutputSheet, Reify};
+use parsed::CssRootNode;
 use proc_macro2::TokenStream;
 
 pub fn macro_fn(input: TokenStream) -> TokenStream {
@@ -13,8 +15,5 @@ pub fn macro_fn(input: TokenStream) -> TokenStream {
     debug!("Parsed as: {:?}", root);
 
     use std::convert::TryInto;
-    match <CssRootNode as TryInto<OutputSheet>>::try_into(root) {
-        Ok(parsed) => parsed.into_token_stream(),
-        Err(failed) => failed,
-    }
+    <CssRootNode as TryInto<OutputSheet>>::try_into(root).reify()
 }
