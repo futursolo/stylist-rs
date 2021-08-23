@@ -67,7 +67,7 @@ mod test {
     fn test_macro_invokation() {
         init();
         let color_red = "red";
-        let style = stylist::css! {
+        let style = stylist::style! {
             ${"&:has()"} {
 
             }
@@ -81,8 +81,7 @@ mod test {
             }
             @-webkit-keyframes {
             }
-        }
-        .to_style();
+        };
         debug!("{}", style.get_style_str())
     }
 }
