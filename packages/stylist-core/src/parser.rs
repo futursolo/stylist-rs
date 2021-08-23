@@ -71,6 +71,8 @@ impl Parser {
         #[cfg(test)]
         trace!("Comment: {}", i);
 
+        Self::expect_non_empty(i)?;
+
         let result = context(
             "StyleComment",
             Self::trimmed(delimited(
@@ -91,6 +93,8 @@ impl Parser {
     fn attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Attribute: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "StyleAttribute",
@@ -141,6 +145,8 @@ impl Parser {
         #[cfg(test)]
         trace!("Attributes: {}", i);
 
+        Self::expect_non_empty(i)?;
+
         let result = context(
             "StyleAttributes",
             Self::trimmed(terminated(
@@ -159,6 +165,8 @@ impl Parser {
     fn string(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         #[cfg(test)]
         trace!("String: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let escaped_char = context("EscapedChar", recognize(preceded(tag("\\"), anychar)));
 
@@ -179,6 +187,8 @@ impl Parser {
     fn string_interpolation(i: &str) -> IResult<&str, StringFragment, VerboseError<&str>> {
         #[cfg(test)]
         trace!("String Interpolation: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "StringInterpolation",
@@ -209,6 +219,8 @@ impl Parser {
         #[cfg(test)]
         trace!("Selector Interpolation: {}", i);
 
+        Self::expect_non_empty(i)?;
+
         let result = context(
             "SelectorInterpolation",
             Self::trimmed(map(Self::string_interpolation, |p: StringFragment| {
@@ -229,6 +241,8 @@ impl Parser {
     fn selector(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Selector: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "Selector",
@@ -252,6 +266,8 @@ impl Parser {
         #[cfg(test)]
         trace!("Condition: {}", i);
 
+        Self::expect_non_empty(i)?;
+
         let result = context(
             "Condition",
             Self::trimmed(many1(terminated(
@@ -270,6 +286,8 @@ impl Parser {
     fn block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Block: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "StyleBlock",
@@ -298,6 +316,8 @@ impl Parser {
         #[cfg(test)]
         trace!("Rule contents: {}", i);
 
+        Self::expect_non_empty(i)?;
+
         let string_as_contents = map(Parser::rule_string, |s| vec![s]);
         let string_or_curlies = alt((Parser::rule_curly_braces, string_as_contents));
         let result = context(
@@ -316,6 +336,8 @@ impl Parser {
     fn rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Rule: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "Rule",
@@ -353,6 +375,8 @@ impl Parser {
         #[cfg(test)]
         trace!("Rule String: {}", i);
 
+        Self::expect_non_empty(i)?;
+
         let result = context(
             "StyleRuleString",
             Self::trimmed(map(is_not("{}"), |p: &str| {
@@ -372,6 +396,8 @@ impl Parser {
     fn rule_curly_braces(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Curly Braces: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "StyleRuleCurlyBraces",
@@ -395,6 +421,8 @@ impl Parser {
     fn dangling_attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Dangling Attribute: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "StyleAttribute",
@@ -452,6 +480,8 @@ impl Parser {
         #[cfg(test)]
         trace!("Dangling Attributes: {}", i);
 
+        Self::expect_non_empty(i)?;
+
         let result = context(
             "StyleAttributes",
             Self::trimmed(many1(Parser::dangling_attribute)),
@@ -467,6 +497,8 @@ impl Parser {
     fn dangling_block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Dangling Block: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "StyleDanglingBlock",
@@ -492,6 +524,8 @@ impl Parser {
         #[cfg(test)]
         trace!("Scope: {}", i);
 
+        Self::expect_non_empty(i)?;
+
         let result = context("StyleScope", Self::trimmed(Parser::scope_contents))(i);
 
         #[cfg(test)]
@@ -502,6 +536,8 @@ impl Parser {
     fn at_rule_condition(i: &str) -> IResult<&str, Vec<StringFragment>, VerboseError<&str>> {
         #[cfg(test)]
         trace!("At Rule: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "AtRule",
@@ -544,6 +580,8 @@ impl Parser {
     fn at_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
         trace!("At Rule: {}", i);
+
+        Self::expect_non_empty(i)?;
 
         let result = context(
             "AtRule",
@@ -1056,6 +1094,42 @@ mod tests {
                 .into(),
             }),
         ]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_empty_block() {
+        init();
+        let test_str = r#".nested {}"#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![ScopeContent::Block(Block {
+            condition: vec![".nested".into()].into(),
+            style_attributes: vec![].into(),
+        })]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_empty_media_rule() {
+        init();
+        let test_str = r#"@media screen and (max-width: 500px) {}"#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![ScopeContent::Rule(Rule {
+            condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()].into(),
+            content: vec![].into(),
+        })]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_empty() {
+        init();
+        let test_str = r#""#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![]);
         assert_eq!(parsed, expected);
     }
 }

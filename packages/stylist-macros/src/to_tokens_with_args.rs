@@ -234,6 +234,6 @@ impl ToTokensWithArgs for Sheet {
             scope_tokens.extend(quote! {#current_scope_tokens ,});
         }
 
-        quote! { ::stylist::ast::Sheet::from( ::std::borrow::Cow::Owned(vec![#scope_tokens])) }
+        quote! { ::stylist::ast::Sheet::from(vec![#scope_tokens]) }
     }
 }
