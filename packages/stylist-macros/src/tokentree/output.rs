@@ -70,7 +70,7 @@ impl Reify for OutputAtRule {
             {
                 let mut #ident_condition = ::std::vec::Vec::<::stylist::ast::StringFragment>::new();
                 #ident_condition.push( "@".into() );
-                #ident_condition.push( #name.into() );
+                #ident_condition.push( #name );
                 #ident_condition.push( " ".into() );
                 #( #ident_condition.push(#prelude); )*
 

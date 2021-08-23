@@ -3,6 +3,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use quote::ToTokens;
 use syn::parse::{Lookahead1, Parse, ParseBuffer, Result as ParseResult};
+use syn::LitStr;
 use syn::{ext::IdentExt, token};
 use syn::{
     punctuated::{Pair, Punctuated},
@@ -69,7 +70,7 @@ impl PunctuatedName {
             || DashedName::peek(lookahead)
     }
 
-    pub fn quote(&self) -> TokenStream {
+    pub fn quote_literal(&self) -> LitStr {
         let formatted = match self {
             Self::Simple { identifier } => identifier.stringify(),
             Self::Dashed1 { identifier, .. } => {
@@ -209,14 +210,14 @@ impl Identifier {
         }
     }
 
-    pub fn quote_at_rule(&self) -> TokenStream {
+    pub fn quote_at_rule(&self) -> LitStr {
         let formatted = self.stringify().from_case(Case::Camel).to_case(Case::Kebab);
         quote! {
             #formatted
         }
     }
 
-    pub fn quote_attribute(&self) -> TokenStream {
+    pub fn quote_attribute(&self) -> LitStr {
         let formatted = self.stringify().from_case(Case::Camel).to_case(Case::Kebab);
         quote! {
             #formatted

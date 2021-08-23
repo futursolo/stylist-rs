@@ -9,8 +9,6 @@ use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use quote::{quote, quote_spanned};
-use std::convert::TryInto;
-use std::iter::FromIterator;
 use std::iter::Peekable;
 use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 use syn::spanned::Spanned;
@@ -310,42 +308,45 @@ impl Default for CssScopeQualifier {
 // =====================================================================
 // =====================================================================
 
-enum CollectTokenError<T> {
-    Result(T),
-    Error(TokenStream),
-}
-
-impl<T> CollectTokenError<T> {
-    fn into_error(self) -> Result<T, TokenStream> {
-        match self {
-            CollectTokenError::Result(t) => Ok(t),
-            CollectTokenError::Error(e) => Err(e),
-        }
-    }
-}
-
-impl<I, T> FromIterator<Result<I, TokenStream>> for CollectTokenError<T>
-where
-    T: FromIterator<I>,
-{
-    fn from_iter<It>(it: It) -> Self
-    where
-        It: IntoIterator<Item = Result<I, TokenStream>>,
-    {
-        let mut items = Vec::new();
-        let mut errors = Vec::new();
-        for i in it.into_iter() {
-            match i {
-                Ok(i) => items.push(i),
-                Err(e) => errors.push(e),
-            }
-        }
-        if errors.is_empty() {
-            CollectTokenError::Result(T::from_iter(items))
-        } else {
-            CollectTokenError::Error(TokenStream::from_iter(errors))
-        }
-    }
+/// We want to normalize the input a bit. For that, we want to pretend that e.g.
+/// the sample input
+///
+/// ```css
+/// outer-attribute: some;
+/// foo-bar: zet;
+/// .nested {
+///     @media print {
+///         only-in-print: foo;
+///     }
+///     and-always: red;
+/// }
+/// ```
+///
+/// gets processed as if written in the (more verbose) shallowly nested style:
+///
+/// ```css
+/// {
+///     outer-attribute: some;
+///     foo-bar: zet;
+/// }
+/// @media print {
+///     .nested {
+///         only-in-print: foo;
+///     }
+/// }
+/// .nested {
+///     and-always: red;
+/// }
+///
+/// ```
+///
+/// Errors in nested items are reported as spanned TokenStreams.
+///
+fn fold_normalized_scope_hierarchy<'it, R: 'it>(
+    it: impl 'it + IntoIterator<Item = CssScopeContent>,
+    handle_item: impl 'it + Copy + Fn(OutputSheetContent) -> R,
+) -> impl 'it + Iterator<Item = Result<R, TokenStream>> {
+    fold_tokens_impl(Default::default(), it, handle_item)
 }
 
 enum OutputSheetContent {
@@ -353,10 +354,11 @@ enum OutputSheetContent {
     QualifiedRule(OutputQualifiedRule),
 }
 
-fn fold_tokens<'it>(
+fn fold_tokens_impl<'it, R: 'it>(
+    context: CssScopeQualifier,
     it: impl 'it + IntoIterator<Item = CssScopeContent>,
-    context: &'it CssScopeQualifier,
-) -> impl 'it + Iterator<Item = Result<OutputSheetContent, TokenStream>> {
+    handle_item: impl 'it + Copy + Fn(OutputSheetContent) -> R,
+) -> impl 'it + Iterator<Item = Result<R, TokenStream>> {
     // Step one: collect attributes into blocks, flatten and lift nested blocks
     struct Wrapper<I: Iterator> {
         it: Peekable<I>,
@@ -380,8 +382,7 @@ fn fold_tokens<'it>(
                         .it
                         .next_if(|i| matches!(i, CssScopeContent::Attribute(_)))
                     {
-                        let output_attr = attr.into_output();
-                        attributes.push(output_attr.reify());
+                        attributes.push(attr.into_output().reify());
                     }
                     let replacement = OutputQualifiedRule {
                         qualifier: self.qualifier.clone().reify(),
@@ -400,10 +401,9 @@ fn fold_tokens<'it>(
     }
 
     let context_conditions = context
-        .clone()
         .qualifiers
-        .into_pairs()
-        .flat_map(|p| p.into_value().reify())
+        .pairs()
+        .flat_map(|p| p.into_value().clone().reify())
         .collect();
     Wrapper {
         it: it.into_iter().peekable(),
@@ -413,42 +413,26 @@ fn fold_tokens<'it>(
     }
     .flat_map(move |w| match w {
         WrappedCase::AttributeCollection(attrs) => {
-            let content = Ok(OutputSheetContent::QualifiedRule(attrs));
-            let it = std::iter::once(content);
-            Box::new(it) as Box<dyn '_ + Iterator<Item = _>>
+            let result = Ok(handle_item(OutputSheetContent::QualifiedRule(attrs)));
+            Box::new(std::iter::once(result)) as Box<dyn '_ + Iterator<Item = _>>
         }
         WrappedCase::AtRule(r) => {
-            let inner = r.try_into_ctx(context);
-            Box::new(std::iter::once(inner))
+            let result = Ok(handle_item(r.fold_in_context(context.clone())));
+            Box::new(std::iter::once(result))
         }
-        WrappedCase::Qualified(b) => b.try_into_ctx(context),
+        WrappedCase::Qualified(b) => {
+            let nested = b.fold_in_context(context.clone());
+            Box::new(nested.map(move |i| i.map(|c| handle_item(c))))
+        }
     })
 }
 
-impl TryInto<OutputSheet> for CssRootNode {
-    type Error = TokenStream;
-    fn try_into(self) -> Result<OutputSheet, TokenStream> {
-        let contents = fold_tokens(self.root_contents, &CssScopeQualifier::default())
-            .map(|contents| {
-                contents.map(|c| match c {
-                    OutputSheetContent::QualifiedRule(block) => {
-                        OutputScopeContent::Block(block).reify()
-                    }
-                    OutputSheetContent::AtRule(rule) => OutputScopeContent::AtRule(rule).reify(),
-                })
-            })
-            .collect::<CollectTokenError<_>>()
-            .into_error()?;
-        Ok(OutputSheet { contents })
-    }
-}
-
 impl CssQualifiedRule {
-    fn try_into_ctx(
+    fn fold_in_context(
         self,
-        ctx: &CssScopeQualifier,
-    ) -> Box<dyn '_ + Iterator<Item = Result<OutputSheetContent, TokenStream>>> {
-        let own_ctx = &self.qualifier;
+        ctx: CssScopeQualifier,
+    ) -> Box<dyn Iterator<Item = Result<OutputSheetContent, TokenStream>>> {
+        let own_ctx = self.qualifier;
         if !own_ctx.qualifiers.is_empty() && !ctx.qualifiers.is_empty() {
             // TODO: figure out how to combine contexts
             let err = quote_spanned! {own_ctx.span()=>
@@ -461,64 +445,83 @@ impl CssQualifiedRule {
         } else {
             ctx
         };
-        // FIXME: no real reason to collect here
-        // it's a bit tricky, since 'relevant_ctx' borrows local ctx
-        #[allow(clippy::needless_collect)]
-        let collected = fold_tokens(self.scope.contents, relevant_ctx).collect::<Vec<_>>();
-        Box::new(collected.into_iter())
+        let collected = fold_tokens_impl(relevant_ctx, self.scope.contents, |c| c);
+        Box::new(collected)
     }
 }
 
 impl CssAtRule {
-    fn try_into_ctx(self, ctx: &CssScopeQualifier) -> Result<OutputSheetContent, TokenStream> {
+    fn fold_in_context(self, ctx: CssScopeQualifier) -> OutputSheetContent {
         let contents = match self.contents {
             CssAtRuleContent::Empty(_) => Vec::new(),
-            CssAtRuleContent::Scope(scope) => fold_tokens(scope.contents, ctx)
-                .map(|contents| {
-                    contents.map(|c| match c {
-                        OutputSheetContent::QualifiedRule(block) => {
-                            OutputRuleContent::Block(block).reify()
-                        }
-                        OutputSheetContent::AtRule(rule) => OutputRuleContent::AtRule(rule).reify(),
-                    })
-                })
-                .collect::<CollectTokenError<Vec<_>>>()
-                .into_error()?,
+            CssAtRuleContent::Scope(scope) => fold_tokens_impl(ctx, scope.contents, |c| match c {
+                OutputSheetContent::QualifiedRule(block) => OutputRuleContent::Block(block),
+                OutputSheetContent::AtRule(rule) => OutputRuleContent::AtRule(rule),
+            })
+            .map(|c| c.reify())
+            .collect(),
         };
-        Ok(OutputSheetContent::AtRule(OutputAtRule {
-            name: self.name.quote_at_rule(),
+        let name_lit = self.name.quote_at_rule();
+        OutputSheetContent::AtRule(OutputAtRule {
+            name: quote! { #name_lit.into() },
             prelude: self.prelude.into_iter().flat_map(|p| p.reify()).collect(),
             contents,
-        }))
+        })
+    }
+}
+// =====================================================================
+// =====================================================================
+// Output structs + quoting
+// =====================================================================
+// =====================================================================
+impl Reify for InjectedExpression {
+    fn reify(self) -> TokenStream {
+        let injected = *self.expr;
+        let ident_result = Ident::new("expr", Span::mixed_site());
+        quote_spanned! {self.braces.span=>
+            {
+                fn write_expr<V: ::std::fmt::Display>(v: V) -> ::std::string::String {
+                    use ::std::fmt::Write;
+                    let mut #ident_result = ::std::string::String::new();
+                    ::std::write!(&mut #ident_result, "{}", v).expect("");
+                    #ident_result
+                }
+                write_expr(#injected).into()
+            }
+        }
+    }
+}
+
+impl CssRootNode {
+    pub fn into_output(self) -> OutputSheet {
+        let contents = fold_normalized_scope_hierarchy(self.root_contents, |c| match c {
+            OutputSheetContent::QualifiedRule(block) => OutputScopeContent::Block(block),
+            OutputSheetContent::AtRule(rule) => OutputScopeContent::AtRule(rule),
+        })
+        .map(|c| c.reify())
+        .collect();
+        OutputSheet { contents }
     }
 }
 
 impl CssAttribute {
-    fn into_output(self) -> Result<OutputAttribute, TokenStream> {
+    fn into_output(self) -> OutputAttribute {
         let key_tokens = self.name.reify();
         let value_tokens = Itertools::intersperse(
             self.value
                 .values
                 .into_pairs()
                 .flat_map(|p| p.into_value().reify()),
-            quote! {
-                ", ".into()
-            },
+            quote! { ", ".into() },
         )
         .collect();
 
-        Ok(OutputAttribute {
+        OutputAttribute {
             key: key_tokens,
             values: value_tokens,
-        })
+        }
     }
 }
-
-// =====================================================================
-// =====================================================================
-// Output structs + quoting
-// =====================================================================
-// =====================================================================
 
 impl CssComponentValue {
     // Reifies into a Vec of TokenStreams of type
@@ -527,37 +530,20 @@ impl CssComponentValue {
     pub fn reify(self) -> Vec<TokenStream> {
         match self {
             Self::Identifier(name) => {
-                let quoted_literal = name.quote();
+                let quoted_literal = name.quote_literal();
                 vec![quote! { #quoted_literal.into() }]
             }
             Self::InjectedExpr(expr) => {
-                let injected = *expr.expr;
-                let ident_result = Ident::new("expr", Span::mixed_site());
-                let fragment = quote_spanned! {expr.braces.span=>
-                    {
-                        fn write_expr<V: ::std::fmt::Display>(w: &mut String, v: V) {
-                            use ::std::fmt::Write;
-                            ::std::write!(w, "{}", v).expect("");
-                        }
-                        let mut #ident_result = ::std::string::String::new();
-                        write_expr(&mut #ident_result, #injected);
-                        #ident_result.into()
-                    }
-                };
-                vec![fragment]
+                vec![expr.reify()]
             }
             Self::ResultClass(_) => {
-                vec![quote! {
-                    "&".into()
-                }]
+                vec![quote! { "&".into() }]
             }
             Self::Function { name, args, .. } => {
-                let name_toks = name.quote();
+                let name_toks = name.quote_literal();
                 let mut write_args = Itertools::intersperse(
                     args.into_iter().flat_map(|arg| arg.reify()),
-                    quote! {
-                        ", ".into()
-                    },
+                    quote! { ", ".into() },
                 )
                 .collect::<Vec<_>>();
                 write_args.insert(0, quote! { #name_toks.into() });
@@ -572,22 +558,11 @@ impl CssComponentValue {
 impl CssAttributeName {
     pub fn reify(self) -> TokenStream {
         match self {
-            Self::Identifier(name) => name.quote_attribute(),
-            Self::InjectedExpr(expr) => {
-                let injected = *expr.expr;
-                let ident_result = Ident::new("expr", Span::mixed_site());
-                quote_spanned! {expr.braces.span=>
-                    {
-                        fn write_expr<V: ::std::fmt::Display>(w: &mut str, v: V) {
-                            use ::std::fmt::Write;
-                            ::std::write!(w, "{}", v).expect("");
-                        }
-                        let mut #ident_result = ::std::string::String::new();
-                        write_expr(&mut #ident_result, #injected);
-                        #ident_result.into()
-                    }
-                }
+            Self::Identifier(name) => {
+                let quoted_literal = name.quote_attribute();
+                vec![quote! { #quoted_literal.into() }]
             }
+            Self::InjectedExpr(expr) => expr.reify(),
         }
     }
 }

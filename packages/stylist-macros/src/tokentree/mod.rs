@@ -3,7 +3,7 @@ mod output;
 mod parsed;
 
 use log::debug;
-use output::{OutputSheet, Reify};
+use output::Reify;
 use parsed::CssRootNode;
 use proc_macro2::TokenStream;
 
@@ -14,6 +14,5 @@ pub fn macro_fn(input: TokenStream) -> TokenStream {
     };
     debug!("Parsed as: {:?}", root);
 
-    use std::convert::TryInto;
-    <CssRootNode as TryInto<OutputSheet>>::try_into(root).reify()
+    root.into_output().reify()
 }
