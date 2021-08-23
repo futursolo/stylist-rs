@@ -17,7 +17,6 @@
 //!
 
 mod block;
-mod into_sheet;
 mod rule;
 mod rule_content;
 mod scope_content;
@@ -28,7 +27,6 @@ mod style_attr;
 mod to_style_str;
 
 pub use block::Block;
-pub use into_sheet::IntoSheet;
 pub use rule::Rule;
 pub use rule_content::RuleContent;
 pub use scope_content::ScopeContent;

@@ -1,11 +1,10 @@
 [package]
-name = "stylist-core"
+name = "stylist-parser"
 version = "0.9.0"
 license = "MIT"
 repository = "https://github.com/futursolo/stylist-rs"
 authors = [
     "Kaede Hoshiakwa <futursolo@icloud.com>",
-    "Martin Molzer <ga65guy@mytum.de>",
 ]
 edition = "2018"
 description = "Stylist is a CSS-in-Rust styling solution for WebAssembly Applications."
@@ -20,6 +19,8 @@ readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 
 [dependencies]
+stylist-core = { path = "../stylist-core", version = "0.9.0" }
+
 nom = "7.0.0"
 thiserror = "1.0.26"
 wasm-bindgen = "0.2.76"

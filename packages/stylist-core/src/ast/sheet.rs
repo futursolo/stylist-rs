@@ -1,26 +1,14 @@
 use std::borrow::Cow;
 use std::fmt;
 use std::ops::Deref;
-use std::str::FromStr;
-use std::sync::Arc;
 
 use super::{ScopeContent, ToStyleStr};
-use crate::parser::Parser;
+
 use crate::Result;
 
 /// The top node of a style string.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Sheet(Arc<Cow<'static, [ScopeContent]>>);
-
-impl FromStr for Sheet {
-    type Err = crate::Error;
-
-    fn from_str(s: &str) -> crate::Result<Self> {
-        let m = Parser::parse(s)?;
-
-        Ok(m)
-    }
-}
+pub struct Sheet(Cow<'static, [ScopeContent]>);
 
 impl Deref for Sheet {
     type Target = [ScopeContent];
@@ -32,25 +20,25 @@ impl Deref for Sheet {
 
 impl Sheet {
     pub fn new() -> Self {
-        Self(Arc::new(Cow::Borrowed(&[])))
+        Self(Cow::Borrowed(&[]))
     }
 }
 
 impl From<Vec<ScopeContent>> for Sheet {
     fn from(v: Vec<ScopeContent>) -> Self {
-        Self(Arc::new(v.into()))
+        Self(v.into())
     }
 }
 
 impl From<&'static [ScopeContent]> for Sheet {
     fn from(v: &'static [ScopeContent]) -> Self {
-        Self(Arc::new(v.into()))
+        Self(v.into())
     }
 }
 
 impl From<Cow<'static, [ScopeContent]>> for Sheet {
     fn from(v: Cow<'static, [ScopeContent]>) -> Self {
-        Self(Arc::new(v))
+        Self(v)
     }
 }
 

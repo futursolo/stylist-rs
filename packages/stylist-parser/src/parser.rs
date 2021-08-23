@@ -1,14 +1,5 @@
 use std::borrow::Cow;
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
 
-use once_cell::sync::Lazy;
-
-use crate::ast::{
-    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StringKind,
-    StyleAttribute,
-};
-use crate::{Error, Result};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while},
@@ -19,13 +10,16 @@ use nom::{
     sequence::{delimited, pair, preceded, separated_pair, terminated},
     IResult,
 };
-
-static CACHED_SHEETS: Lazy<Arc<Mutex<HashMap<String, Sheet>>>> = Lazy::new(Arc::default);
+use stylist_core::ast::{
+    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StringKind,
+    StyleAttribute,
+};
+use stylist_core::{Error, Result};
 
 #[cfg(test)]
 use log::trace;
 
-pub(crate) struct Parser;
+pub struct Parser {}
 
 impl Parser {
     /// Returns Error when string is Empty
@@ -657,7 +651,7 @@ impl Parser {
     }
 
     /// The parse the style and returns a `Result<Sheet>`.
-    fn parse_impl(css: &str) -> Result<Sheet> {
+    pub fn parse(css: &str) -> Result<Sheet> {
         match Self::sheet(css) {
             // Converting to String, primarily due to lifetime requirements.
             Err(nom::Err::Error(e)) | Err(nom::Err::Failure(e)) => Err(Error::Parse {
@@ -675,22 +669,6 @@ impl Parser {
                 source: None,
             }),
             Ok((_, res)) => Ok(res),
-        }
-    }
-
-    pub(crate) fn parse(css: &str) -> Result<Sheet> {
-        let cache = CACHED_SHEETS.clone();
-
-        let mut cache = cache.lock().unwrap();
-
-        if let Some(m) = cache.get(css) {
-            Ok(m.clone())
-        } else {
-            let m = Self::parse_impl(css)?;
-
-            cache.insert(css.to_string(), m.clone());
-
-            Ok(m)
         }
     }
 }

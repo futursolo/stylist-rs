@@ -1,11 +1,12 @@
 //! This module contains yew specific features.
 
+#[cfg(feature = "parser")]
 use std::borrow::Cow;
 
 use yew::html::Classes;
 use yew::html::IntoPropValue;
 
-use crate::ast::Sheet;
+use crate::ast::SheetRef;
 use crate::IntoStyle;
 use crate::Style;
 
@@ -21,18 +22,24 @@ impl From<Style> for Classes {
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl IntoPropValue<Style> for String {
     fn into_prop_value(self) -> Style {
         self.parse().expect("Failed to parse style.")
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl IntoPropValue<Style> for &str {
     fn into_prop_value(self) -> Style {
         self.parse().expect("Failed to parse style.")
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl IntoPropValue<Style> for Cow<'_, str> {
     fn into_prop_value(self) -> Style {
         self.parse().expect("Failed to parse style.")
@@ -47,37 +54,31 @@ impl From<IntoStyle> for Classes {
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl IntoPropValue<IntoStyle> for String {
     fn into_prop_value(self) -> IntoStyle {
         IntoStyle::String(self.into())
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl IntoPropValue<IntoStyle> for &'static str {
     fn into_prop_value(self) -> IntoStyle {
         IntoStyle::String(self.into())
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl IntoPropValue<IntoStyle> for Cow<'static, str> {
     fn into_prop_value(self) -> IntoStyle {
         IntoStyle::String(self)
     }
 }
 
-impl IntoPropValue<IntoStyle> for Sheet {
-    fn into_prop_value(self) -> IntoStyle {
-        IntoStyle::Sheet(Cow::Owned(self))
-    }
-}
-
-impl IntoPropValue<IntoStyle> for &'static Sheet {
-    fn into_prop_value(self) -> IntoStyle {
-        IntoStyle::Sheet(Cow::Borrowed(self))
-    }
-}
-
-impl IntoPropValue<IntoStyle> for Cow<'static, Sheet> {
+impl IntoPropValue<IntoStyle> for SheetRef {
     fn into_prop_value(self) -> IntoStyle {
         IntoStyle::Sheet(self)
     }

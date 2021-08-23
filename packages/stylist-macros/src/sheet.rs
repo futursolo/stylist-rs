@@ -4,9 +4,11 @@ use std::collections::{HashMap, HashSet};
 
 use litrs::StringLit;
 use proc_macro_error::{abort, abort_call_site};
+use quote::quote;
 use std::convert::TryFrom;
 
 use stylist_core::ast::Sheet;
+use stylist_parser::Parser;
 
 use crate::argument::Argument;
 use crate::to_tokens_with_args::ToTokensWithArgs;
@@ -24,7 +26,7 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
         Err(e) => return e.to_compile_error2(),
     };
 
-    let sheet: Sheet = match s_literal.value().parse() {
+    let sheet: Sheet = match Parser::parse(s_literal.value()) {
         Ok(m) => m,
 
         Err(e) => abort!(first_token, "{}", e.to_string()),
@@ -117,11 +119,11 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
         if !args_used.contains(k) {
             abort!(
                 v.name_token,
-                "Argument {} is not used, arguments must be used",
+                "argument {} is not used, arguments must be used",
                 k
             );
         }
     }
 
-    stream
+    quote! { ::stylist::ast::SheetRef::from(#stream) }
 }

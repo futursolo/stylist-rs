@@ -59,6 +59,8 @@ pub trait YieldStyle {
         self.manager().prefix()
     }
 
+    #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+    #[cfg(feature = "parser")]
     /// Returns the raw style string.
     #[deprecated(since = "0.9.0", note = "use style_from() instead")]
     fn style_str(&self) -> Cow<'static, str> {
@@ -68,16 +70,22 @@ pub trait YieldStyle {
     /// Returns a type that can be turned into a [`Style`].
     ///
     /// Override this method to customise the style.
+    #[cfg(feature = "parser")]
     #[allow(deprecated)]
     fn style_from(&self) -> IntoStyle {
         self.style_str().into()
+    }
+
+    #[cfg(not(feature = "parser"))]
+    fn style_from(&self) -> IntoStyle {
+        todo!()
     }
 
     /// Returns the generated style.
     ///
     /// Returns [`Err(Error)`](crate::Error) when failed to create a style.
     fn try_style(&self) -> Result<Style> {
-        Style::new_with_manager(self.style_from().to_sheet().as_ref(), self.manager())
+        Style::new_with_manager(self.style_from().to_sheet(), self.manager())
     }
 
     /// Returns the generated style.

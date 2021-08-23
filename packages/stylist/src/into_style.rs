@@ -1,6 +1,7 @@
+#[cfg(feature = "parser")]
 use std::borrow::Cow;
 
-use crate::ast::Sheet;
+use crate::ast::{Sheet, SheetRef};
 use crate::GlobalStyle;
 use crate::Style;
 
@@ -22,39 +23,49 @@ use crate::Style;
 /// ```
 #[derive(Debug, Clone)]
 pub enum IntoStyle {
+    #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+    #[cfg(feature = "parser")]
     String(Cow<'static, str>),
-    Sheet(Cow<'static, Sheet>),
+    Sheet(SheetRef),
 }
 
 impl IntoStyle {
     pub fn to_style(&self) -> Style {
-        Style::new(self.to_sheet().as_ref()).expect("Failed to create style")
+        Style::new(self.to_sheet()).expect("Failed to create style")
     }
 
     pub fn to_global_style(&self) -> GlobalStyle {
-        GlobalStyle::new(self.to_sheet().as_ref()).expect("Failed to create style")
+        GlobalStyle::new(self.to_sheet()).expect("Failed to create style")
     }
 
-    pub fn to_sheet(&self) -> Cow<'static, Sheet> {
+    pub fn to_sheet(&self) -> SheetRef {
         match self {
             Self::Sheet(ref m) => m.clone(),
-            Self::String(ref m) => Cow::Owned(m.parse::<Sheet>().expect("Failed to parse style")),
+            #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+            #[cfg(feature = "parser")]
+            Self::String(ref m) => m.parse::<SheetRef>().expect("Failed to parse style"),
         }
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl From<String> for IntoStyle {
     fn from(other: String) -> IntoStyle {
         IntoStyle::String(other.into())
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl From<&'static str> for IntoStyle {
     fn from(other: &'static str) -> IntoStyle {
         IntoStyle::String(other.into())
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl From<Cow<'static, str>> for IntoStyle {
     fn from(other: Cow<'static, str>) -> IntoStyle {
         IntoStyle::String(other)
@@ -63,18 +74,18 @@ impl From<Cow<'static, str>> for IntoStyle {
 
 impl From<Sheet> for IntoStyle {
     fn from(other: Sheet) -> IntoStyle {
-        IntoStyle::Sheet(Cow::Owned(other))
+        IntoStyle::Sheet(other.into())
     }
 }
 
 impl From<&'static Sheet> for IntoStyle {
     fn from(other: &'static Sheet) -> IntoStyle {
-        IntoStyle::Sheet(Cow::Borrowed(other))
+        IntoStyle::Sheet(other.clone().into())
     }
 }
 
-impl From<Cow<'static, Sheet>> for IntoStyle {
-    fn from(other: Cow<'static, Sheet>) -> IntoStyle {
+impl From<SheetRef> for IntoStyle {
+    fn from(other: SheetRef) -> IntoStyle {
         IntoStyle::Sheet(other)
     }
 }

@@ -2,6 +2,7 @@
 members = [
     "packages/stylist",
     "packages/stylist-core",
+    "packages/stylist-parser",
     "packages/stylist-macros",
 
     "examples/benchmarks",
@@ -11,3 +12,7 @@ members = [
     "examples/yew-theme-agent",
     "examples/yew-theme-yewdux",
 ]
+
+[profile.release]
+opt-level = 'z'
+lto = true

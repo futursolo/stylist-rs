@@ -98,8 +98,7 @@ impl Global {
             m.unregister();
         }
 
-        self.global_style = Some(
-            GlobalStyle::new(self.props.css.to_sheet().as_ref()).expect("Failed to parse style."),
-        );
+        self.global_style =
+            Some(GlobalStyle::new(self.props.css.to_sheet()).expect("Failed to parse style."));
     }
 }

@@ -86,5 +86,5 @@ fn test_sheet_interpolation() {
             .into(),
         }),
     ]);
-    assert_eq!(parsed, expected);
+    assert_eq!(parsed, expected.into());
 }

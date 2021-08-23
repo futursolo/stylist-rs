@@ -1,14 +1,16 @@
-use std::borrow::Cow;
 use std::rc::Rc;
+#[cfg(feature = "parser")]
 use std::str::FromStr;
 
-use crate::ast::{IntoSheet, Sheet, ToStyleStr};
+use crate::ast::{IntoSheet, SheetRef, ToStyleStr};
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
 use crate::style::StyleContent;
 use crate::style::StyleId;
 use crate::utils::get_entropy;
-use crate::{Error, Result};
+#[cfg(feature = "parser")]
+use crate::Error;
+use crate::Result;
 
 /// A struct that represents a global Style.
 ///
@@ -24,7 +26,7 @@ pub struct GlobalStyle {
 impl GlobalStyle {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_impl(css: Cow<'_, Sheet>, manager: StyleManager) -> Result<Self> {
+    fn create_impl(css: SheetRef, manager: StyleManager) -> Result<Self> {
         let prefix = format!("{}-global", manager.prefix());
 
         // Creates the StyleKey, return from registry if already cached.
@@ -40,15 +42,6 @@ impl GlobalStyle {
         if let Some(m) = reg.get(&key) {
             return Ok(Self { inner: m });
         }
-
-        let key = StyleKey {
-            is_global: true,
-            prefix: key.prefix,
-            // I don't think there's a way to turn a Cow<'_, Sheet> to a Cow<'static, Sheet>
-            // if inner is &'static Sheet without cloning.
-            // But I think it would be good enough if allocation only happens once.
-            ast: Cow::Owned(key.ast.into_owned()),
-        };
 
         let style_str = key.ast.to_style_str(None)?;
 
@@ -81,17 +74,17 @@ impl GlobalStyle {
     /// let style = Style::new("background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<'a, Css>(css: Css) -> Result<Self>
+    pub fn new<Css>(css: Css) -> Result<Self>
     where
-        Css: IntoSheet<'a>,
+        Css: IntoSheet,
     {
         Self::new_with_manager(css, StyleManager::default())
     }
 
     /// Creates a new style using a custom manager.
-    pub fn new_with_manager<'a, Css, M>(css: Css, manager: M) -> Result<Self>
+    pub fn new_with_manager<Css, M>(css: Css, manager: M) -> Result<Self>
     where
-        Css: IntoSheet<'a>,
+        Css: IntoSheet,
         M: Into<StyleManager>,
     {
         let css = css.into_sheet()?;
@@ -122,7 +115,7 @@ impl GlobalStyle {
     }
 
     /// Returns a reference of style key.
-    pub(crate) fn key(&self) -> Rc<StyleKey<'static>> {
+    pub(crate) fn key(&self) -> Rc<StyleKey> {
         self.inner.key()
     }
 
@@ -141,6 +134,8 @@ impl GlobalStyle {
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl FromStr for GlobalStyle {
     type Err = Error;
 

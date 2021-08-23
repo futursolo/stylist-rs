@@ -8,4 +8,4 @@ edition = "2018"
 log = "0.4.14"
 console_log = { version = "0.2.0", features = ["color"] }
 yew = "0.18.0"
-stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
+stylist = { path = "../../packages/stylist", default-features = false, features = ["macros", "yew_integration"] }

@@ -8,8 +8,3 @@
 mod error;
 pub use error::{Error, Result};
 pub mod ast;
-mod parser;
-
-#[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
-#[cfg(feature = "yew_integration")]
-mod yew;

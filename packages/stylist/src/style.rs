@@ -2,12 +2,15 @@ use std::borrow::Cow;
 use std::fmt;
 use std::ops::Deref;
 use std::rc::Rc;
+#[cfg(feature = "parser")]
 use std::str::FromStr;
 
-use crate::ast::{IntoSheet, Sheet, ToStyleStr};
+use crate::ast::{IntoSheet, SheetRef, ToStyleStr};
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
-use crate::{Error, Result};
+#[cfg(feature = "parser")]
+use crate::Error;
+use crate::Result;
 
 use crate::utils::get_entropy;
 
@@ -36,7 +39,7 @@ pub(crate) struct StyleContent {
 
     pub id: StyleId,
 
-    pub key: Rc<StyleKey<'static>>,
+    pub key: Rc<StyleKey>,
 
     pub style_str: String,
 
@@ -56,7 +59,7 @@ impl StyleContent {
         self.manager().unmount(self.id())
     }
 
-    pub fn key(&self) -> Rc<StyleKey<'static>> {
+    pub fn key(&self) -> Rc<StyleKey> {
         self.key.clone()
     }
 
@@ -150,7 +153,7 @@ impl Style {
     // and inlining
     fn create_impl(
         class_prefix: Cow<'static, str>,
-        css: Cow<'_, Sheet>,
+        css: SheetRef,
         manager: StyleManager,
     ) -> Result<Self> {
         // Creates the StyleKey, return from registry if already cached.
@@ -167,15 +170,6 @@ impl Style {
             return Ok(Style { inner: m });
         }
 
-        let key = StyleKey {
-            is_global: false,
-            prefix: key.prefix,
-            // I don't think there's a way to turn a Cow<'_, Sheet> to a Cow<'static, Sheet>
-            // if inner is &'static Sheet without cloning.
-            // But I think it would be good enough if allocation only happens once.
-            ast: Cow::Owned(key.ast.into_owned()),
-        };
-
         let id = StyleId(format!("{}-{}", key.prefix, get_entropy()));
 
         let style_str = key.ast.to_style_str(Some(&id))?;
@@ -183,7 +177,7 @@ impl Style {
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.
         #[cfg(debug_assertions)]
-        style_str.parse::<Sheet>()?;
+        style_str.parse::<SheetRef>()?;
 
         let new_style = Self {
             inner: StyleContent {
@@ -214,9 +208,9 @@ impl Style {
     /// let style = Style::new("background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<'a, Css>(css: Css) -> Result<Self>
+    pub fn new<Css>(css: Css) -> Result<Self>
     where
-        Css: IntoSheet<'a>,
+        Css: IntoSheet,
     {
         Self::create(StyleManager::default().prefix(), css)
     }
@@ -231,10 +225,10 @@ impl Style {
     /// let style = Style::create("my-component", "background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn create<'a, N, Css>(class_prefix: N, css: Css) -> Result<Self>
+    pub fn create<N, Css>(class_prefix: N, css: Css) -> Result<Self>
     where
         N: Into<Cow<'static, str>>,
-        Css: IntoSheet<'a>,
+        Css: IntoSheet,
     {
         let css = css.into_sheet()?;
         Self::create_impl(class_prefix.into(), css, StyleManager::default())
@@ -244,7 +238,7 @@ impl Style {
     /// manager.
     pub fn new_with_manager<'a, Css, M>(css: Css, manager: M) -> Result<Self>
     where
-        Css: IntoSheet<'a>,
+        Css: IntoSheet,
         M: Into<StyleManager>,
     {
         let css = css.into_sheet()?;
@@ -257,7 +251,7 @@ impl Style {
     pub fn create_with_manager<'a, N, Css, M>(class_prefix: N, css: Css, manager: M) -> Result<Self>
     where
         N: Into<Cow<'static, str>>,
-        Css: IntoSheet<'a>,
+        Css: IntoSheet,
         M: Into<StyleManager>,
     {
         let css = css.into_sheet()?;
@@ -306,7 +300,7 @@ impl Style {
     }
 
     /// Return a reference of style key.
-    pub(crate) fn key(&self) -> Rc<StyleKey<'static>> {
+    pub(crate) fn key(&self) -> Rc<StyleKey> {
         self.inner.key()
     }
 
@@ -325,6 +319,8 @@ impl Style {
     }
 }
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
 impl FromStr for Style {
     type Err = Error;
 
