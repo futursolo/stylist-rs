@@ -560,7 +560,7 @@ impl CssAttributeName {
         match self {
             Self::Identifier(name) => {
                 let quoted_literal = name.quote_attribute();
-                vec![quote! { #quoted_literal.into() }]
+                quote! { #quoted_literal.into() }
             }
             Self::InjectedExpr(expr) => expr.reify(),
         }
