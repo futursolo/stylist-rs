@@ -24,7 +24,7 @@ pub(crate) struct StyleRegistry {
 
 impl StyleRegistry {
     pub(crate) fn register(&mut self, content: Rc<StyleContent>) {
-        let key = content.key().clone();
+        let key = content.key();
         if self.styles.insert(key, content).is_some() {
             panic!("A Style with this StyleKey has already been created.");
         }

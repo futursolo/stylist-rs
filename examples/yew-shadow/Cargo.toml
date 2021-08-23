@@ -1,5 +1,5 @@
 [package]
-name = "yew-shadow"
+name = "example-yew-shadow"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2018"

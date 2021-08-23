@@ -1,5 +1,5 @@
 [package]
-name = "yew-theme-yewdux"
+name = "example-yew-theme-yewdux"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2018"
