@@ -176,7 +176,7 @@ impl Style {
 
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.
-        #[cfg(debug_assertions)]
+        #[cfg(all(debug_assertions, feature = "parser"))]
         style_str.parse::<SheetRef>()?;
 
         let new_style = Self {

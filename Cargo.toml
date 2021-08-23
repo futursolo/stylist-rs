@@ -12,7 +12,3 @@ members = [
     "examples/yew-theme-agent",
     "examples/yew-theme-yewdux",
 ]
-
-[profile.release]
-opt-level = 'z'
-lto = true

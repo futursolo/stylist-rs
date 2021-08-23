@@ -4,6 +4,9 @@ use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
 use log::Level;
 
+#[global_allocator]
+static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
+
 pub struct Inside {}
 
 impl Component for Inside {
