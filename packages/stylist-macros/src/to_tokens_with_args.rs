@@ -8,6 +8,7 @@ use quote::quote;
 use stylist_core::ast::*;
 
 use crate::argument::Argument;
+use crate::fstring;
 
 pub(crate) trait ToTokensWithArgs {
     fn to_tokens_with_args(
@@ -23,33 +24,15 @@ impl ToTokensWithArgs for Selector {
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> TokenStream {
-        match &self.kind {
-            StringKind::Literal => {
-                let s = Literal::string(&self.inner);
-                quote! {
-                    ::stylist::ast::Selector{
-                        inner: #s.into(),
-                        kind: ::stylist::ast::StringKind::Literal,
-                    }
-                }
-            }
+        let mut fragment_tokens = TokenStream::new();
 
-            StringKind::Interpolation => {
-                let arg = match args.get(self.inner.as_ref()) {
-                    Some(m) => m,
-                    None => abort_call_site!("missing argument: {}", self.inner),
-                };
+        for frag in self.fragments.iter() {
+            fragment_tokens.extend(frag.to_tokens_with_args(args, args_used));
+        }
 
-                let tokens = arg.tokens.clone();
-
-                args_used.insert(arg.name.clone());
-
-                quote! {
-                    ::stylist::ast::Selector{
-                        inner: #tokens.to_string().into(),
-                        kind: ::stylist::ast::StringKind::Literal,
-                    }
-                }
+        quote! {
+            ::stylist::ast::Selector{
+                fragments: vec![#fragment_tokens].into(),
             }
         }
     }
@@ -68,7 +51,7 @@ impl ToTokensWithArgs for StyleAttribute {
         for i in self.value.iter() {
             let current_tokens = i.to_tokens_with_args(args, args_used);
 
-            val_tokens.extend(quote! {#current_tokens ,});
+            val_tokens.extend(current_tokens);
         }
         quote! { ::stylist::ast::StyleAttribute{ key: #key_s.into(), value: vec![#val_tokens].into() } }
     }
@@ -98,8 +81,8 @@ impl ToTokensWithArgs for Block {
 
         quote! {
             ::stylist::ast::Block {
-                condition: ::std::borrow::Cow::Owned(vec![#selector_tokens]),
-                style_attributes: ::std::borrow::Cow::Owned(vec![#style_attr_tokens])
+                condition: vec![#selector_tokens].into(),
+                style_attributes: vec![#style_attr_tokens].into(),
             }
         }
     }
@@ -136,35 +119,49 @@ impl ToTokensWithArgs for StringFragment {
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> TokenStream {
-        match &self.kind {
-            StringKind::Literal => {
-                let s = Literal::string(&self.inner);
-                quote! {
-                    ::stylist::ast::StringFragment {
-                        inner: #s.into(),
-                        kind: ::stylist::ast::StringKind::Literal,
-                    }
+        let fragments = match fstring::Parser::parse(&self.inner) {
+            Ok(m) => m,
+            Err(e) => abort_call_site!("{}", e),
+        };
+
+        let mut tokens = TokenStream::new();
+
+        for frag in fragments.iter() {
+            match frag {
+                fstring::Fragment::Literal(ref m) => {
+                    let s = Literal::string(m);
+
+                    let current_tokens = quote! {
+                        ::stylist::ast::StringFragment {
+                            inner: #s.into(),
+                        },
+                    };
+
+                    tokens.extend(current_tokens);
                 }
-            }
 
-            StringKind::Interpolation => {
-                let arg = match args.get(self.inner.as_ref()) {
-                    Some(m) => m,
-                    None => abort_call_site!("missing argument: {}", self.inner),
-                };
+                fstring::Fragment::Interpolation(ref m) => {
+                    let arg = match args.get(m) {
+                        Some(m) => m,
+                        None => abort_call_site!("missing argument: {}", self.inner),
+                    };
 
-                let tokens = arg.tokens.clone();
+                    let arg_tokens = arg.tokens.clone();
 
-                args_used.insert(arg.name.clone());
+                    args_used.insert(arg.name.clone());
 
-                quote! {
-                    ::stylist::ast::StringFragment {
-                        inner: #tokens.to_string().into(),
-                        kind: ::stylist::ast::StringKind::Literal,
-                    }
+                    let current_tokens = quote! {
+                        ::stylist::ast::StringFragment {
+                            inner: #arg_tokens.to_string().into(),
+                        },
+                    };
+
+                    tokens.extend(current_tokens);
                 }
             }
         }
+
+        tokens
     }
 }
 
@@ -179,7 +176,7 @@ impl ToTokensWithArgs for Rule {
         for i in self.condition.iter() {
             let current_tokens = i.to_tokens_with_args(args, args_used);
 
-            cond_tokens.extend(quote! {#current_tokens ,});
+            cond_tokens.extend(current_tokens);
         }
 
         let mut content_tokens = TokenStream::new();
@@ -192,8 +189,8 @@ impl ToTokensWithArgs for Rule {
 
         quote! {
             ::stylist::ast::Rule {
-                condition: ::std::borrow::Cow::Owned(vec![#cond_tokens]),
-                content: ::std::borrow::Cow::Owned(vec![#content_tokens])
+                condition: vec![#cond_tokens].into(),
+                content: vec![#content_tokens].into(),
             }
         }
     }

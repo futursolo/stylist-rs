@@ -35,7 +35,7 @@ pub use sheet::Sheet;
 pub use style_attr::StyleAttribute;
 pub use to_style_str::ToStyleStr;
 
-pub use str_frag::{StringFragment, StringKind};
+pub use str_frag::StringFragment;
 
 #[cfg(test)]
 mod tests {

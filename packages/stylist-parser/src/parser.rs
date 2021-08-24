@@ -11,14 +11,14 @@ use nom::{
     IResult,
 };
 use stylist_core::ast::{
-    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StringKind,
-    StyleAttribute,
+    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StyleAttribute,
 };
 use stylist_core::{Error, Result};
 
 #[cfg(test)]
 use log::trace;
 
+/// A lightweight CSS Parser.
 pub struct Parser {}
 
 impl Parser {
@@ -96,35 +96,28 @@ impl Parser {
                 separated_pair(
                     preceded(
                         opt(Parser::cmt),
-                        preceded(opt(Parser::sp), is_not(" \t\r\n:{")),
+                        preceded(opt(Parser::sp), is_not(" \t\r\n:{}")),
                     ),
                     preceded(opt(Parser::cmt), preceded(opt(Parser::sp), tag(":"))),
                     preceded(
                         opt(Parser::cmt),
                         preceded(
                             opt(Parser::sp),
-                            many1(alt((
-                                map(is_not("$;{}"), |m: &str| StringFragment {
-                                    inner: m.to_string().into(),
-                                    kind: StringKind::Literal,
-                                }),
-                                Self::string_interpolation,
-                            ))),
+                            map(
+                                recognize(many1(alt((
+                                    is_not("${;}"),
+                                    recognize(Self::string_interpolation),
+                                )))),
+                                |m: &str| StringFragment {
+                                    inner: m.to_string().trim().to_string().into(),
+                                },
+                            ),
                         ),
                     ),
                 ),
-                move |p: (&str, Vec<StringFragment>)| {
-                    let mut value = p.1;
-
-                    // Remove trailing spaces for last item
-                    if let Some(mut m) = value.last_mut() {
-                        m.inner = m.inner.trim_end().to_string().into();
-                    }
-
-                    StyleAttribute {
-                        key: p.0.trim().to_string().into(),
-                        value: value.into(),
-                    }
+                move |p: (&str, StringFragment)| StyleAttribute {
+                    key: p.0.trim().to_string().into(),
+                    value: vec![p.1].into(),
                 },
             )),
         )(i);
@@ -197,36 +190,12 @@ impl Parser {
                 ),
                 |p: &str| StringFragment {
                     inner: p.trim().to_owned().into(),
-                    kind: StringKind::Interpolation,
                 },
             )),
         )(i);
 
         #[cfg(test)]
         trace!("String Interpolation: {:#?}", result);
-
-        result
-    }
-
-    /// Parse a selector interpolation.
-    fn selector_interpolation(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Selector Interpolation: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "SelectorInterpolation",
-            Self::trimmed(map(Self::string_interpolation, |p: StringFragment| {
-                Selector {
-                    inner: p.inner,
-                    kind: StringKind::Interpolation,
-                }
-            })),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Selector Interpolation: {:#?}", result);
 
         result
     }
@@ -241,10 +210,11 @@ impl Parser {
         let result = context(
             "Selector",
             Self::trimmed(map(
-                recognize(preceded(
-                    none_of("$,}@{"),
-                    many0(alt((is_not(",\"{"), Self::string))),
-                )),
+                recognize(many1(alt((
+                    recognize(preceded(none_of("$,}@{\""), opt(is_not("$,\"{")))),
+                    Self::string,
+                    recognize(Self::string_interpolation),
+                )))),
                 |p: &str| p.trim().to_owned().into(),
             )),
         )(i);
@@ -264,10 +234,7 @@ impl Parser {
 
         let result = context(
             "Condition",
-            Self::trimmed(many1(terminated(
-                alt((Self::selector, Self::selector_interpolation)),
-                opt(tag(",")),
-            ))),
+            Self::trimmed(many1(terminated(Self::selector, opt(tag(","))))),
         )(i);
 
         #[cfg(test)]
@@ -425,7 +392,7 @@ impl Parser {
                     // Key
                     preceded(
                         opt(Parser::cmt),
-                        preceded(opt(Parser::sp), is_not(" \t\r\n:{")),
+                        preceded(opt(Parser::sp), is_not(" \t\r\n:{}")),
                     ),
                     // Separator
                     preceded(opt(Parser::cmt), preceded(opt(Parser::sp), tag(":"))),
@@ -435,29 +402,24 @@ impl Parser {
                         preceded(
                             opt(Parser::sp),
                             terminated(
-                                many1(alt((
-                                    map(is_not("$;{}"), |m: &str| StringFragment {
-                                        inner: m.to_string().into(),
-                                        kind: StringKind::Literal,
-                                    }),
-                                    Self::string_interpolation,
-                                ))),
+                                map(
+                                    recognize(many1(alt((
+                                        is_not("${;}"),
+                                        recognize(Self::string_interpolation),
+                                    )))),
+                                    |m: &str| StringFragment {
+                                        inner: m.to_string().trim().to_string().into(),
+                                    },
+                                ),
                                 tag(";"),
                             ),
                         ),
                     ),
                 ),
-                move |p: (&str, Vec<StringFragment>)| -> StyleAttribute {
-                    let mut value = p.1;
-
-                    // Remove trailing spaces for last item
-                    if let Some(mut m) = value.last_mut() {
-                        m.inner = m.inner.trim_end().to_string().into();
-                    }
-
+                move |p: (&str, StringFragment)| -> StyleAttribute {
                     StyleAttribute {
                         key: p.0.trim().to_string().into(),
-                        value: value.into(),
+                        value: vec![p.1].into(),
                     }
                 },
             )),
@@ -538,28 +500,23 @@ impl Parser {
             Self::trimmed(map(
                 pair(
                     alt((tag("@supports "), tag("@media "))),
-                    many1(alt((
-                        map(is_not("${"), |m: &str| StringFragment {
-                            inner: m.to_string().into(),
-                            kind: StringKind::Literal,
-                        }),
-                        Self::string_interpolation,
-                    ))),
+                    map(
+                        recognize(many1(alt((
+                            is_not("${"),
+                            recognize(Self::string_interpolation),
+                        )))),
+                        |m: &str| StringFragment {
+                            inner: m.trim().to_string().into(),
+                        },
+                    ),
                 ),
-                |p: (&str, Vec<StringFragment>)| {
-                    let mut v = vec![StringFragment {
-                        inner: p.0.to_string().into(),
-                        kind: StringKind::Literal,
-                    }];
-
-                    v.extend_from_slice(&p.1);
-
-                    // Remove trailing spaces for last item
-                    if let Some(mut m) = v.last_mut() {
-                        m.inner = m.inner.trim_end().to_string().into();
-                    }
-
-                    v
+                |p: (&str, StringFragment)| {
+                    vec![
+                        StringFragment {
+                            inner: p.0.to_string().into(),
+                        },
+                        p.1,
+                    ]
                 },
             )),
         )(i);
@@ -1051,14 +1008,7 @@ mod tests {
                 .into(),
             }),
             ScopeContent::Block(Block {
-                condition: vec![
-                    ".nested".into(),
-                    Selector {
-                        inner: "var_a".into(),
-                        kind: StringKind::Interpolation,
-                    },
-                ]
-                .into(),
+                condition: vec![".nested".into(), "${var_a}".into()].into(),
                 style_attributes: vec![
                     StyleAttribute {
                         key: "background-color".into(),
@@ -1108,6 +1058,68 @@ mod tests {
         let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
 
         let expected = Sheet::from(vec![]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_pseudo_sel() {
+        init();
+        let test_str = r#"
+                color: ${color};
+
+                span, ${sel_div} {
+                    background-color: blue;
+                }
+
+                :not(${sel_root}) {
+                    background-color: black;
+                }
+
+                @media screen and ${breakpoint} {
+                    display: flex;
+                }
+            "#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![
+            ScopeContent::Block(Block {
+                condition: Cow::Borrowed(&[]),
+                style_attributes: vec![StyleAttribute {
+                    key: "color".into(),
+                    value: vec!["${color}".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec!["span".into(), "${sel_div}".into()].into(),
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".into(),
+                    value: vec!["blue".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec![":not(${sel_root})".into()].into(),
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".into(),
+                    value: vec!["black".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Rule(Rule {
+                condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
+                content: vec![RuleContent::Block(Block {
+                    condition: Cow::Borrowed(&[]),
+                    style_attributes: vec![StyleAttribute {
+                        key: "display".into(),
+                        value: vec!["flex".into()].into(),
+                    }]
+                    .into(),
+                })]
+                .into(),
+            }),
+        ]);
+
         assert_eq!(parsed, expected);
     }
 }

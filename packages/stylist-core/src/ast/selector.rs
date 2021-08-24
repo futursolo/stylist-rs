@@ -1,8 +1,8 @@
 use std::borrow::Cow;
 use std::fmt;
 
-use super::{StringKind, ToStyleStr};
-use crate::{Error, Result};
+use super::{StringFragment, ToStyleStr};
+use crate::Result;
 
 /// A CSS Selector.
 ///
@@ -12,46 +12,45 @@ use crate::{Error, Result};
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Selector {
-    pub inner: Cow<'static, str>,
-    pub kind: StringKind,
+    pub fragments: Cow<'static, [StringFragment]>,
 }
 
 impl ToStyleStr for Selector {
     fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
-        if self.kind == StringKind::Interpolation {
-            return Err(Error::Interpolation {
-                name: self.inner.to_string(),
-            });
+        let mut joined_s = "".to_string();
+
+        for frag in self.fragments.iter() {
+            frag.write_style(&mut joined_s, class_name)?;
         }
 
         if let Some(m) = class_name {
             // If contains current selector or root pseudo class, replace them with class name.
-            if self.inner.contains('&') || self.inner.contains(":root") {
+            if joined_s.contains('&') || joined_s.contains(":root") {
                 let scoped_class = format!(".{}", m);
 
                 write!(
                     w,
                     "{}",
-                    self.inner
+                    joined_s
                         .replace("&", scoped_class.as_str())
                         .replace(":root", scoped_class.as_str())
                 )?;
 
             // If selector starts with a pseudo-class, apply it to the root element.
-            } else if self.inner.starts_with(':') {
-                write!(w, ".{}{}", m, self.inner)?;
+            } else if joined_s.starts_with(':') {
+                write!(w, ".{}{}", m, joined_s)?;
 
             // For other selectors, scope it to be the children of the root element.
             } else {
-                write!(w, ".{} {}", m, self.inner)?;
+                write!(w, ".{} {}", m, joined_s)?;
             }
 
         // For global styles, if it contains &, it will be replaced with html.
-        } else if self.inner.contains('&') {
-            write!(w, "{}", self.inner.replace("&", "html"))?;
+        } else if joined_s.contains('&') {
+            write!(w, "{}", joined_s.replace("&", "html"))?;
         // For other styles, it will be written as is.
         } else {
-            write!(w, "{}", self.inner)?;
+            write!(w, "{}", joined_s)?;
         }
 
         Ok(())
@@ -61,8 +60,7 @@ impl ToStyleStr for Selector {
 impl<T: Into<Cow<'static, str>>> From<T> for Selector {
     fn from(s: T) -> Self {
         Self {
-            inner: s.into(),
-            kind: StringKind::Literal,
+            fragments: vec![s.into().into()].into(),
         }
     }
 }

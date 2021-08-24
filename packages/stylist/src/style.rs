@@ -387,23 +387,4 @@ border: 1px solid black;
             )
         )
     }
-
-    #[test]
-    fn test_no_runtime_interpolation() {
-        let e = Style::new(
-            r#"
-                ${selector_a} {
-                    color: red;
-                }
-            "#,
-        )
-        .expect_err("Style parsed, expected error.");
-
-        assert_eq!(
-            e,
-            Error::Interpolation {
-                name: "selector_a".into()
-            }
-        );
-    }
 }

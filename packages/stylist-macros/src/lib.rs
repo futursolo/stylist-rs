@@ -10,6 +10,7 @@ use proc_macro_error::proc_macro_error;
 
 mod argument;
 mod css;
+mod fstring;
 mod global_style;
 mod sheet;
 mod style;
