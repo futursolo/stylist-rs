@@ -109,7 +109,7 @@ impl Parse for CssScopeContent {
         let next_input = component_peek
             .peek()
             .cloned()
-            .ok_or_else(|| forked_input.error("unexpected end of input"))??;
+            .ok_or_else(|| forked_input.error("Scope: unexpected end of input"))??;
         // Steps from 5.4.4. Consume a list of declarations
         // At-rule first
         if let ComponentValue::Token(PreservedToken::Punct(ref p)) = next_input {
@@ -141,7 +141,7 @@ impl Parse for CssAttribute {
         // Advance the real iterator
         let name = component_iter
             .next()
-            .ok_or_else(|| input.error("unexpected end of input"))??;
+            .ok_or_else(|| input.error("Attribute: unexpected end of input"))??;
         let name_span = name.span();
         let name = name.maybe_to_attribute_name().ok_or_else(|| {
             ParseError::new(
@@ -182,7 +182,7 @@ impl Parse for CssAttributeValue {
             }
             let next_token = component_iter
                 .next()
-                .ok_or_else(|| input.error("unexpected end of input"))??;
+                .ok_or_else(|| input.error("AttributeValue: unexpected end of input"))??;
             // unwrap okay, since we already peeked
             values.push(next_token);
         }
@@ -201,7 +201,13 @@ impl Parse for CssScopeQualifier {
             }
             let next_token = component_iter
                 .next()
-                .ok_or_else(|| input.error("unexpected end of input"))??;
+                .ok_or_else(|| input.error("ScopeQualifier: unexpected end of input"))??;
+            if !next_token.is_selector_token() {
+                return Err(ParseError::new_spanned(
+                    next_token,
+                    "expected a valid part of a scope qualifier",
+                ));
+            }
             // FIXME: reparse scope qualifiers for more validation?
             // unwrap okay, since we already peeked
             qualifiers.push(next_token);
@@ -238,7 +244,7 @@ impl Parse for CssAtRule {
             }
             let next_token = component_iter
                 .next()
-                .ok_or_else(|| input.error("unexpected end of input"))??;
+                .ok_or_else(|| input.error("AtRule: unexpected end of input"))??;
             // unwrap okay, since we already peeked
             prelude.push(next_token);
         };

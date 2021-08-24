@@ -6,7 +6,7 @@ fn main() {
         }
     };
     let result_reg = regex::Regex::new(
-        r#"@supports (display: grid) \{
+        r#"@supports \(display:grid\) \{
 \.stylist-[[:alnum:]]+ \{
 background-color: grey;
 \}

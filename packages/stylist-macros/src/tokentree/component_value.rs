@@ -5,7 +5,7 @@ use std::ops::Deref;
 use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 use syn::LitStr;
 use syn::{braced, bracketed, parenthesized, token};
-use syn::{Expr, Ident};
+use syn::{Expr, Ident, Lit};
 
 #[derive(Debug, Clone)]
 pub enum PreservedToken {
@@ -316,6 +316,21 @@ impl ComponentValue {
                 write_args.push(quote! { ")".into() });
                 write_args
             }
+        }
+    }
+    // Lazy version of parsing a css selector :)
+    pub fn is_selector_token(&self) -> bool {
+        match self {
+            Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => true,
+            Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
+                contents.iter().all(|e| e.is_selector_token())
+            }
+            Self::Block(_) => false,
+            Self::Token(PreservedToken::Literal(l)) => {
+                let syn_lit = Lit::new(l.clone());
+                matches!(syn_lit, Lit::Str(_))
+            }
+            Self::Token(PreservedToken::Punct(p)) => "&>+~|$*=.:,".contains(p.as_char()),
         }
     }
 }

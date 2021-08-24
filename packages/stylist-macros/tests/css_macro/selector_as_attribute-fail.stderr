@@ -1,5 +1,5 @@
-error: expected curly braces
- --> $DIR/selector_as_attribute-fail.rs:3:30
+error: expected a valid part of a scope qualifier
+ --> $DIR/selector_as_attribute-fail.rs:3:36
   |
 3 |         looks_like_selector(): blue;
-  |                              ^
+  |                                    ^
