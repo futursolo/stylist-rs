@@ -1,3 +1,6 @@
+use crate::tokentree::component_value::ComponentValue;
+use crate::tokentree::component_value::PreservedToken;
+use itertools::Itertools;
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -29,7 +32,7 @@ pub enum OutputRuleContent {
 }
 #[derive(Clone)]
 pub struct OutputQualifier {
-    pub selectors: Vec<TokenStream>,
+    pub selectors: Vec<ComponentValue>,
 }
 pub struct OutputAttribute {
     pub key: TokenStream,
@@ -114,8 +117,35 @@ impl Reify for OutputQualifiedRule {
 
 impl Reify for OutputQualifier {
     fn reify(self) -> TokenStream {
+        fn is_not_comma(q: &ComponentValue) -> bool {
+            !matches!(q, ComponentValue::Token(PreservedToken::Punct(ref p)) if p.as_char() == ',')
+        }
+
         let ident_selector = Ident::new("conditions", Span::mixed_site());
         let Self { selectors, .. } = self;
+        let selectors = selectors
+            .iter()
+            .peekable()
+            .batching(|it| {
+                it.peek()?; // Return if no items left
+                let ident_selector = Ident::new("selector", Span::mixed_site());
+                let ident_assert_string = Ident::new("as_string", Span::mixed_site());
+                // Take until the next comma
+                let selector_parts = it
+                    .peeking_take_while(|q| is_not_comma(q))
+                    .flat_map(|p| p.reify());
+                let selector = quote! {
+                    {
+                        use ::std::fmt::Write;
+                        fn #ident_assert_string(s: ::std::string::String) -> ::std::string::String { s }
+                        let mut #ident_selector = ::std::string::String::new();
+                        #( ::std::write!(&mut #ident_selector, "{}", #ident_assert_string(#selector_parts)).expect(""); )*
+                        ::stylist_core::ast::Selector::from(#ident_selector)
+                    }
+                };
+                it.next(); // Consume the comma
+                Some(selector)
+            });
         quote! {
             {
                 let mut #ident_selector = ::std::vec::Vec::<::stylist::ast::Selector>::new();

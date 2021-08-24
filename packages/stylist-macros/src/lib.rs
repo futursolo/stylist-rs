@@ -53,11 +53,9 @@ mod test {
     fn test_parse() {
         init();
         let input = r#"
-            .outer {
-                .inner {
-                    background-color: red;
-                }
-            }
+        &, .some-class, --someid, struct, .${color_red} {
+            color: ${color_red};
+        }
         "#;
         let output = super::sheet::macro_fn(input.parse().unwrap());
         debug!("{}", output);
@@ -68,18 +66,21 @@ mod test {
         init();
         let color_red = "red";
         let style = stylist::style! {
-            ${"&:has()"} {
-
+            &:has(> img) {
+                backgroundColor: black;
             }
             backgroundColor: blue;
-            backgroundColor: red(${"color"});
-            &, .some-class, --someid, r#struct, #byid, body {
+            backgroundColor: ${"color"};
+            &, .some-class, --someid, struct, .${color_red}[text~=""] {
                 color: ${color_red};
             }
             @media print {
                 fontFace: Roboto;
             }
             @-webkit-keyframes {
+            }
+            @supports (foo: bar) {
+                background-color: grey;
             }
         };
         debug!("{}", style.get_style_str())

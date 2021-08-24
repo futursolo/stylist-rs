@@ -1,4 +1,5 @@
-mod css_name;
+mod component_value;
+mod css_ident;
 mod output;
 mod parsed;
 

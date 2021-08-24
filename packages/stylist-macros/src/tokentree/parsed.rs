@@ -1,20 +1,20 @@
-use super::css_name::{Identifier, PunctuatedName};
 use super::output::{
-    OutputAtRule, OutputAttribute, OutputQualifiedRule, OutputQualifier, OutputSheet, Reify,
+    OutputAtRule, OutputAttribute, OutputQualifiedRule, OutputQualifier, OutputRuleContent,
+    OutputScopeContent, OutputSheet, Reify,
 };
-use crate::tokentree::output::OutputRuleContent;
-use crate::tokentree::output::OutputScopeContent;
+use crate::tokentree::component_value::ComponentValue;
+use crate::tokentree::component_value::ComponentValueStream;
+use crate::tokentree::component_value::InjectedExpression;
+use crate::tokentree::component_value::PreservedToken;
+use crate::tokentree::css_ident::CssIdent;
 use itertools::Itertools;
-use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use quote::{quote, quote_spanned};
 use std::iter::Peekable;
-use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
+use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
 use syn::spanned::Spanned;
-use syn::Ident;
-use syn::{braced, parenthesized, token};
-use syn::{punctuated::Punctuated, Expr, Token};
+use syn::{braced, token};
 
 #[derive(Debug)]
 pub struct CssRootNode {
@@ -22,27 +22,8 @@ pub struct CssRootNode {
 }
 
 #[derive(Debug, Clone)]
-pub struct InjectedExpression {
-    dollar: token::Dollar,
-    braces: token::Brace,
-    expr: Box<Expr>,
-}
-
-#[derive(Debug, Clone)]
-pub enum CssComponentValue {
-    Identifier(PunctuatedName),
-    InjectedExpr(InjectedExpression),
-    ResultClass(token::And),
-    Function {
-        name: PunctuatedName,
-        brace: token::Paren,
-        args: Punctuated<CssComponentValue, Token![,]>,
-    },
-}
-
-#[derive(Debug, Clone)]
 pub struct CssScopeQualifier {
-    qualifiers: Punctuated<CssComponentValue, Token![,]>,
+    qualifiers: Vec<ComponentValue>,
 }
 
 #[derive(Debug)]
@@ -66,13 +47,13 @@ pub enum CssScopeContent {
 
 #[derive(Debug)]
 pub enum CssAttributeName {
-    Identifier(Identifier),
+    Identifier(CssIdent),
     InjectedExpr(InjectedExpression),
 }
 
 #[derive(Debug)]
 pub struct CssAttributeValue {
-    values: Punctuated<CssComponentValue, Token![,]>,
+    values: Vec<ComponentValue>,
 }
 
 #[derive(Debug)]
@@ -92,8 +73,8 @@ pub enum CssAtRuleContent {
 #[derive(Debug)]
 pub struct CssAtRule {
     at: token::At,
-    name: Identifier,
-    prelude: Vec<CssComponentValue>,
+    name: CssIdent,
+    prelude: Vec<ComponentValue>,
     contents: CssAtRuleContent,
 }
 // =====================================================================
@@ -103,18 +84,81 @@ pub struct CssAtRule {
 // =====================================================================
 impl Parse for CssRootNode {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        let root_contents = CssScope::parse_contents(input)?;
+        let root_contents = CssScopeContent::consume_list_of_rules(input)?;
         Ok(Self { root_contents })
     }
 }
 
-impl CssScope {
-    fn parse_contents(input: &ParseBuffer) -> ParseResult<Vec<CssScopeContent>> {
+impl CssScopeContent {
+    // (5.4.1) Consume a list of rules
+    fn consume_list_of_rules(input: &ParseBuffer) -> ParseResult<Vec<Self>> {
         let mut contents = Vec::new();
         while !input.is_empty() {
+            // Not handled: <CDO-token> <CDC-token>
             contents.push(input.parse()?);
         }
         Ok(contents)
+    }
+}
+
+impl Parse for CssScopeContent {
+    fn parse(input: &ParseBuffer) -> ParseResult<Self> {
+        // Fork the stream. Peeking a component value will still consume tokens from the stream!
+        let forked_input = input.fork();
+        let mut component_peek = ComponentValueStream::from(&forked_input).multipeek();
+        let next_input = component_peek
+            .peek()
+            .cloned()
+            .ok_or_else(|| forked_input.error("unexpected end of input"))??;
+        // Steps from 5.4.4. Consume a list of declarations
+        // At-rule first
+        if let ComponentValue::Token(PreservedToken::Punct(ref p)) = next_input {
+            if p.as_char() == '@' {
+                let atrule = input.parse()?;
+                return Ok(Self::AtRule(atrule));
+            }
+        }
+        // If it starts with an <ident-token>, it might be an attribute.
+        if next_input.maybe_to_attribute_name().is_some() {
+            // peek another token to see if it's colon
+            let maybe_colon = component_peek.peek();
+            if let Some(Ok(ComponentValue::Token(PreservedToken::Punct(p)))) = maybe_colon {
+                if p.as_char() == ':' {
+                    let attr = input.parse()?;
+                    return Ok(Self::Attribute(attr));
+                }
+            }
+        }
+        // It isn't. All that's left now is that it's a qualified rule.
+        let rule = input.parse()?;
+        Ok(Self::Nested(rule))
+    }
+}
+
+impl Parse for CssAttribute {
+    fn parse(input: &ParseBuffer) -> ParseResult<Self> {
+        let mut component_iter = ComponentValueStream::from(input);
+        // Advance the real iterator
+        let name = component_iter
+            .next()
+            .ok_or_else(|| input.error("unexpected end of input"))??;
+        let name_span = name.span();
+        let name = name.maybe_to_attribute_name().ok_or_else(|| {
+            ParseError::new(
+                name_span,
+                "expected an identifier or interpolated expression",
+            )
+        })?;
+
+        let colon = input.parse()?;
+        let value = input.parse()?;
+        let terminator = input.parse()?;
+        Ok(CssAttribute {
+            name,
+            colon,
+            value,
+            terminator,
+        })
     }
 }
 
@@ -122,118 +166,55 @@ impl Parse for CssScope {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
         let inner;
         let brace = braced!(inner in input);
-        let contents = Self::parse_contents(&inner)?;
+        let contents = CssScopeContent::consume_list_of_rules(&inner)?;
         Ok(Self { brace, contents })
-    }
-}
-
-impl Parse for CssScopeContent {
-    fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        let lookahead = input.lookahead1();
-        if lookahead.peek(token::At) {
-            let atrule = input.parse()?;
-            return Ok(Self::AtRule(atrule));
-        }
-        let next_header: CssScopeQualifier = input.parse()?;
-        let lookahead = input.lookahead1();
-        if let Some(name) = next_header.can_be_attribute() {
-            if lookahead.peek(token::Colon) {
-                // An attribute!
-                let colon = input.parse()?;
-                let value = input.parse()?;
-                let terminator = input.parse()?;
-                return Ok(Self::Attribute(CssAttribute {
-                    colon,
-                    name,
-                    value,
-                    terminator,
-                }));
-            }
-        }
-        if lookahead.peek(token::Brace) {
-            let nested = input.parse()?;
-            Ok(Self::Nested(CssQualifiedRule {
-                qualifier: next_header,
-                scope: nested,
-            }))
-        } else {
-            Err(lookahead.error())
-        }
-    }
-}
-
-impl CssAttributeName {
-    fn maybe_from_component(component: &CssComponentValue) -> Option<Self> {
-        match component {
-            CssComponentValue::ResultClass(_) => None,
-            CssComponentValue::Function { .. } => None,
-            CssComponentValue::Identifier(id) => {
-                Identifier::maybe_from_punctuated(id).map(Self::Identifier)
-            }
-            CssComponentValue::InjectedExpr(expr) => {
-                Some(CssAttributeName::InjectedExpr(expr.clone()))
-            }
-        }
-    }
-}
-
-impl CssScopeQualifier {
-    fn can_be_attribute(&self) -> Option<CssAttributeName> {
-        if self.qualifiers.len() != 1 || self.qualifiers.trailing_punct() {
-            return None;
-        }
-        let first = self.qualifiers.first().unwrap();
-        CssAttributeName::maybe_from_component(first)
-    }
-}
-
-impl Parse for CssComponentValue {
-    fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        let lookahead = input.lookahead1();
-        if lookahead.peek(token::Dollar) {
-            let dollar = input.parse()?;
-            let inner;
-            let braces = braced!(inner in input);
-            let expr = Box::new(inner.parse()?);
-            Ok(Self::InjectedExpr(InjectedExpression {
-                dollar,
-                braces,
-                expr,
-            }))
-        } else if lookahead.peek(token::And) {
-            let bang = input.parse()?;
-            Ok(Self::ResultClass(bang))
-        } else if PunctuatedName::peek(&lookahead) {
-            let identifier = input.parse()?;
-            if input.peek(token::Paren) {
-                let inner;
-                let brace = parenthesized!(inner in input);
-                let args = inner.parse_terminated(CssComponentValue::parse)?;
-                Ok(Self::Function {
-                    name: identifier,
-                    brace,
-                    args,
-                })
-            } else {
-                Ok(Self::Identifier(identifier))
-            }
-        } else {
-            Err(lookahead.error())
-        }
     }
 }
 
 impl Parse for CssAttributeValue {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        let values = Punctuated::parse_separated_nonempty(input)?;
+        // Consume all tokens till the next ';'
+        let mut component_iter = ComponentValueStream::from(input).peekable();
+        let mut values = vec![];
+        loop {
+            if input.peek(token::Semi) {
+                break;
+            }
+            let next_token = component_iter
+                .next()
+                .ok_or_else(|| input.error("unexpected end of input"))??;
+            // unwrap okay, since we already peeked
+            values.push(next_token);
+        }
         Ok(Self { values })
     }
 }
 
 impl Parse for CssScopeQualifier {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        let qualifiers = Punctuated::parse_separated_nonempty(input)?;
+        // Consume all tokens till the next '{'-block
+        let mut component_iter = ComponentValueStream::from(input).peekable();
+        let mut qualifiers = vec![];
+        loop {
+            if input.peek(token::Brace) {
+                break;
+            }
+            let next_token = component_iter
+                .next()
+                .ok_or_else(|| input.error("unexpected end of input"))??;
+            // FIXME: reparse scope qualifiers for more validation?
+            // unwrap okay, since we already peeked
+            qualifiers.push(next_token);
+        }
         Ok(Self { qualifiers })
+    }
+}
+
+impl Parse for CssQualifiedRule {
+    fn parse(input: &ParseBuffer) -> ParseResult<Self> {
+        let qualifier = input.parse()?;
+        let scope = input.parse()?;
+        Ok(Self { qualifier, scope })
     }
 }
 
@@ -241,19 +222,25 @@ impl Parse for CssAtRule {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
         let at = input.parse()?;
         let name = input.parse()?;
-        let mut prelude = Vec::new();
+
+        // Consume all tokens till the next ';' or the next block
+        let mut component_iter = ComponentValueStream::from(input).peekable();
+        let mut prelude = vec![];
+
         let contents = loop {
-            let lookahead = input.lookahead1();
-            if lookahead.peek(token::Brace) {
-                let scope = input.parse()?;
-                break CssAtRuleContent::Scope(scope);
-            } else if lookahead.peek(token::Semi) {
+            if input.peek(token::Semi) {
                 let semi = input.parse()?;
                 break CssAtRuleContent::Empty(semi);
-            } else {
-                let component = input.parse()?;
-                prelude.push(component);
             }
+            if input.peek(token::Brace) {
+                let scope = input.parse()?;
+                break CssAtRuleContent::Scope(scope);
+            }
+            let next_token = component_iter
+                .next()
+                .ok_or_else(|| input.error("unexpected end of input"))??;
+            // unwrap okay, since we already peeked
+            prelude.push(next_token);
         };
 
         Ok(Self {
@@ -264,42 +251,30 @@ impl Parse for CssAtRule {
         })
     }
 }
-impl ToTokens for InjectedExpression {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        self.dollar.to_tokens(tokens);
-        self.braces.surround(tokens, |toks| {
-            self.expr.to_tokens(toks);
-        });
-    }
-}
 
-impl ToTokens for CssComponentValue {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
+impl ComponentValue {
+    fn maybe_to_attribute_name(self) -> Option<CssAttributeName> {
         match self {
-            CssComponentValue::Identifier(name) => name.to_tokens(tokens),
-            CssComponentValue::ResultClass(and) => and.to_tokens(tokens),
-            CssComponentValue::Function { name, brace, args } => {
-                name.to_tokens(tokens);
-                brace.surround(tokens, |toks| {
-                    args.to_tokens(toks);
-                });
+            ComponentValue::Token(PreservedToken::Ident(i)) => {
+                Some(CssAttributeName::Identifier(i))
             }
-            CssComponentValue::InjectedExpr(expr) => expr.to_tokens(tokens),
+            ComponentValue::Expr(expr) => Some(CssAttributeName::InjectedExpr(expr)),
+            _ => None,
         }
     }
 }
 
 impl ToTokens for CssScopeQualifier {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        self.qualifiers.to_tokens(tokens);
+        for q in self.qualifiers.iter() {
+            q.to_tokens(tokens);
+        }
     }
 }
 
 impl Default for CssScopeQualifier {
     fn default() -> Self {
-        Self {
-            qualifiers: Punctuated::new(),
-        }
+        Self { qualifiers: vec![] }
     }
 }
 // =====================================================================
@@ -400,16 +375,9 @@ fn fold_tokens_impl<'it, R: 'it>(
         }
     }
 
-    let context_conditions = context
-        .qualifiers
-        .pairs()
-        .flat_map(|p| p.into_value().clone().reify())
-        .collect();
     Wrapper {
         it: it.into_iter().peekable(),
-        qualifier: OutputQualifier {
-            selectors: context_conditions,
-        },
+        qualifier: context.clone().into_output(),
     }
     .flat_map(move |w| match w {
         WrappedCase::AttributeCollection(attrs) => {
@@ -425,6 +393,13 @@ fn fold_tokens_impl<'it, R: 'it>(
             Box::new(nested.map(move |i| i.map(|c| handle_item(c))))
         }
     })
+}
+
+impl CssScopeQualifier {
+    fn into_output(self) -> OutputQualifier {
+        let selectors = self.qualifiers;
+        OutputQualifier { selectors }
+    }
 }
 
 impl CssQualifiedRule {
@@ -474,23 +449,6 @@ impl CssAtRule {
 // Output structs + quoting
 // =====================================================================
 // =====================================================================
-impl Reify for InjectedExpression {
-    fn reify(self) -> TokenStream {
-        let injected = *self.expr;
-        let ident_result = Ident::new("expr", Span::mixed_site());
-        quote_spanned! {self.braces.span=>
-            {
-                fn write_expr<V: ::std::fmt::Display>(v: V) -> ::std::string::String {
-                    use ::std::fmt::Write;
-                    let mut #ident_result = ::std::string::String::new();
-                    ::std::write!(&mut #ident_result, "{}", v).expect("");
-                    #ident_result
-                }
-                write_expr(#injected).into()
-            }
-        }
-    }
-}
 
 impl CssRootNode {
     pub fn into_output(self) -> OutputSheet {
@@ -507,50 +465,11 @@ impl CssRootNode {
 impl CssAttribute {
     fn into_output(self) -> OutputAttribute {
         let key_tokens = self.name.reify();
-        let value_tokens = Itertools::intersperse(
-            self.value
-                .values
-                .into_pairs()
-                .flat_map(|p| p.into_value().reify()),
-            quote! { ", ".into() },
-        )
-        .collect();
+        let value_tokens = self.value.values.iter().flat_map(|p| p.reify()).collect();
 
         OutputAttribute {
             key: key_tokens,
             values: value_tokens,
-        }
-    }
-}
-
-impl CssComponentValue {
-    // Reifies into a Vec of TokenStreams of type
-    // for<I: Into<Cow<'static, str>>> T: From<I>
-    // including ::stylist::ast::Selector and ::stylist::ast::StringFragment
-    pub fn reify(self) -> Vec<TokenStream> {
-        match self {
-            Self::Identifier(name) => {
-                let quoted_literal = name.quote_literal();
-                vec![quote! { #quoted_literal.into() }]
-            }
-            Self::InjectedExpr(expr) => {
-                vec![expr.reify()]
-            }
-            Self::ResultClass(_) => {
-                vec![quote! { "&".into() }]
-            }
-            Self::Function { name, args, .. } => {
-                let name_toks = name.quote_literal();
-                let mut write_args = Itertools::intersperse(
-                    args.into_iter().flat_map(|arg| arg.reify()),
-                    quote! { ", ".into() },
-                )
-                .collect::<Vec<_>>();
-                write_args.insert(0, quote! { #name_toks.into() });
-                write_args.insert(1, quote! { "(".into() });
-                write_args.push(quote! { ")".into() });
-                write_args
-            }
         }
     }
 }
