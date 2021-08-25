@@ -445,7 +445,7 @@ impl CssAtRule {
         let name_lit = self.name.quote_at_rule();
         OutputSheetContent::AtRule(OutputAtRule {
             name: quote! { #name_lit.into() },
-            prelude: self.prelude.into_iter().flat_map(|p| p.reify()).collect(),
+            prelude: self.prelude,
             contents,
         })
     }
@@ -471,11 +471,11 @@ impl CssRootNode {
 impl CssAttribute {
     fn into_output(self) -> OutputAttribute {
         let key_tokens = self.name.reify();
-        let value_tokens = self.value.values.iter().flat_map(|p| p.reify()).collect();
+        let values = self.value.values;
 
         OutputAttribute {
             key: key_tokens,
-            values: value_tokens,
+            values,
         }
     }
 }

@@ -15,7 +15,7 @@ pub struct OutputSheet {
 }
 pub struct OutputAtRule {
     pub name: TokenStream,
-    pub prelude: Vec<TokenStream>,
+    pub prelude: Vec<ComponentValue>,
     pub contents: Vec<TokenStream>,
 }
 pub struct OutputQualifiedRule {
@@ -36,7 +36,7 @@ pub struct OutputQualifier {
 }
 pub struct OutputAttribute {
     pub key: TokenStream,
-    pub values: Vec<TokenStream>,
+    pub values: Vec<ComponentValue>,
 }
 
 /// Reify a structure into an expression of a specific type.
@@ -73,6 +73,7 @@ impl Reify for OutputAtRule {
             contents,
         } = self;
 
+        let prelude_parts = prelude.into_iter().flat_map(|p| p.reify());
         quote! {
             ::stylist::ast::Rule {
                 condition: {
@@ -80,7 +81,7 @@ impl Reify for OutputAtRule {
                     #ident_condition.push( "@".into() );
                     #ident_condition.push( #name );
                     #ident_condition.push( " ".into() );
-                    #( #ident_condition.push(#prelude); )*
+                    #( #ident_condition.push(#prelude_parts); )*
                     #ident_condition.into()
                 },
                 content: {
@@ -117,35 +118,39 @@ impl Reify for OutputQualifiedRule {
 
 impl Reify for OutputQualifier {
     fn reify(self) -> TokenStream {
-        fn is_not_comma(q: &ComponentValue) -> bool {
+        fn is_not_comma(q: &&ComponentValue) -> bool {
             !matches!(q, ComponentValue::Token(PreservedToken::Punct(ref p)) if p.as_char() == ',')
         }
+        // Reify the expression of a Selector from the expressions of its fragments
+        fn reify_selector<'c>(
+            selector_parts: impl Iterator<Item = &'c ComponentValue>,
+        ) -> TokenStream {
+            let ident_selector = Ident::new("selector", Span::mixed_site());
+            let ident_assert_string = Ident::new("as_string", Span::mixed_site());
+            let parts = selector_parts.flat_map(|p| p.reify());
+            quote! {
+                {
+                    use ::std::fmt::Write;
+                    fn #ident_assert_string(s: ::std::string::String) -> ::std::string::String { s }
+                    let mut #ident_selector = ::std::string::String::new();
+                    #( ::std::write!(&mut #ident_selector, "{}", #ident_assert_string(#parts)).expect(""); )*
+                    ::stylist_core::ast::Selector::from(#ident_selector)
+                }
+            }
+        }
+
+        let Self { selectors, .. } = self;
+        let selectors = selectors.iter().peekable().batching(|it| {
+            // Return if no items left
+            it.peek()?;
+            // Take until the next comma
+            let selector_parts = it.peeking_take_while(is_not_comma);
+            let selector = reify_selector(selector_parts);
+            it.next(); // Consume the comma
+            Some(selector)
+        });
 
         let ident_selector = Ident::new("conditions", Span::mixed_site());
-        let Self { selectors, .. } = self;
-        let selectors = selectors
-            .iter()
-            .peekable()
-            .batching(|it| {
-                it.peek()?; // Return if no items left
-                let ident_selector = Ident::new("selector", Span::mixed_site());
-                let ident_assert_string = Ident::new("as_string", Span::mixed_site());
-                // Take until the next comma
-                let selector_parts = it
-                    .peeking_take_while(|q| is_not_comma(q))
-                    .flat_map(|p| p.reify());
-                let selector = quote! {
-                    {
-                        use ::std::fmt::Write;
-                        fn #ident_assert_string(s: ::std::string::String) -> ::std::string::String { s }
-                        let mut #ident_selector = ::std::string::String::new();
-                        #( ::std::write!(&mut #ident_selector, "{}", #ident_assert_string(#selector_parts)).expect(""); )*
-                        ::stylist_core::ast::Selector::from(#ident_selector)
-                    }
-                };
-                it.next(); // Consume the comma
-                Some(selector)
-            });
         quote! {
             {
                 let mut #ident_selector = ::std::vec::Vec::<::stylist::ast::Selector>::new();
@@ -191,12 +196,13 @@ impl Reify for OutputAttribute {
         let ident_writable_value = Ident::new("writer_value", Span::mixed_site());
         let Self { key, values } = self;
 
+        let value_parts = values.iter().flat_map(|p| p.reify());
         quote! {
             ::stylist::ast::StyleAttribute {
                 key: #key,
                 value: {
                     let mut #ident_writable_value = ::std::vec::Vec::<::stylist::ast::StringFragment>::new();
-                    #( #ident_writable_value.push(#values); )*
+                    #( #ident_writable_value.push(#value_parts); )*
                     #ident_writable_value.into()
                 },
             }
