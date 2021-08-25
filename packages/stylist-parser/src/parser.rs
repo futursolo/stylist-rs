@@ -72,7 +72,7 @@ impl Parser {
         Self::expect_non_empty(i)?;
 
         let result = context(
-            "StyleComment",
+            "Comment",
             Self::trimmed(delimited(
                 tag("/*"),
                 recognize(many0(alt((
@@ -95,7 +95,7 @@ impl Parser {
         F: nom::Parser<&'a str, O, VerboseError<&'a str>>,
     {
         context(
-            "Trimmed",
+            "TrimmedComments",
             delimited(
                 // Drop Preceeding comments.
                 opt(Self::cmt),

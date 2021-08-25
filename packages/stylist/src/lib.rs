@@ -190,10 +190,6 @@ pub use yield_style::YieldStyle;
 /// This macro supports string interpolation, please see documentation of [`css!`] macro for it's
 /// usage.
 ///
-/// # Panics
-///
-/// This macro will panic at runtime if [`Style`] fails to mount.
-///
 /// # Example
 ///
 /// ```
@@ -211,10 +207,6 @@ pub use stylist_macros::style;
 ///
 /// This macro supports string interpolation, please see documentation of [`css!`] macro for it's
 /// usage.
-///
-/// # Panics
-///
-/// This macro will panic at runtime if [`GlobalStyle`] fails to mount.
 ///
 /// # Example
 ///
