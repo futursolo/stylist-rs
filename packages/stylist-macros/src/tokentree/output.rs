@@ -134,7 +134,7 @@ impl Reify for OutputQualifier {
                     fn #ident_assert_string(s: ::std::string::String) -> ::std::string::String { s }
                     let mut #ident_selector = ::std::string::String::new();
                     #( ::std::write!(&mut #ident_selector, "{}", #ident_assert_string(#parts)).expect(""); )*
-                    ::stylist_core::ast::Selector::from(#ident_selector)
+                    ::stylist::ast::Selector::from(#ident_selector)
                 }
             }
         }
