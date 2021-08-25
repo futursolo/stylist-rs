@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while, take_while1},
-    character::complete::{alpha1, alphanumeric1, anychar, char, none_of, one_of},
+    character::complete::{alpha1, alphanumeric1, anychar, char, none_of},
     combinator::{map, map_res, not, opt, recognize},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
     multi::{many0, many1, separated_list0},
@@ -143,6 +143,7 @@ impl Parser {
         result
     }
 
+    // TODO: Parse value properly.
     fn style_attr_value(i: &str) -> IResult<&str, StringFragment, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Style Attribute Value: {}", i);
@@ -239,7 +240,7 @@ impl Parser {
 
         let result = context(
             "StyleAttributes",
-            Self::trimmed(many1(Parser::dangling_attribute)),
+            Self::trimmed(many1(Self::dangling_attribute)),
         )(i);
 
         #[cfg(test)]
@@ -257,8 +258,8 @@ impl Parser {
         let result = context(
             "StyleAttributes",
             Self::trimmed(terminated(
-                separated_list0(preceded(opt(Parser::sp), one_of(";")), Parser::attribute),
-                preceded(opt(Parser::sp), opt(tag(";"))),
+                separated_list0(tag(";"), Self::attribute),
+                preceded(opt(Self::sp), opt(tag(";"))),
             )),
         )(i);
 
@@ -269,6 +270,8 @@ impl Parser {
     }
 
     /// Parse a quoted string.
+    ///
+    // TODO: Parse ' quoted strings.
     fn string(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         #[cfg(test)]
         trace!("String: {}", i);
@@ -291,6 +294,8 @@ impl Parser {
     }
 
     /// Parse a string interpolation.
+    ///
+    // TODO: Handle escaping.
     fn interpolation(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Interpolation: {}", i);
@@ -316,6 +321,8 @@ impl Parser {
     }
 
     /// Parse a selector.
+    ///
+    // TODO: Parse selector properly.
     fn selector(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Selector: {}", i);
