@@ -151,8 +151,9 @@ impl Parser {
             "StyleAttrValue",
             Self::trimmed(Self::trim_cmt(Self::trimmed(map(
                 recognize(many1(alt((
-                    is_not("${;}/"),
+                    is_not("${;}/\""),
                     recognize(Self::interpolation),
+                    Self::string,
                 )))),
                 |m: &str| StringFragment {
                     inner: m.to_string().trim().to_string().into(),
@@ -733,6 +734,7 @@ mod tests {
 
         let test_str = r#"
             background-color: red;
+            content: ";";
 
             [placeholder="someone@example.com"] {
                 background-color: blue;
@@ -743,10 +745,16 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![StyleAttribute {
-                    key: "background-color".into(),
-                    value: vec!["red".into()].into(),
-                }]
+                style_attributes: vec![
+                    StyleAttribute {
+                        key: "background-color".into(),
+                        value: vec!["red".into()].into(),
+                    },
+                    StyleAttribute {
+                        key: "content".into(),
+                        value: vec![r#"";""#.into()].into(),
+                    },
+                ]
                 .into(),
             }),
             ScopeContent::Block(Block {
