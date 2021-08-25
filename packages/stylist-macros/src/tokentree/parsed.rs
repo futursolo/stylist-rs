@@ -6,6 +6,7 @@ use crate::tokentree::component_value::ComponentValue;
 use crate::tokentree::component_value::ComponentValueStream;
 use crate::tokentree::component_value::InjectedExpression;
 use crate::tokentree::component_value::PreservedToken;
+use crate::tokentree::component_value::SimpleBlock;
 use crate::tokentree::css_ident::CssIdent;
 use itertools::Itertools;
 use proc_macro2::TokenStream;
@@ -183,6 +184,17 @@ impl Parse for CssAttributeValue {
             let next_token = component_iter
                 .next()
                 .ok_or_else(|| input.error("AttributeValue: unexpected end of input"))??;
+            if !next_token.is_attribute_token() {
+                let error_message = if matches!(
+                    next_token,
+                    ComponentValue::Block(SimpleBlock::Braced { .. })
+                ) {
+                    "expected a valid part of an attribute, got a block. Did you mean to write `${..}` to inject an expression?"
+                } else {
+                    "expected a valid part of an attribute"
+                };
+                return Err(ParseError::new_spanned(next_token, error_message));
+            }
             // unwrap okay, since we already peeked
             values.push(next_token);
         }

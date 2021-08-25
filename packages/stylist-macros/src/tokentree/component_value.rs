@@ -318,7 +318,21 @@ impl ComponentValue {
             }
         }
     }
-    // Lazy version of parsing a css selector :)
+    // Overly simplified parsing of a css attribute
+    pub fn is_attribute_token(&self) -> bool {
+        match self {
+            Self::Expr(_)
+            | Self::Token(PreservedToken::Ident(_))
+            | Self::Token(PreservedToken::Literal(_)) => true,
+            Self::Function(FunctionToken { args, .. }) => {
+                args.iter().all(|a| a.is_attribute_token())
+            }
+            Self::Block(_) => false,
+            Self::Token(PreservedToken::Punct(p)) => "/:,".contains(p.as_char()),
+        }
+    }
+
+    // Overly simplified of parsing a css selector :)
     pub fn is_selector_token(&self) -> bool {
         match self {
             Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => true,
