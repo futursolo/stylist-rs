@@ -2,11 +2,19 @@
 
 ## v0.9
 
-Other Changes:
+### Breaking Changes:
+- [`Style`] and [`GlobalStyle`] no longer implements `FromStr`.
+- `style_str` method in `YieldStyle` renamed to `style_from`
+  and takes `IntoStyle` as return type.
+
+### Other Changes:
 - Added a Procedural Macro API that parses the Stylesheet at the compile
   time.
-- `style_str` method in `YieldStyle` is now deprecated, use `style_from`
-  instead.
+- Parsers will check stylesheets more strictly.
+- Parsed results are now cached.
+- Updated `nom` to `v7`.
+- Runtime parser is now optional (disabling `parser` will make the bundle
+  ~60K smaller).
 
 ## v0.8
 
