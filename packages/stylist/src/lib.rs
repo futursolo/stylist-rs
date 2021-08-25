@@ -187,7 +187,7 @@ pub use yield_style::YieldStyle;
 
 /// A procedural macro that parses a string literal into a [`Style`].
 ///
-/// This macro supports string interpolation, please see documentation of [`css!`] macro for it's
+/// This macro supports string interpolation, please see documentation of [`css!`] macro for
 /// usage.
 ///
 /// # Example
@@ -205,7 +205,7 @@ pub use stylist_macros::style;
 
 /// A procedural macro that parses a string literal into a [`GlobalStyle`].
 ///
-/// This macro supports string interpolation, please see documentation of [`css!`] macro for it's
+/// This macro supports string interpolation, please see documentation of [`css!`] macro for
 /// usage.
 ///
 /// # Example
@@ -240,6 +240,11 @@ pub use stylist_macros::global_style;
 ///
 /// Interpolated strings are denoted with `${ident}` and any type that implements [`std::fmt::Display`] can be
 /// used as value. Only named argument are supported at this moment.
+///
+/// Stylist currently does not check or escape the content of interpolated strings. It is possible
+/// to pass invalid strings that would result in an invalid stylesheet. In debug mode, if feature `parser` is
+/// enabled, Stylist will attempt to parse the stylesheet again after interpolated strings are
+/// substituted with its actual value to check if the final stylesheet is invalid.
 ///
 /// # Example
 ///

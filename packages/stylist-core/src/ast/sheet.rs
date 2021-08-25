@@ -7,6 +7,7 @@ use super::{ScopeContent, ToStyleStr};
 use crate::Result;
 
 /// The top node of a style string.
+// Once a sheet is constructed, it becomes immutable.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Sheet(Cow<'static, [ScopeContent]>);
 

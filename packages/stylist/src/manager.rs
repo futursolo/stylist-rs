@@ -3,7 +3,7 @@
 //! This module contains [`StyleManager`] which can be used for customising
 //! mounting point / mounting behaviour for styles (when rendering contents into a `ShadowRoot` or an `<iframe />`).
 //!
-//! This is an advanced feature and most of time you don't need to use it.
+//! This is an advanced feature and most of the time you don't need to use it.
 
 use std::borrow::Cow;
 use std::cell::RefCell;

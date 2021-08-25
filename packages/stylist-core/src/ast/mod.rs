@@ -1,20 +1,4 @@
-//! This module contains the semantic representation of a CSS.
-//!
-//! ```text
-//! struct Sheet
-//! └── Vec<enum ScopeContent>
-//!     ├── struct Block
-//!     │   ├── selector: Vec<Selector>
-//!     │   └── Vec<struct StyleAttribute>
-//!     │       ├── key: String
-//!     │       └── value: String
-//!     └── struct Rule
-//!         ├── condition: String
-//!         └── Vec<enum RuleContent>
-//!             ├── Block (*)
-//!             └── Rule (*)
-//! ```
-//!
+// this module is documented at stylist::ast
 
 mod block;
 mod rule;

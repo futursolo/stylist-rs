@@ -10,7 +10,7 @@
 ### Other Changes:
 - Added a Procedural Macro API that parses the Stylesheet at the compile
   time.
-- Parsers will check stylesheets more strictly.
+- Parser will now check stylesheets more strictly.
 - Parsed results are now cached.
 - Updated `nom` to `v7`.
 - Runtime parser is now optional (disabling `parser` will make the bundle
