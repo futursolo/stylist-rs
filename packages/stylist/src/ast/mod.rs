@@ -25,6 +25,9 @@ pub use stylist_core::ast::*;
 #[cfg(feature = "macros")]
 pub use stylist_macros::sheet;
 
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
+mod feat_parser;
 mod into_sheet;
 mod sheet_ref;
 

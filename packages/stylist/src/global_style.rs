@@ -41,6 +41,11 @@ impl GlobalStyle {
 
         let style_str = key.ast.to_style_str(None)?;
 
+        // We parse the style str again in debug mode to ensure that interpolated values are
+        // not corrupting the stylesheet.
+        #[cfg(all(debug_assertions, feature = "parser"))]
+        style_str.parse::<SheetRef>()?;
+
         let new_style = Self {
             inner: StyleContent {
                 is_global: true,

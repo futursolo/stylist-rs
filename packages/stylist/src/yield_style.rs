@@ -59,27 +59,8 @@ pub trait YieldStyle {
         self.manager().prefix()
     }
 
-    #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
-    #[cfg(feature = "parser")]
-    /// Returns the raw style string.
-    #[deprecated(since = "0.9.0", note = "use style_from() instead")]
-    fn style_str(&self) -> Cow<'static, str> {
-        unimplemented!("Not Implemented!")
-    }
-
     /// Returns a type that can be turned into a [`Style`].
-    ///
-    /// Override this method to customise the style.
-    #[cfg(feature = "parser")]
-    #[allow(deprecated)]
-    fn style_from(&self) -> IntoStyle {
-        self.style_str().into()
-    }
-
-    #[cfg(not(feature = "parser"))]
-    fn style_from(&self) -> IntoStyle {
-        todo!()
-    }
+    fn style_from(&self) -> IntoStyle;
 
     /// Returns the generated style.
     ///
