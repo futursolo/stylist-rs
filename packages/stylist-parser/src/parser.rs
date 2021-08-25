@@ -2,9 +2,9 @@ use std::borrow::Cow;
 
 use nom::{
     branch::alt,
-    bytes::complete::{is_not, tag, take_while},
-    character::complete::{alpha1, alphanumeric1, anychar, none_of, one_of},
-    combinator::{map, map_res, opt, recognize},
+    bytes::complete::{is_not, tag, take_while, take_while1},
+    character::complete::{alpha1, alphanumeric1, anychar, char, none_of, one_of},
+    combinator::{map, map_res, not, opt, recognize},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
     multi::{many0, many1, separated_list0},
     sequence::{delimited, pair, preceded, separated_pair, terminated},
@@ -19,8 +19,10 @@ use stylist_core::{Error, Result};
 use log::trace;
 
 /// A lightweight CSS Parser.
+#[derive(Debug)]
 pub struct Parser {}
 
+#[allow(clippy::let_and_return)]
 impl Parser {
     /// Returns Error when string is Empty
     fn expect_non_empty(i: &str) -> std::result::Result<(), nom::Err<VerboseError<&str>>> {
@@ -61,6 +63,8 @@ impl Parser {
     }
 
     /// Parse a comment
+    ///
+    /// token('/*') + anything but '*' followed by '/' + token("*/")
     fn cmt(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Comment: {}", i);
@@ -71,14 +75,126 @@ impl Parser {
             "StyleComment",
             Self::trimmed(delimited(
                 tag("/*"),
-                // not(tag("*/")), // TODO check for the string
-                is_not("*"),
+                recognize(many0(alt((
+                    is_not("*"),
+                    terminated(tag("*"), not(char('/'))),
+                )))),
                 tag("*/"),
             )),
         )(i);
 
         #[cfg(test)]
         trace!("Comment: {:#?}", result);
+
+        result
+    }
+
+    /// Drop comments
+    fn trim_cmt<'a, F, O>(f: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, VerboseError<&str>>
+    where
+        F: nom::Parser<&'a str, O, VerboseError<&'a str>>,
+    {
+        context(
+            "Trimmed",
+            delimited(
+                // Drop Preceeding comments.
+                opt(Self::cmt),
+                // Parse until finishes
+                f,
+                // Drop Trailing comments.
+                opt(Self::cmt),
+            ),
+        )
+    }
+
+    /// Parse an ident
+    ///
+    /// [\-a-zA-Z(non-ascii)]{1}[\-a-zA-Z0-9(non-ascii)]*
+    fn ident(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Ident: {}", i);
+
+        let non_ascii = take_while1(|m: char| !m.is_ascii());
+        let non_ascii2 = take_while1(|m: char| !m.is_ascii());
+
+        let result = recognize(preceded(
+            alt((tag("-"), alpha1, non_ascii)),
+            many0(alt((tag("-"), alphanumeric1, non_ascii2))),
+        ))(i);
+
+        #[cfg(test)]
+        trace!("Ident: {:#?}", result);
+
+        result
+    }
+
+    fn style_attr_key(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Style Attribute Key: {}", i);
+
+        let result = context(
+            "StyleAttrKey",
+            Self::trimmed(Self::trim_cmt(Self::trimmed(Self::ident))),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Style Attribute Key: {:#?}", result);
+
+        result
+    }
+
+    fn style_attr_value(i: &str) -> IResult<&str, StringFragment, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Style Attribute Value: {}", i);
+
+        let result = context(
+            "StyleAttrValue",
+            Self::trimmed(Self::trim_cmt(Self::trimmed(map(
+                recognize(many1(alt((
+                    is_not("${;}/"),
+                    recognize(Self::interpolation),
+                )))),
+                |m: &str| StringFragment {
+                    inner: m.to_string().trim().to_string().into(),
+                },
+            )))),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Style Attribute Value: {:#?}", result);
+
+        result
+    }
+
+    /// Parse a style attribute such as "width: 10px;"
+    fn dangling_attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Dangling Attribute: {}", i);
+
+        Self::expect_non_empty(i)?;
+
+        let result = context(
+            "StyleAttribute",
+            Self::trimmed(map(
+                separated_pair(
+                    // Key
+                    Self::style_attr_key,
+                    // Separator
+                    tag(":"),
+                    // Value
+                    terminated(Self::style_attr_value, tag(";")),
+                ),
+                move |p: (&str, StringFragment)| -> StyleAttribute {
+                    StyleAttribute {
+                        key: p.0.trim().to_string().into(),
+                        value: vec![p.1].into(),
+                    }
+                },
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Dangling Attribute: {:#?}", result);
 
         result
     }
@@ -94,26 +210,11 @@ impl Parser {
             "StyleAttribute",
             Self::trimmed(map(
                 separated_pair(
-                    preceded(
-                        opt(Parser::cmt),
-                        preceded(opt(Parser::sp), is_not(" \t\r\n:{}")),
-                    ),
-                    preceded(opt(Parser::cmt), preceded(opt(Parser::sp), tag(":"))),
-                    preceded(
-                        opt(Parser::cmt),
-                        preceded(
-                            opt(Parser::sp),
-                            map(
-                                recognize(many1(alt((
-                                    is_not("${;}"),
-                                    recognize(Self::string_interpolation),
-                                )))),
-                                |m: &str| StringFragment {
-                                    inner: m.to_string().trim().to_string().into(),
-                                },
-                            ),
-                        ),
-                    ),
+                    // Key
+                    Self::style_attr_key,
+                    // Separator
+                    tag(":"),
+                    Self::style_attr_value,
                 ),
                 move |p: (&str, StringFragment)| StyleAttribute {
                     key: p.0.trim().to_string().into(),
@@ -124,6 +225,24 @@ impl Parser {
 
         #[cfg(test)]
         trace!("Attribute: {:#?}", result);
+
+        result
+    }
+
+    /// Parse attributes outside of a { ... }.
+    fn dangling_attributes(i: &str) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Dangling Attributes: {}", i);
+
+        Self::expect_non_empty(i)?;
+
+        let result = context(
+            "StyleAttributes",
+            Self::trimmed(many1(Parser::dangling_attribute)),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Dangling Attributes: {:#?}", result);
 
         result
     }
@@ -171,31 +290,26 @@ impl Parser {
     }
 
     /// Parse a string interpolation.
-    fn string_interpolation(i: &str) -> IResult<&str, StringFragment, VerboseError<&str>> {
+    fn interpolation(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         #[cfg(test)]
-        trace!("String Interpolation: {}", i);
+        trace!("Interpolation: {}", i);
 
         Self::expect_non_empty(i)?;
 
         let result = context(
-            "StringInterpolation",
-            Self::trimmed(map(
-                delimited(
-                    tag("${"),
-                    Self::trimmed(recognize(preceded(
-                        alpha1,
-                        many0(alt((alphanumeric1, tag("_")))),
-                    ))),
-                    tag("}"),
-                ),
-                |p: &str| StringFragment {
-                    inner: p.trim().to_owned().into(),
-                },
+            "Interpolation",
+            Self::trimmed(delimited(
+                tag("${"),
+                Self::trimmed(recognize(preceded(
+                    alpha1,
+                    many0(alt((alphanumeric1, tag("_")))),
+                ))),
+                tag("}"),
             )),
         )(i);
 
         #[cfg(test)]
-        trace!("String Interpolation: {:#?}", result);
+        trace!("Interpolation: {:#?}", result);
 
         result
     }
@@ -213,7 +327,7 @@ impl Parser {
                 recognize(many1(alt((
                     recognize(preceded(none_of("$,}@{\""), opt(is_not("$,\"{")))),
                     Self::string,
-                    recognize(Self::string_interpolation),
+                    recognize(Self::interpolation),
                 )))),
                 |p: &str| p.trim().to_owned().into(),
             )),
@@ -256,7 +370,7 @@ impl Parser {
                 separated_pair(
                     Self::condition,
                     tag("{"),
-                    terminated(terminated(Parser::attributes, opt(Parser::sp)), tag("}")),
+                    terminated(Self::trim_cmt(Self::attributes), tag("}")),
                 ),
                 |p: (Vec<Selector>, Vec<StyleAttribute>)| {
                     ScopeContent::Block(Block {
@@ -378,77 +492,6 @@ impl Parser {
         result
     }
 
-    /// Parse a style attribute such as "width: 10px;"
-    fn dangling_attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Dangling Attribute: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleAttribute",
-            Self::trimmed(map(
-                separated_pair(
-                    // Key
-                    preceded(
-                        opt(Parser::cmt),
-                        preceded(opt(Parser::sp), is_not(" \t\r\n:{}")),
-                    ),
-                    // Separator
-                    preceded(opt(Parser::cmt), preceded(opt(Parser::sp), tag(":"))),
-                    // Value
-                    preceded(
-                        opt(Parser::cmt),
-                        preceded(
-                            opt(Parser::sp),
-                            terminated(
-                                map(
-                                    recognize(many1(alt((
-                                        is_not("${;}"),
-                                        recognize(Self::string_interpolation),
-                                    )))),
-                                    |m: &str| StringFragment {
-                                        inner: m.to_string().trim().to_string().into(),
-                                    },
-                                ),
-                                tag(";"),
-                            ),
-                        ),
-                    ),
-                ),
-                move |p: (&str, StringFragment)| -> StyleAttribute {
-                    StyleAttribute {
-                        key: p.0.trim().to_string().into(),
-                        value: vec![p.1].into(),
-                    }
-                },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Dangling Attribute: {:#?}", result);
-
-        result
-    }
-
-    /// Parse attributes outside of a { ... }.
-    fn dangling_attributes(i: &str) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Dangling Attributes: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleAttributes",
-            Self::trimmed(many1(Parser::dangling_attribute)),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Dangling Attributes: {:#?}", result);
-
-        result
-    }
-
     /// Parse anything that is not in a { ... }
     fn dangling_block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
@@ -501,10 +544,7 @@ impl Parser {
                 pair(
                     alt((tag("@supports "), tag("@media "))),
                     map(
-                        recognize(many1(alt((
-                            is_not("${"),
-                            recognize(Self::string_interpolation),
-                        )))),
+                        recognize(many1(alt((is_not("${"), recognize(Self::interpolation))))),
                         |m: &str| StringFragment {
                             inner: m.trim().to_string().into(),
                         },
@@ -1076,6 +1116,72 @@ mod tests {
                 }
 
                 @media screen and ${breakpoint} {
+                    display: flex;
+                }
+            "#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![
+            ScopeContent::Block(Block {
+                condition: Cow::Borrowed(&[]),
+                style_attributes: vec![StyleAttribute {
+                    key: "color".into(),
+                    value: vec!["${color}".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec!["span".into(), "${sel_div}".into()].into(),
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".into(),
+                    value: vec!["blue".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec![":not(${sel_root})".into()].into(),
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".into(),
+                    value: vec!["black".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Rule(Rule {
+                condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
+                content: vec![RuleContent::Block(Block {
+                    condition: Cow::Borrowed(&[]),
+                    style_attributes: vec![StyleAttribute {
+                        key: "display".into(),
+                        value: vec!["flex".into()].into(),
+                    }]
+                    .into(),
+                })]
+                .into(),
+            }),
+        ]);
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_comment() {
+        init();
+        let test_str = r#"
+                /* some comment */
+                color: /**/${color};
+
+                span, ${sel_div} {
+                    /* comment before block */
+                    background-color /* comment before colon */ : blue /* comment after attribute */;
+                    /* comment after block */
+                }
+
+                :not(${sel_root}) {
+                    background-color: black;
+                }
+
+                @media screen and ${breakpoint} {
+                    /* a comment with * */
                     display: flex;
                 }
             "#;
