@@ -4,16 +4,16 @@ fn main() {
         @supports (display: grid) {
             background-color: grey;
         }
-    };
-    let result_reg = regex::Regex::new(
-        r#"@supports \(display:grid\) \{
-\.stylist-[[:alnum:]]+ \{
-background-color: grey;
-\}
-\}
-"#,
-    )
+    }
     .unwrap();
-    log::debug!("{}", style.get_style_str());
-    assert!(result_reg.is_match(style.get_style_str()));
+    let expected_result = format!(
+        r#"@supports (display:grid) {{
+.{cls} {{
+background-color: grey;
+}}
+}}
+"#,
+        cls = style.get_class_name()
+    );
+    assert_eq!(expected_result, style.get_style_str());
 }

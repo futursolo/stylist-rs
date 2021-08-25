@@ -82,7 +82,8 @@ mod test {
             @supports (foo: bar) {
                 background-color: grey;
             }
-        };
+        }
+        .expect("");
         debug!("{}", style.get_style_str())
     }
 }

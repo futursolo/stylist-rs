@@ -9,21 +9,21 @@ fn main() {
                 margin: ${"2cm"};
             }
         }
-    };
-    let result_reg = regex::Regex::new(
-        r#"@media print \{
-\.stylist-[[:alnum:]]+ \.outer \{
-background-color: grey;
-\}
-\}
-@page  \{
-\.stylist-[[:alnum:]]+ .outer \{
-margin: 2cm;
-\}
-\}
-"#,
-    )
+    }
     .unwrap();
-    log::debug!("{}", style.get_style_str());
-    assert!(result_reg.is_match(style.get_style_str()));
+    let expected_reusult = format!(
+        r#"@media print {{
+.{cls} .outer {{
+background-color: grey;
+}}
+}}
+@page  {{
+.{cls} .outer {{
+margin: 2cm;
+}}
+}}
+"#,
+        cls = style.get_class_name()
+    );
+    assert_eq!(expected_reusult, style.get_style_str());
 }
