@@ -231,6 +231,20 @@ impl ToTokensWithArgs for Sheet {
             scope_tokens.extend(quote! {#current_scope_tokens ,});
         }
 
-        quote! { ::stylist::ast::Sheet::from(vec![#scope_tokens]) }
+        if args.is_empty() {
+            quote! { {::stylist::ast::Sheet::from(vec![#scope_tokens])} }
+        } else {
+            quote! { {
+                use ::stylist::vendor::once_cell::sync::Lazy;
+                use ::stylist::ast::{Sheet, SheetRef};
+
+                static SHEET_REF: Lazy<SheetRef> = Lazy::new(
+                    || SheetRef::from(Sheet::from(vec![#scope_tokens]))
+                );
+
+
+                SHEET_REF.clone()
+            } }
+        }
     }
 }

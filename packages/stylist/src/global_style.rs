@@ -1,6 +1,4 @@
 use std::rc::Rc;
-#[cfg(feature = "parser")]
-use std::str::FromStr;
 
 use crate::ast::{IntoSheet, SheetRef, ToStyleStr};
 use crate::manager::StyleManager;
@@ -8,8 +6,6 @@ use crate::registry::StyleKey;
 use crate::style::StyleContent;
 use crate::style::StyleId;
 use crate::utils::get_entropy;
-#[cfg(feature = "parser")]
-use crate::Error;
 use crate::Result;
 
 /// A struct that represents a global Style.
@@ -131,16 +127,6 @@ impl GlobalStyle {
     /// Returns the [`StyleId`] for current style.
     pub fn id(&self) -> &StyleId {
         self.inner.id()
-    }
-}
-
-#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
-#[cfg(feature = "parser")]
-impl FromStr for GlobalStyle {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        GlobalStyle::new(s)
     }
 }
 

@@ -26,7 +26,7 @@ impl From<Style> for Classes {
 #[cfg(feature = "parser")]
 impl IntoPropValue<Style> for String {
     fn into_prop_value(self) -> Style {
-        self.parse().expect("Failed to parse style.")
+        Style::new(self).expect("Failed to parse style.")
     }
 }
 
@@ -34,7 +34,7 @@ impl IntoPropValue<Style> for String {
 #[cfg(feature = "parser")]
 impl IntoPropValue<Style> for &str {
     fn into_prop_value(self) -> Style {
-        self.parse().expect("Failed to parse style.")
+        Style::new(self).expect("Failed to parse style.")
     }
 }
 
@@ -42,7 +42,7 @@ impl IntoPropValue<Style> for &str {
 #[cfg(feature = "parser")]
 impl IntoPropValue<Style> for Cow<'_, str> {
     fn into_prop_value(self) -> Style {
-        self.parse().expect("Failed to parse style.")
+        Style::new(self).expect("Failed to parse style.")
     }
 }
 

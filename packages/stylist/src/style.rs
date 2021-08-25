@@ -2,14 +2,10 @@ use std::borrow::Cow;
 use std::fmt;
 use std::ops::Deref;
 use std::rc::Rc;
-#[cfg(feature = "parser")]
-use std::str::FromStr;
 
 use crate::ast::{IntoSheet, SheetRef, ToStyleStr};
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
-#[cfg(feature = "parser")]
-use crate::Error;
 use crate::Result;
 
 use crate::utils::get_entropy;
@@ -316,16 +312,6 @@ impl Style {
     /// Returns the [`StyleId`] for current style.
     pub fn id(&self) -> &StyleId {
         self.inner.id()
-    }
-}
-
-#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
-#[cfg(feature = "parser")]
-impl FromStr for Style {
-    type Err = Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        Style::new(s)
     }
 }
 

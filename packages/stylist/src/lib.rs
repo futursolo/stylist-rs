@@ -238,10 +238,6 @@ pub use stylist_macros::global_style;
 ///
 /// This macro supports string interpolation on values of style attributes, selectors, `@supports` and `@media` rules.
 ///
-/// Selectors are limited to an entire selector in a selectors list, this limitation is imposed to
-/// reduce complexity on selector parsing logic. You can also use Current Selector (`&`) in the
-/// interpolated selectors.
-///
 /// Interpolated strings are denoted with `${ident}` and any type that implements [`std::fmt::Display`] can be
 /// used as value. Only named argument are supported at this moment.
 ///
@@ -295,3 +291,6 @@ pub mod yew;
 
 #[doc(inline)]
 pub use stylist_core::{Error, Result};
+
+#[doc(hidden)]
+pub mod vendor;
