@@ -39,24 +39,6 @@ mod feat_parser {
 
     use super::*;
 
-    impl IntoPropValue<Style> for String {
-        fn into_prop_value(self) -> Style {
-            Style::new(self).expect("Failed to parse style.")
-        }
-    }
-
-    impl IntoPropValue<Style> for &str {
-        fn into_prop_value(self) -> Style {
-            Style::new(self).expect("Failed to parse style.")
-        }
-    }
-
-    impl IntoPropValue<Style> for Cow<'_, str> {
-        fn into_prop_value(self) -> Style {
-            Style::new(self).expect("Failed to parse style.")
-        }
-    }
-
     impl IntoPropValue<StyleSource<'static>> for String {
         fn into_prop_value(self) -> StyleSource<'static> {
             self.into()

@@ -1,6 +1,5 @@
 #[cfg(feature = "parser")]
 use std::borrow::Cow;
-
 #[cfg(not(feature = "parser"))]
 use std::marker::PhantomData;
 
@@ -37,7 +36,6 @@ enum SheetSource {
 /// let s: StyleSource = "color: red;".into();
 ///
 /// let rendered = html! {<div class=s.clone() />};
-///
 /// let global_rendered = html! {<Global css=s />};
 /// ```
 #[derive(Debug, Clone, PartialEq)]
@@ -55,13 +53,11 @@ impl StyleSource<'_> {
     pub fn try_to_sheet(&self) -> Result<Sheet> {
         match self.inner {
             SheetSource::Sheet(ref m) => Ok(m.clone()),
-            #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
             #[cfg(feature = "parser")]
             SheetSource::String(ref m) => m.parse::<Sheet>(),
         }
     }
 
-    #[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
     #[cfg(feature = "yew_integration")]
     pub(crate) fn to_style(&self) -> Style {
         Style::new(self.clone()).expect("Failed to create style")

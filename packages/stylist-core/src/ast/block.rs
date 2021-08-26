@@ -17,8 +17,8 @@ use crate::Result;
 pub struct Block {
     /// Selector(s) for Current Block
     ///
-    /// If value is set to [`&[]`], signals to substitute with the classname generated for the
-    /// [`Sheet`](super::Sheet) in which this is conatined.
+    /// If the value is set as [`&[]`], it signals to substitute with the classname generated for the
+    /// [`Sheet`](super::Sheet) in which this is contained.
     pub condition: Cow<'static, [Selector]>,
     pub style_attributes: Cow<'static, [StyleAttribute]>,
 }

@@ -80,7 +80,6 @@ impl Component for Global {
     fn change(&mut self, props: Self::Properties) -> ShouldRender {
         self.props = props;
 
-        #[cfg(target_arch = "wasm32")]
         self.update_global_style();
 
         false
