@@ -1,8 +1,9 @@
 use crate::tokentree::css_ident::CssIdent;
 use proc_macro2::{Literal, Punct, Span, TokenStream};
 use quote::{quote, quote_spanned, ToTokens};
+use std::iter::FromIterator;
 use std::ops::Deref;
-use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
+use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
 use syn::LitStr;
 use syn::{braced, bracketed, parenthesized, token};
 use syn::{Expr, Ident, Lit};
@@ -280,11 +281,51 @@ impl PreservedToken {
     }
 }
 
+#[derive(Debug)]
+pub enum SelectorValidation {
+    Valid,
+    // one or more errors has been discovered
+    // but it still looks like a selector. Continue to consume selectors
+    Error(ParseError),
+    // one or more errors has been discovered and stop consuming selectors
+    TerminalError(ParseError),
+}
+
+impl SelectorValidation {
+    pub fn merge_with(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Valid, o) => o,
+            (s, Self::Valid) => s,
+            (Self::Error(mut e), Self::Error(o)) => {
+                e.extend(o);
+                Self::Error(e)
+            }
+            (
+                Self::Error(mut e) | Self::TerminalError(mut e),
+                Self::Error(o) | Self::TerminalError(o),
+            ) => {
+                e.extend(o);
+                Self::TerminalError(e)
+            }
+        }
+    }
+}
+
+impl FromIterator<SelectorValidation> for SelectorValidation {
+    fn from_iter<T: IntoIterator<Item = SelectorValidation>>(iter: T) -> Self {
+        let mut res = Self::Valid;
+        for t in iter {
+            res = res.merge_with(t);
+        }
+        res
+    }
+}
+
 impl ComponentValue {
     // Reifies into a Vec of TokenStreams of type
     // for<I: Into<Cow<'static, str>>> T: From<I>
     // including ::stylist::ast::Selector and ::stylist::ast::StringFragment
-    pub fn reify(&self) -> Vec<TokenStream> {
+    pub fn reify_parts(&self) -> Vec<TokenStream> {
         match self {
             Self::Token(token) => {
                 let quoted_literal = token.quote_literal();
@@ -297,20 +338,29 @@ impl ComponentValue {
                 unreachable!("blocks should not get reified");
             }
             Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
-                let mut inner_args = contents.iter().flat_map(|c| c.reify()).collect::<Vec<_>>();
+                let mut inner_args = contents
+                    .iter()
+                    .flat_map(|c| c.reify_parts())
+                    .collect::<Vec<_>>();
                 inner_args.insert(0, quote! { "[".into() });
                 inner_args.push(quote! { "]".into() });
                 inner_args
             }
             Self::Block(SimpleBlock::Paren { contents, .. }) => {
-                let mut inner_args = contents.iter().flat_map(|c| c.reify()).collect::<Vec<_>>();
+                let mut inner_args = contents
+                    .iter()
+                    .flat_map(|c| c.reify_parts())
+                    .collect::<Vec<_>>();
                 inner_args.insert(0, quote! { "(".into() });
                 inner_args.push(quote! { ")".into() });
                 inner_args
             }
             Self::Function(FunctionToken { name, args, .. }) => {
                 let name_toks = name.quote_literal();
-                let mut write_args = args.iter().flat_map(|arg| arg.reify()).collect::<Vec<_>>();
+                let mut write_args = args
+                    .iter()
+                    .flat_map(|arg| arg.reify_parts())
+                    .collect::<Vec<_>>();
                 write_args.insert(0, quote! { #name_toks.into() });
                 write_args.insert(1, quote! { "(".into() });
                 write_args.push(quote! { ")".into() });
@@ -333,18 +383,45 @@ impl ComponentValue {
     }
 
     // Overly simplified of parsing a css selector :)
-    pub fn is_selector_token(&self) -> bool {
+    pub fn validate_selector_token(&self) -> SelectorValidation {
         match self {
-            Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => true,
-            Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
-                contents.iter().all(|e| e.is_selector_token())
+            Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => {
+                SelectorValidation::Valid
             }
-            Self::Block(_) => false,
+            Self::Block(SimpleBlock::Bracketed { contents, .. }) => contents
+                .iter()
+                .map(|e| e.validate_selector_token())
+                .collect(),
+            Self::Block(_) => SelectorValidation::Error(ParseError::new_spanned(
+                self,
+                "expected a valid part of a scope qualifier, not a block",
+            )),
             Self::Token(PreservedToken::Literal(l)) => {
                 let syn_lit = Lit::new(l.clone());
-                matches!(syn_lit, Lit::Str(_))
+                if matches!(syn_lit, Lit::Str(_)) {
+                    SelectorValidation::Valid
+                } else {
+                    SelectorValidation::Error(ParseError::new_spanned(
+                        self,
+                        "only string literals are allowed in selectors",
+                    ))
+                }
             }
-            Self::Token(PreservedToken::Punct(p)) => "&>+~|$*=.:,".contains(p.as_char()),
+            Self::Token(PreservedToken::Punct(p)) => {
+                if "&>+~|$*=.:,".contains(p.as_char()) {
+                    SelectorValidation::Valid
+                } else if p.as_char() == ';' {
+                    SelectorValidation::TerminalError(ParseError::new_spanned(
+                        self,
+                        "unexpected ';' in selector, did you mean to write an attribute?",
+                    ))
+                } else {
+                    SelectorValidation::Error(ParseError::new_spanned(
+                        self,
+                        "unexpected punctuation in selector",
+                    ))
+                }
+            }
         }
     }
 }

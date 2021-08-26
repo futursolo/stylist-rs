@@ -4,6 +4,7 @@ use itertools::Itertools;
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::parse::{Error as ParseError, Result as ParseResult};
 use syn::Ident;
 // =====================================================================
 // =====================================================================
@@ -33,15 +34,28 @@ pub enum OutputRuleContent {
 #[derive(Clone)]
 pub struct OutputQualifier {
     pub selectors: Vec<ComponentValue>,
+    pub errors: Vec<ParseError>,
 }
 pub struct OutputAttribute {
     pub key: TokenStream,
-    pub values: Vec<ComponentValue>,
+    pub values: Vec<ParseResult<ComponentValue>>,
 }
 
 /// Reify a structure into an expression of a specific type.
 pub(crate) trait Reify {
     fn reify(self) -> TokenStream;
+}
+
+impl Reify for TokenStream {
+    fn reify(self) -> Self {
+        self
+    }
+}
+
+impl Reify for syn::Error {
+    fn reify(self) -> TokenStream {
+        self.into_compile_error()
+    }
 }
 
 impl Reify for OutputSheet {
@@ -73,7 +87,7 @@ impl Reify for OutputAtRule {
             contents,
         } = self;
 
-        let prelude_parts = prelude.into_iter().flat_map(|p| p.reify());
+        let prelude_parts = prelude.into_iter().flat_map(|p| p.reify_parts());
         quote! {
             ::stylist::ast::Rule {
                 condition: {
@@ -127,7 +141,7 @@ impl Reify for OutputQualifier {
         ) -> TokenStream {
             let ident_selector = Ident::new("selector", Span::mixed_site());
             let ident_assert_string = Ident::new("as_string", Span::mixed_site());
-            let parts = selector_parts.flat_map(|p| p.reify());
+            let parts = selector_parts.flat_map(|p| p.reify_parts());
             quote! {
                 {
                     use ::std::fmt::Write;
@@ -139,7 +153,9 @@ impl Reify for OutputQualifier {
             }
         }
 
-        let Self { selectors, .. } = self;
+        let Self {
+            selectors, errors, ..
+        } = self;
         let selectors = selectors.iter().peekable().batching(|it| {
             // Return if no items left
             it.peek()?;
@@ -149,11 +165,13 @@ impl Reify for OutputQualifier {
             it.next(); // Consume the comma
             Some(selector)
         });
+        let errors = errors.into_iter().map(|e| e.into_compile_error());
 
         let ident_selector = Ident::new("conditions", Span::mixed_site());
         quote! {
             {
                 let mut #ident_selector = ::std::vec::Vec::<::stylist::ast::Selector>::new();
+                #( #errors )*
                 #( #ident_selector.push(#selectors); )*
                 #ident_selector.into()
             }
@@ -196,7 +214,10 @@ impl Reify for OutputAttribute {
         let ident_writable_value = Ident::new("writer_value", Span::mixed_site());
         let Self { key, values } = self;
 
-        let value_parts = values.iter().flat_map(|p| p.reify());
+        let value_parts = values.iter().flat_map(|p| match p {
+            Err(e) => vec![e.to_compile_error()],
+            Ok(c) => c.reify_parts(),
+        });
         quote! {
             ::stylist::ast::StyleAttribute {
                 key: #key,
@@ -210,11 +231,11 @@ impl Reify for OutputAttribute {
     }
 }
 
-impl<E: Reify> Reify for Result<E, TokenStream> {
+impl<E: Reify> Reify for Result<E, syn::Error> {
     fn reify(self) -> TokenStream {
         match self {
             Ok(o) => o.reify(),
-            Err(e) => e,
+            Err(e) => e.to_compile_error(),
         }
     }
 }

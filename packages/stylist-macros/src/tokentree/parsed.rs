@@ -6,12 +6,13 @@ use crate::tokentree::component_value::ComponentValue;
 use crate::tokentree::component_value::ComponentValueStream;
 use crate::tokentree::component_value::InjectedExpression;
 use crate::tokentree::component_value::PreservedToken;
+use crate::tokentree::component_value::SelectorValidation;
 use crate::tokentree::component_value::SimpleBlock;
 use crate::tokentree::css_ident::CssIdent;
 use itertools::Itertools;
 use proc_macro2::TokenStream;
+use quote::quote;
 use quote::ToTokens;
-use quote::{quote, quote_spanned};
 use std::iter::Peekable;
 use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
 use syn::spanned::Spanned;
@@ -25,6 +26,8 @@ pub struct CssRootNode {
 #[derive(Debug, Clone)]
 pub struct CssScopeQualifier {
     qualifiers: Vec<ComponentValue>,
+    // additional errors to emit, if any
+    qualifier_errors: Vec<ParseError>,
 }
 
 #[derive(Debug)]
@@ -54,7 +57,7 @@ pub enum CssAttributeName {
 
 #[derive(Debug)]
 pub struct CssAttributeValue {
-    values: Vec<ComponentValue>,
+    values: Vec<ParseResult<ComponentValue>>,
 }
 
 #[derive(Debug)]
@@ -184,7 +187,7 @@ impl Parse for CssAttributeValue {
             let next_token = component_iter
                 .next()
                 .ok_or_else(|| input.error("AttributeValue: unexpected end of input"))??;
-            if !next_token.is_attribute_token() {
+            let parsed_token = if !next_token.is_attribute_token() {
                 let error_message = if matches!(
                     next_token,
                     ComponentValue::Block(SimpleBlock::Braced { .. })
@@ -193,10 +196,12 @@ impl Parse for CssAttributeValue {
                 } else {
                     "expected a valid part of an attribute"
                 };
-                return Err(ParseError::new_spanned(next_token, error_message));
-            }
+                Err(ParseError::new_spanned(next_token, error_message))
+            } else {
+                Ok(next_token)
+            };
             // unwrap okay, since we already peeked
-            values.push(next_token);
+            values.push(parsed_token);
         }
         Ok(Self { values })
     }
@@ -207,6 +212,7 @@ impl Parse for CssScopeQualifier {
         // Consume all tokens till the next '{'-block
         let mut component_iter = ComponentValueStream::from(input).peekable();
         let mut qualifiers = vec![];
+        let mut qualifier_errors = vec![];
         loop {
             if input.peek(token::Brace) {
                 break;
@@ -214,17 +220,17 @@ impl Parse for CssScopeQualifier {
             let next_token = component_iter
                 .next()
                 .ok_or_else(|| input.error("ScopeQualifier: unexpected end of input"))??;
-            if !next_token.is_selector_token() {
-                return Err(ParseError::new_spanned(
-                    next_token,
-                    "expected a valid part of a scope qualifier",
-                ));
+            match next_token.validate_selector_token() {
+                SelectorValidation::Error(e) => qualifier_errors.push(e),
+                SelectorValidation::TerminalError(e) => return Err(e),
+                SelectorValidation::Valid => qualifiers.push(next_token),
             }
-            // FIXME: reparse scope qualifiers for more validation?
-            // unwrap okay, since we already peeked
-            qualifiers.push(next_token);
         }
-        Ok(Self { qualifiers })
+        // FIXME: reparse scope qualifiers for more validation?
+        Ok(Self {
+            qualifiers,
+            qualifier_errors,
+        })
     }
 }
 
@@ -292,7 +298,10 @@ impl ToTokens for CssScopeQualifier {
 
 impl Default for CssScopeQualifier {
     fn default() -> Self {
-        Self { qualifiers: vec![] }
+        Self {
+            qualifiers: vec![],
+            qualifier_errors: vec![],
+        }
     }
 }
 // =====================================================================
@@ -338,7 +347,7 @@ impl Default for CssScopeQualifier {
 fn fold_normalized_scope_hierarchy<'it, R: 'it>(
     it: impl 'it + IntoIterator<Item = CssScopeContent>,
     handle_item: impl 'it + Copy + Fn(OutputSheetContent) -> R,
-) -> impl 'it + Iterator<Item = Result<R, TokenStream>> {
+) -> impl 'it + Iterator<Item = ParseResult<R>> {
     fold_tokens_impl(Default::default(), it, handle_item)
 }
 
@@ -351,7 +360,7 @@ fn fold_tokens_impl<'it, R: 'it>(
     context: CssScopeQualifier,
     it: impl 'it + IntoIterator<Item = CssScopeContent>,
     handle_item: impl 'it + Copy + Fn(OutputSheetContent) -> R,
-) -> impl 'it + Iterator<Item = Result<R, TokenStream>> {
+) -> impl 'it + Iterator<Item = ParseResult<R>> {
     // Step one: collect attributes into blocks, flatten and lift nested blocks
     struct Wrapper<I: Iterator> {
         it: Peekable<I>,
@@ -413,24 +422,15 @@ fn fold_tokens_impl<'it, R: 'it>(
     })
 }
 
-impl CssScopeQualifier {
-    fn into_output(self) -> OutputQualifier {
-        let selectors = self.qualifiers;
-        OutputQualifier { selectors }
-    }
-}
-
 impl CssQualifiedRule {
     fn fold_in_context(
         self,
         ctx: CssScopeQualifier,
-    ) -> Box<dyn Iterator<Item = Result<OutputSheetContent, TokenStream>>> {
+    ) -> Box<dyn Iterator<Item = ParseResult<OutputSheetContent>>> {
         let own_ctx = self.qualifier;
         if !own_ctx.qualifiers.is_empty() && !ctx.qualifiers.is_empty() {
             // TODO: figure out how to combine contexts
-            let err = quote_spanned! {own_ctx.span()=>
-                ::std::compile_error!("Can not nest qualified blocks (yet)")
-            };
+            let err = ParseError::new_spanned(own_ctx, "Can not nest qualified blocks (yet)");
             return Box::new(std::iter::once(Err(err)));
         }
         let relevant_ctx = if !own_ctx.qualifiers.is_empty() {
@@ -462,11 +462,6 @@ impl CssAtRule {
         })
     }
 }
-// =====================================================================
-// =====================================================================
-// Output structs + quoting
-// =====================================================================
-// =====================================================================
 
 impl CssRootNode {
     pub fn into_output(self) -> OutputSheet {
@@ -477,6 +472,14 @@ impl CssRootNode {
         .map(|c| c.reify())
         .collect();
         OutputSheet { contents }
+    }
+}
+
+impl CssScopeQualifier {
+    fn into_output(self) -> OutputQualifier {
+        let selectors = self.qualifiers;
+        let errors = self.qualifier_errors;
+        OutputQualifier { selectors, errors }
     }
 }
 

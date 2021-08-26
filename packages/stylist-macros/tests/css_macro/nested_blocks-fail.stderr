@@ -2,4 +2,4 @@ error: Can not nest qualified blocks (yet)
  --> $DIR/nested_blocks-fail.rs:4:13
   |
 4 |             .inner {
-  |             ^
+  |             ^^^^^^
