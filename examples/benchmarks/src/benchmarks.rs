@@ -1,4 +1,4 @@
-use stylist::ast::Sheet;
+use stylist::ast::{sheet, Sheet};
 use stylist::Style;
 
 use crate::utils::now;
@@ -7,6 +7,15 @@ pub fn bench_parse_simple() -> f64 {
     let start_time = now();
     for _ in 0..1_000_000 {
         let _sheet: Sheet = "color:red;".parse().expect("Failed to parse stylesheet.");
+    }
+
+    now() - start_time
+}
+
+pub fn bench_macro_simple() -> f64 {
+    let start_time = now();
+    for _ in 0..1_000_000 {
+        let _sheet: Sheet = sheet!("color:red;");
     }
 
     now() - start_time
@@ -48,6 +57,36 @@ pub fn bench_parse_complex() -> f64 {
         "#
         .parse()
         .expect("Failed to parse stylesheet.");
+    }
+
+    now() - start_time
+}
+
+pub fn bench_macro_complex() -> f64 {
+    let start_time = now();
+    for _ in 0..100_000 {
+        let _sheet: Sheet = sheet!(
+            r#"
+            color:red;
+
+            .class-name-a {
+                background: red;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            @media screen and (max-width: 500px;) {
+                font-size: 0.9rem;
+
+                .class-name-b {
+                    flex-direction: row;
+                }
+            }
+        "#
+        );
     }
 
     now() - start_time
