@@ -109,17 +109,24 @@ impl Parser {
 
     /// Parse an ident
     ///
-    /// [\-a-zA-Z(non-ascii)]{1}[\-a-zA-Z0-9(non-ascii)]*
+    /// [\-_a-zA-Z(non-ascii)]{1}[\-_a-zA-Z0-9(non-ascii)]*
     fn ident(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Ident: {}", i);
 
-        let non_ascii = take_while1(|m: char| !m.is_ascii());
-        let non_ascii2 = take_while1(|m: char| !m.is_ascii());
-
         let result = recognize(preceded(
-            alt((tag("-"), alpha1, non_ascii)),
-            many0(alt((tag("-"), alphanumeric1, non_ascii2))),
+            alt((
+                tag("-"),
+                tag("_"),
+                alpha1,
+                take_while1(|m: char| !m.is_ascii()),
+            )),
+            many0(alt((
+                tag("-"),
+                tag("_"),
+                alphanumeric1,
+                take_while1(|m: char| !m.is_ascii()),
+            ))),
         ))(i);
 
         #[cfg(test)]
