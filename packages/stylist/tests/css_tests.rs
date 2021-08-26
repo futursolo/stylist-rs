@@ -1,3 +1,4 @@
+use stylist::ast::ToStyleStr;
 use stylist::*;
 
 #[test]
@@ -24,7 +25,7 @@ fn test_sheet_interpolation() {
         breakpoint = "(max-width: 500px)",
     );
 
-    let style = parsed.to_style();
+    let sheet = parsed.try_to_sheet().expect("Failed to parse style.");
 
     let expected = format!(
         r#".{cls} {{
@@ -42,7 +43,7 @@ display: flex;
 }}
 }}
 "#,
-        cls = style.get_class_name()
+        cls = "stylist-testtest"
     );
-    assert_eq!(style.get_style_str(), expected);
+    assert_eq!(sheet.to_style_str(Some("stylist-testtest")), Ok(expected));
 }

@@ -1,18 +1,17 @@
 use yew::prelude::*;
 
-use crate::yew::IntoStyle;
-use crate::GlobalStyle;
+use crate::{GlobalStyle, StyleSource};
 
 /// The properties for [`Global`] Component, please see its documentation for usage.
 #[derive(Properties, Clone, Debug)]
 pub struct GlobalProps {
-    pub css: IntoStyle,
+    pub css: StyleSource<'static>,
 }
 
 /// A Global Style that will be applied to `<html />` tag, inspired by [emotion](https://emotion.sh).
 ///
 /// The `css` attribute accepts anything that implements
-/// [`IntoPropValue<IntoStyle>`](yew::html::IntoPropValue) and
+/// [`IntoPropValue<StyleSource>`](yew::html::IntoPropValue) and
 /// panics if the string failed to be parsed into a stylesheet.
 ///
 /// # Example:
@@ -99,6 +98,6 @@ impl Global {
         }
 
         self.global_style =
-            Some(GlobalStyle::new(self.props.css.to_sheet()).expect("Failed to parse style."));
+            Some(GlobalStyle::new(self.props.css.clone()).expect("Failed to parse style."));
     }
 }

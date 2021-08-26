@@ -4,8 +4,7 @@ use yew::html::Classes;
 use yew::html::IntoPropValue;
 
 use crate::ast::SheetRef;
-use crate::IntoStyle;
-use crate::Style;
+use crate::{Style, StyleSource};
 
 mod global;
 
@@ -19,17 +18,17 @@ impl From<Style> for Classes {
     }
 }
 
-impl From<IntoStyle> for Classes {
-    fn from(into_style: IntoStyle) -> Self {
+impl From<StyleSource<'_>> for Classes {
+    fn from(style_src: StyleSource<'_>) -> Self {
         let mut classes = Self::new();
-        classes.push(into_style.to_style().get_class_name().to_string());
+        classes.push(style_src.to_style().get_class_name().to_string());
         classes
     }
 }
 
-impl IntoPropValue<IntoStyle> for SheetRef {
-    fn into_prop_value(self) -> IntoStyle {
-        IntoStyle::Sheet(self)
+impl IntoPropValue<StyleSource<'static>> for SheetRef {
+    fn into_prop_value(self) -> StyleSource<'static> {
+        self.into()
     }
 }
 
@@ -38,10 +37,7 @@ impl IntoPropValue<IntoStyle> for SheetRef {
 mod feat_parser {
     use std::borrow::Cow;
 
-    use yew::html::IntoPropValue;
-
-    use crate::IntoStyle;
-    use crate::Style;
+    use super::*;
 
     impl IntoPropValue<Style> for String {
         fn into_prop_value(self) -> Style {
@@ -61,21 +57,21 @@ mod feat_parser {
         }
     }
 
-    impl IntoPropValue<IntoStyle> for String {
-        fn into_prop_value(self) -> IntoStyle {
-            IntoStyle::String(self.into())
+    impl IntoPropValue<StyleSource<'static>> for String {
+        fn into_prop_value(self) -> StyleSource<'static> {
+            self.into()
         }
     }
 
-    impl IntoPropValue<IntoStyle> for &'static str {
-        fn into_prop_value(self) -> IntoStyle {
-            IntoStyle::String(self.into())
+    impl<'a> IntoPropValue<StyleSource<'static>> for &'static str {
+        fn into_prop_value(self) -> StyleSource<'static> {
+            self.into()
         }
     }
 
-    impl IntoPropValue<IntoStyle> for Cow<'static, str> {
-        fn into_prop_value(self) -> IntoStyle {
-            IntoStyle::String(self)
+    impl<'a> IntoPropValue<StyleSource<'static>> for Cow<'static, str> {
+        fn into_prop_value(self) -> StyleSource<'static> {
+            self.into()
         }
     }
 }

@@ -54,12 +54,12 @@
 //!
 //! ```rust
 //! use std::borrow::Cow;
-//! use stylist::{css, IntoStyle, YieldStyle};
+//! use stylist::{css, StyleSource, YieldStyle};
 //!
 //! pub struct Component;
 //!
 //! impl YieldStyle for Component {
-//!     fn style_from(&self) -> IntoStyle {
+//!     fn style_from(&self) -> StyleSource<'static> {
 //!         css!("color: red;")
 //!     }
 //! }
@@ -175,14 +175,14 @@ mod registry;
 
 pub mod ast;
 mod global_style;
-mod into_style;
 mod style;
+mod style_src;
 mod utils;
 mod yield_style;
 
 pub use global_style::GlobalStyle;
-pub use into_style::IntoStyle;
 pub use style::Style;
+pub use style_src::StyleSource;
 pub use yield_style::YieldStyle;
 
 /// A procedural macro that parses a string literal into a [`Style`].
@@ -221,7 +221,7 @@ pub use stylist_macros::style;
 #[cfg(feature = "macros")]
 pub use stylist_macros::global_style;
 
-/// A procedural macro that parses a string literal into a [`IntoStyle`].
+/// A procedural macro that parses a string literal into a [`StyleSource`].
 ///
 /// # Example
 ///
@@ -249,7 +249,7 @@ pub use stylist_macros::global_style;
 /// # Example
 ///
 /// ```
-/// use stylist::css;
+/// use stylist::{Style, css};
 /// use yew::prelude::*;
 ///
 /// let s = css!(
@@ -269,7 +269,7 @@ pub use stylist_macros::global_style;
 ///     breakpoint = "(max-width: 500px)",
 /// );
 ///
-/// let style = s.to_style();
+/// let style = Style::new(s).expect("Failed to create style");
 ///
 /// // Example Output:
 /// // .stylist-fIEWv6EP {

@@ -4,8 +4,10 @@
 
 ### Breaking Changes:
 - [`Style`] and [`GlobalStyle`] no longer implements `FromStr`.
+- [`Style`] and [`GlobalStyle`] now takes any type that implements
+  `Into<StyleSource>` as a source for a stylesheet.
 - `style_str` method in `YieldStyle` renamed to `style_from`
-  and takes `IntoStyle` as return type.
+  and returns a `StyleSource<'static>`.
 
 ### Other Changes:
 - Added a Procedural Macro API that parses the Stylesheet at the compile

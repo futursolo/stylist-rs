@@ -1,0 +1,93 @@
+#[cfg(feature = "parser")]
+use std::borrow::Cow;
+
+use crate::ast::SheetRef;
+use crate::Result;
+#[cfg(feature = "yew_integration")]
+use crate::Style;
+
+#[derive(Debug, Clone, PartialEq)]
+enum SheetSource<'a> {
+    #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+    #[cfg(feature = "parser")]
+    String(Cow<'a, str>),
+    Sheet(SheetRef),
+}
+
+/// A struct that can be used as a source to create a [`Style`](crate::Style) or
+/// [`GlobalStyle`](crate::GlobalStyle).
+///
+/// This struct is usually created by [`css!`](crate::css) macro.
+///
+/// You can also get a StyleSource instance from a string or a [`SheetRef`] by calling `.into()`.
+///
+/// ```rust
+/// use stylist::StyleSource;
+/// use yew::prelude::*;
+/// use stylist::yew::Global;
+///
+/// let s: StyleSource = "color: red;".into();
+///
+/// let rendered = html! {<div class=s.clone() />};
+///
+/// let global_rendered = html! {<Global css=s />};
+/// ```
+#[derive(Debug, Clone, PartialEq)]
+pub struct StyleSource<'a> {
+    inner: SheetSource<'a>,
+}
+
+impl StyleSource<'_> {
+    pub fn try_to_sheet(&self) -> Result<SheetRef> {
+        match self.inner {
+            SheetSource::Sheet(ref m) => Ok(m.clone()),
+            #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+            #[cfg(feature = "parser")]
+            SheetSource::String(ref m) => m.parse::<SheetRef>(),
+        }
+    }
+
+    #[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
+    #[cfg(feature = "yew_integration")]
+    pub(crate) fn to_style(&self) -> Style {
+        Style::new(self.clone()).expect("Failed to create style")
+    }
+}
+
+impl From<SheetRef> for StyleSource<'_> {
+    fn from(other: SheetRef) -> StyleSource<'static> {
+        StyleSource {
+            inner: SheetSource::Sheet(other),
+        }
+    }
+}
+
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
+mod feat_parser {
+    use super::*;
+
+    impl From<String> for StyleSource<'_> {
+        fn from(other: String) -> StyleSource<'static> {
+            StyleSource {
+                inner: SheetSource::String(other.into()),
+            }
+        }
+    }
+
+    impl<'a> From<&'a str> for StyleSource<'a> {
+        fn from(other: &'a str) -> StyleSource<'a> {
+            StyleSource {
+                inner: SheetSource::String(other.into()),
+            }
+        }
+    }
+
+    impl<'a> From<Cow<'a, str>> for StyleSource<'a> {
+        fn from(other: Cow<'a, str>) -> StyleSource<'a> {
+            StyleSource {
+                inner: SheetSource::String(other),
+            }
+        }
+    }
+}

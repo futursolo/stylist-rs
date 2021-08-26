@@ -1,6 +1,6 @@
 use gloo::timers::callback::Timeout;
 use stylist::yew::Global;
-use stylist::{IntoStyle, YieldStyle};
+use stylist::{StyleSource, YieldStyle};
 use yew::prelude::*;
 
 use log::Level;
@@ -200,7 +200,7 @@ impl Component for Benchmarks {
 }
 
 impl YieldStyle for Benchmarks {
-    fn style_from(&self) -> IntoStyle {
+    fn style_from(&self) -> StyleSource<'static> {
         r#"
             display: flex;
             justify-content: center;
@@ -309,7 +309,7 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_from(&self) -> IntoStyle {
+    fn style_from(&self) -> StyleSource<'static> {
         r#"
             display: flex;
             justify-content: center;

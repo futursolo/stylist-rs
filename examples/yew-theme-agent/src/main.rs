@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use stylist::yew::Global;
-use stylist::{IntoStyle, YieldStyle};
+use stylist::{StyleSource, YieldStyle};
 use yew::{html, Bridge, Component, ComponentLink, Html, ShouldRender};
 use yewtil::store::{Bridgeable, ReadOnly, StoreWrapper};
 
@@ -80,7 +80,7 @@ impl Component for Inside {
 }
 
 impl YieldStyle for Inside {
-    fn style_from(&self) -> IntoStyle {
+    fn style_from(&self) -> StyleSource<'static> {
         r#"
             button {
                 color: white;
@@ -194,7 +194,7 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_from(&self) -> IntoStyle {
+    fn style_from(&self) -> StyleSource<'static> {
         if let Some(ref m) = self.theme {
             format!(
                 r#"

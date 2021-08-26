@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::manager::StyleManager;
-use crate::{IntoStyle, Result, Style};
+use crate::{Result, Style, StyleSource};
 
 /// A trait to create [`Style`].
 ///
@@ -18,7 +18,7 @@ use crate::{IntoStyle, Result, Style};
 /// use yew::prelude::*;
 ///
 /// use std::borrow::Cow;
-/// use stylist::{css, IntoStyle, YieldStyle};
+/// use stylist::{css, StyleSource, YieldStyle};
 ///
 /// struct MyStyledComponent {}
 ///
@@ -44,7 +44,7 @@ use crate::{IntoStyle, Result, Style};
 /// }
 ///
 /// impl YieldStyle for MyStyledComponent {
-///     fn style_from(&self) -> IntoStyle {
+///     fn style_from(&self) -> StyleSource<'static> {
 ///         css!("color: red;")
 ///     }
 /// }
@@ -60,13 +60,13 @@ pub trait YieldStyle {
     }
 
     /// Returns a type that can be turned into a [`Style`].
-    fn style_from(&self) -> IntoStyle;
+    fn style_from(&self) -> StyleSource<'static>;
 
     /// Returns the generated style.
     ///
     /// Returns [`Err(Error)`](crate::Error) when failed to create a style.
     fn try_style(&self) -> Result<Style> {
-        Style::new_with_manager(self.style_from().to_sheet(), self.manager())
+        Style::new_with_manager(self.style_from(), self.manager())
     }
 
     /// Returns the generated style.

@@ -1,5 +1,5 @@
 use stylist::yew::Global;
-use stylist::{IntoStyle, Style, YieldStyle};
+use stylist::{Style, StyleSource, YieldStyle};
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 
 use log::Level;
@@ -35,7 +35,7 @@ impl Component for Inside {
 impl YieldStyle for Inside {
     // Every `.style()` is called, this method will also be called.
     // So you can create style dynamically (theming).
-    fn style_from(&self) -> IntoStyle {
+    fn style_from(&self) -> StyleSource<'static> {
         r#"
             width: 200px;
             height: 200px;

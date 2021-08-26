@@ -1,5 +1,5 @@
 use stylist::yew::Global;
-use stylist::{IntoStyle, YieldStyle};
+use stylist::{StyleSource, YieldStyle};
 use yew::{html, Component, ComponentLink, Html, ShouldRender};
 use yewdux::prelude::*;
 use yewtil::NeqAssign;
@@ -55,7 +55,7 @@ impl Component for BaseInside {
 }
 
 impl YieldStyle for BaseInside {
-    fn style_from(&self) -> IntoStyle {
+    fn style_from(&self) -> StyleSource<'static> {
         r#"
             button {
                 color: white;
@@ -136,7 +136,7 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_from(&self) -> IntoStyle {
+    fn style_from(&self) -> StyleSource<'static> {
         let theme = self.dispatch.state().theme.current();
 
         format!(

@@ -3,10 +3,10 @@ use std::fmt;
 use std::ops::Deref;
 use std::rc::Rc;
 
-use crate::ast::{IntoSheet, SheetRef, ToStyleStr};
+use crate::ast::{SheetRef, ToStyleStr};
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
-use crate::Result;
+use crate::{Result, StyleSource};
 
 use crate::utils::get_entropy;
 
@@ -149,9 +149,11 @@ impl Style {
     // and inlining
     fn create_impl(
         class_prefix: Cow<'static, str>,
-        css: SheetRef,
+        css: StyleSource<'_>,
         manager: StyleManager,
     ) -> Result<Self> {
+        let css = css.try_to_sheet()?;
+
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
             is_global: false,
@@ -204,9 +206,9 @@ impl Style {
     /// let style = Style::new("background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<Css>(css: Css) -> Result<Self>
+    pub fn new<'a, Css>(css: Css) -> Result<Self>
     where
-        Css: IntoSheet,
+        Css: Into<StyleSource<'a>>,
     {
         Self::create(StyleManager::default().prefix(), css)
     }
@@ -221,37 +223,34 @@ impl Style {
     /// let style = Style::create("my-component", "background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn create<N, Css>(class_prefix: N, css: Css) -> Result<Self>
+    pub fn create<'a, N, Css>(class_prefix: N, css: Css) -> Result<Self>
     where
         N: Into<Cow<'static, str>>,
-        Css: IntoSheet,
+        Css: Into<StyleSource<'a>>,
     {
-        let css = css.into_sheet()?;
-        Self::create_impl(class_prefix.into(), css, StyleManager::default())
+        Self::create_impl(class_prefix.into(), css.into(), StyleManager::default())
     }
 
     /// Creates a new style from some parsable css with a default prefix using a custom
     /// manager.
-    pub fn new_with_manager<Css, M>(css: Css, manager: M) -> Result<Self>
+    pub fn new_with_manager<'a, Css, M>(css: Css, manager: M) -> Result<Self>
     where
-        Css: IntoSheet,
+        Css: Into<StyleSource<'a>>,
         M: Into<StyleManager>,
     {
-        let css = css.into_sheet()?;
         let mgr = manager.into();
-        Self::create_impl(mgr.prefix(), css, mgr.clone())
+        Self::create_impl(mgr.prefix(), css.into(), mgr.clone())
     }
 
     /// Creates a new style with a custom class prefix from some parsable css using a custom
     /// manager.
-    pub fn create_with_manager<N, Css, M>(class_prefix: N, css: Css, manager: M) -> Result<Self>
+    pub fn create_with_manager<'a, N, Css, M>(class_prefix: N, css: Css, manager: M) -> Result<Self>
     where
         N: Into<Cow<'static, str>>,
-        Css: IntoSheet,
+        Css: Into<StyleSource<'a>>,
         M: Into<StyleManager>,
     {
-        let css = css.into_sheet()?;
-        Self::create_impl(class_prefix.into(), css, manager.into())
+        Self::create_impl(class_prefix.into(), css.into(), manager.into())
     }
 
     /// Returns the class name for current style
