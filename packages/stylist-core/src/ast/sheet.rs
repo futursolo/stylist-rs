@@ -86,7 +86,7 @@ mod feat_parser {
                 return Ok(m.clone());
             }
 
-            let m: Sheet = Parser::parse(s)?.into();
+            let m: Sheet = Parser::parse(s)?;
 
             cached_sheets.insert(s.to_string(), m.clone());
 
