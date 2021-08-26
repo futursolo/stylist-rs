@@ -77,8 +77,6 @@ mod test {
             @media print {
                 fontFace: Roboto;
             }
-            @-webkit-keyframes {
-            }
             @supports (foo: bar) {
                 background-color: grey;
             }

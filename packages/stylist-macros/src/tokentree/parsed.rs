@@ -80,6 +80,7 @@ pub struct CssAtRule {
     name: CssIdent,
     prelude: Vec<ComponentValue>,
     contents: CssAtRuleContent,
+    errors: Vec<ParseError>,
 }
 // =====================================================================
 // =====================================================================
@@ -245,11 +246,18 @@ impl Parse for CssQualifiedRule {
 impl Parse for CssAtRule {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
         let at = input.parse()?;
-        let name = input.parse()?;
+        let name = input.parse::<CssIdent>()?;
 
         // Consume all tokens till the next ';' or the next block
         let mut component_iter = ComponentValueStream::from(input).peekable();
         let mut prelude = vec![];
+        let mut errors = vec![];
+        if !["media", "supports"].contains(&name.stringify().as_str()) {
+            errors.push(ParseError::new_spanned(
+                &name,
+                format!("@-rule '{}' not supported", name.stringify()),
+            ));
+        }
 
         let contents = loop {
             if input.peek(token::Semi) {
@@ -272,6 +280,7 @@ impl Parse for CssAtRule {
             name,
             prelude,
             contents,
+            errors,
         })
     }
 }
@@ -477,6 +486,7 @@ impl CssAtRule {
             name: quote! { #name_lit.into() },
             prelude: self.prelude,
             contents,
+            errors: self.errors,
         })
     }
 }

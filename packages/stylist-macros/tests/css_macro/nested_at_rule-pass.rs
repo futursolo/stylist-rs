@@ -5,7 +5,7 @@ fn main() {
             @media print {
                 background-color: grey;
             }
-            @page {
+            @supports (display: grid) {
                 margin: ${"2cm"};
             }
         }
@@ -17,7 +17,7 @@ fn main() {
 background-color: grey;
 }}
 }}
-@page  {{
+@supports (display:grid) {{
 .{cls} .outer {{
 margin: 2cm;
 }}

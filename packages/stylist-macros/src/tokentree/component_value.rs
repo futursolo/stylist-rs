@@ -378,7 +378,7 @@ impl ComponentValue {
                 args.iter().all(|a| a.is_attribute_token())
             }
             Self::Block(_) => false,
-            Self::Token(PreservedToken::Punct(p)) => "/:,".contains(p.as_char()),
+            Self::Token(PreservedToken::Punct(p)) => "/:,#".contains(p.as_char()),
         }
     }
 

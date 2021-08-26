@@ -18,6 +18,7 @@ pub struct OutputAtRule {
     pub name: TokenStream,
     pub prelude: Vec<ComponentValue>,
     pub contents: Vec<TokenStream>,
+    pub errors: Vec<ParseError>,
 }
 pub struct OutputQualifiedRule {
     pub qualifier: TokenStream,
@@ -83,12 +84,15 @@ impl Reify for OutputAtRule {
             name,
             prelude,
             contents,
+            errors,
         } = self;
 
         let prelude_parts = prelude.into_iter().flat_map(|p| p.reify_parts());
+        let errors = errors.into_iter().map(|e| e.into_compile_error());
         quote! {
             ::stylist::ast::Rule {
                 condition: {
+                    #( #errors )*
                     let mut #ident_condition = ::std::vec::Vec::<::stylist::ast::StringFragment>::new();
                     #ident_condition.push( "@".into() );
                     #ident_condition.push( #name );
