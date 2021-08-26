@@ -64,14 +64,12 @@ impl Reify for OutputSheet {
         let Self { contents } = self;
 
         quote! {
-            ::stylist::ast::SheetRef::from(
-                ::stylist::ast::Sheet::from(
-                    {
-                        let mut #ident_scopes = ::std::vec::Vec::<::stylist::ast::ScopeContent>::new();
-                        #( #ident_scopes.push( #contents ); )*
-                        #ident_scopes
-                    }
-                )
+            ::stylist::ast::Sheet::from(
+                {
+                    let mut #ident_scopes = ::std::vec::Vec::<::stylist::ast::ScopeContent>::new();
+                    #( #ident_scopes.push( #contents ); )*
+                    #ident_scopes
+                }
             )
         }
     }
