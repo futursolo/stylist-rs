@@ -1,22 +1,24 @@
-use super::output::{
-    OutputAtRule, OutputAttribute, OutputQualifiedRule, OutputQualifier, OutputRuleContent,
-    OutputScopeContent, OutputSheet, Reify,
+use super::{
+    component_value::{
+        ComponentValue, ComponentValueStream, InjectedExpression, PreservedToken,
+        SelectorValidation, SimpleBlock,
+    },
+    css_ident::CssIdent,
+    output::{
+        OutputAtRule, OutputAttribute, OutputQualifiedRule, OutputQualifier, OutputRuleContent,
+        OutputScopeContent, OutputSheet, Reify,
+    },
 };
-use crate::tokentree::component_value::ComponentValue;
-use crate::tokentree::component_value::ComponentValueStream;
-use crate::tokentree::component_value::InjectedExpression;
-use crate::tokentree::component_value::PreservedToken;
-use crate::tokentree::component_value::SelectorValidation;
-use crate::tokentree::component_value::SimpleBlock;
-use crate::tokentree::css_ident::CssIdent;
 use itertools::Itertools;
 use proc_macro2::TokenStream;
-use quote::quote;
-use quote::ToTokens;
+use quote::{quote, ToTokens};
 use std::iter::Peekable;
-use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
-use syn::spanned::Spanned;
-use syn::{braced, token};
+use syn::{
+    braced,
+    parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
+    spanned::Spanned,
+    token,
+};
 
 #[derive(Debug)]
 pub struct CssRootNode {

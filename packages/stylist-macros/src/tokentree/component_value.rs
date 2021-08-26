@@ -1,12 +1,12 @@
-use crate::tokentree::css_ident::CssIdent;
+use super::css_ident::CssIdent;
 use proc_macro2::{Literal, Punct, Span, TokenStream};
 use quote::{quote, quote_spanned, ToTokens};
-use std::iter::FromIterator;
-use std::ops::Deref;
-use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
-use syn::LitStr;
-use syn::{braced, bracketed, parenthesized, token};
-use syn::{Expr, Ident, Lit};
+use std::{iter::FromIterator, ops::Deref};
+use syn::{
+    braced, bracketed, parenthesized,
+    parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
+    token, Expr, Ident, Lit, LitStr,
+};
 
 #[derive(Debug, Clone)]
 pub enum PreservedToken {

@@ -1,11 +1,11 @@
-use crate::tokentree::component_value::ComponentValue;
-use crate::tokentree::component_value::PreservedToken;
+use super::component_value::{ComponentValue, PreservedToken};
 use itertools::Itertools;
-use proc_macro2::Span;
-use proc_macro2::TokenStream;
+use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::parse::{Error as ParseError, Result as ParseResult};
-use syn::Ident;
+use syn::{
+    parse::{Error as ParseError, Result as ParseResult},
+    Ident,
+};
 // =====================================================================
 // =====================================================================
 // Output structs + quoting

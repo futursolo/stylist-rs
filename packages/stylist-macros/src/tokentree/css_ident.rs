@@ -1,12 +1,12 @@
 use convert_case::{Case, Casing};
-use proc_macro2::TokenStream;
-use proc_macro2::{Punct, Spacing};
+use proc_macro2::{Punct, Spacing, TokenStream};
 use quote::ToTokens;
-use syn::parse::{Lookahead1, Parse, ParseBuffer, Result as ParseResult};
-use syn::spanned::Spanned;
-use syn::Ident;
-use syn::LitStr;
-use syn::{ext::IdentExt, token};
+use syn::{
+    ext::IdentExt,
+    parse::{Lookahead1, Parse, ParseBuffer, Result as ParseResult},
+    spanned::Spanned,
+    token, Ident, LitStr,
+};
 
 syn::custom_punctuation!(DoubleSub, --);
 
