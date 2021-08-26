@@ -18,73 +18,12 @@ stylist = "0.8"
 
 ## Usage
 
-### Procedural Macros
-
-To create a stylesheet, you can use `style!`:
-
-```rust
-use stylist::style;
-
-let style = style!(
-   // A CSS string literal
-   r#"
-       background-color: red;
-
-       .nested {
-           background-color: blue;
-           width: 100px
-       }
-   "#
-).expect("Failed to mount style");
-```
-### Style API
-
-If you want to parse a string into a style at runtime, you can use `Style::new`:
-
-```rust
-use stylist::Style;
-
-let style = Style::new(
-    // A CSS string
-    r#"
-        background-color: red;
-
-        .nested {
-            background-color: blue;
-            width: 100px
-        }
-    "#,
-).expect("Failed to create style");
-```
-
-### YieldStyle API
-
-Alternatively, any struct that implements `YieldStyle` trait can call
-`self.style()` to get a `Style` instance.
-
-```rust
-use stylist::{css, StyleSource, YieldStyle};
-
-pub struct Component;
-
-impl YieldStyle for Component {
-    fn style_from(&self) -> StyleSource<'static> {
-        css!("color: red;")
-    }
-}
-
-impl Component {
-    fn print_style_class(&self) {
-        println!("{}", self.style().get_class_name());
-    }
-}
-```
+For detailed usage, please see
+[documentation](https://docs.rs/stylist/).
 
 ## Yew Integration
 
-To enable yew integration. Enable feature `yew_integration` in `Cargo.toml`.
-
-Then create a style and use it with yew like this:
+To style your yew component, you can use `css!` macro:
 
 ```rust
 use stylist::css;
@@ -111,6 +50,51 @@ impl Component for MyStyledComponent {
         html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
     }
 }
+```
+
+### Standalone
+
+To create a stylesheet, you can use `style!`:
+
+```rust
+use stylist::style;
+
+let style = style!(
+   // A CSS string literal
+   r#"
+       background-color: red;
+
+       .nested {
+           background-color: blue;
+           width: 100px
+       }
+   "#
+).expect("Failed to mount style");
+
+// stylist-uSu9NZZu
+println!("{}", style.get_class_name());
+```
+
+### Runtime Style
+
+If you want to parse a string into a style at runtime, you can use `Style::new`:
+
+```rust
+use stylist::Style;
+
+let style_str = r#"
+    background-color: red;
+
+    .nested {
+        background-color: blue;
+        width: 100px
+    }
+"#;
+
+let style = Style::new(style_str).expect("Failed to create style");
+
+// stylist-uSu9NZZu
+println!("{}", style.get_class_name());
 ```
 
 ### Theming
