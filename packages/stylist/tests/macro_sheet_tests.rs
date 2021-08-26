@@ -1,9 +1,15 @@
 use std::borrow::Cow;
 
-use stylist::ast::*;
+use stylist::{ast::*, Style};
+
+fn init() {
+    let _ = env_logger::builder().is_test(true).try_init();
+}
 
 #[test]
 fn test_sheet_interpolation() {
+    init();
+
     let parsed = sheet!(
         r#"
             background-color: red;

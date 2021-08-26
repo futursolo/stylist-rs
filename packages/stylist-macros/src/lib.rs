@@ -60,28 +60,4 @@ mod test {
         let output = super::sheet::macro_fn(input.parse().unwrap());
         debug!("{}", output);
     }
-
-    #[test]
-    fn test_macro_invokation() {
-        init();
-        let color_red = "red";
-        let style = stylist::style! {
-            &:has(> img) {
-                backgroundColor: black;
-            }
-            backgroundColor: blue;
-            backgroundColor: ${"color"};
-            &, .some-class, --someid, struct, .${color_red}[text~=""] {
-                color: ${color_red};
-            }
-            @media print {
-                fontFace: Roboto;
-            }
-            @supports (foo: bar) {
-                background-color: grey;
-            }
-        }
-        .expect("");
-        debug!("{}", style.get_style_str())
-    }
 }
