@@ -35,7 +35,7 @@ let style = style!(
            width: 100px
        }
    "#
-);
+).expect("Failed to mount style");
 ```
 ### Style API
 

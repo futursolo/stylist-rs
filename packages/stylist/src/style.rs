@@ -3,7 +3,7 @@ use std::fmt;
 use std::ops::Deref;
 use std::rc::Rc;
 
-use crate::ast::{SheetRef, ToStyleStr};
+use crate::ast::ToStyleStr;
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
 use crate::{Result, StyleSource};
@@ -152,6 +152,9 @@ impl Style {
         css: StyleSource<'_>,
         manager: StyleManager,
     ) -> Result<Self> {
+        #[cfg(all(debug_assertions, feature = "parser"))]
+        use crate::ast::SheetRef;
+
         let css = css.try_to_sheet()?;
 
         // Creates the StyleKey, return from registry if already cached.

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::ast::{SheetRef, ToStyleStr};
+use crate::ast::ToStyleStr;
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
 use crate::style::StyleContent;
@@ -23,8 +23,10 @@ impl GlobalStyle {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
     fn create_impl(css: StyleSource<'_>, manager: StyleManager) -> Result<Self> {
-        let prefix = format!("{}-global", manager.prefix());
+        #[cfg(all(debug_assertions, feature = "parser"))]
+        use crate::ast::SheetRef;
 
+        let prefix = format!("{}-global", manager.prefix());
         let css = css.try_to_sheet()?;
 
         // Creates the StyleKey, return from registry if already cached.
