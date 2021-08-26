@@ -344,11 +344,10 @@ impl Default for CssScopeQualifier {
 ///
 /// Errors in nested items are reported as spanned TokenStreams.
 ///
-fn fold_normalized_scope_hierarchy<'it, R: 'it>(
+fn fold_normalized_scope_hierarchy<'it>(
     it: impl 'it + IntoIterator<Item = CssScopeContent>,
-    handle_item: impl 'it + Copy + Fn(OutputSheetContent) -> R,
-) -> impl 'it + Iterator<Item = ParseResult<R>> {
-    fold_tokens_impl(Default::default(), it, handle_item)
+) -> impl 'it + Iterator<Item = ParseResult<OutputSheetContent>> {
+    fold_tokens_impl(Default::default(), it)
 }
 
 enum OutputSheetContent {
@@ -356,11 +355,10 @@ enum OutputSheetContent {
     QualifiedRule(OutputQualifiedRule),
 }
 
-fn fold_tokens_impl<'it, R: 'it>(
+fn fold_tokens_impl<'it>(
     context: CssScopeQualifier,
     it: impl 'it + IntoIterator<Item = CssScopeContent>,
-    handle_item: impl 'it + Copy + Fn(OutputSheetContent) -> R,
-) -> impl 'it + Iterator<Item = ParseResult<R>> {
+) -> impl 'it + Iterator<Item = ParseResult<OutputSheetContent>> {
     // Step one: collect attributes into blocks, flatten and lift nested blocks
     struct Wrapper<I: Iterator> {
         it: Peekable<I>,
@@ -408,18 +406,42 @@ fn fold_tokens_impl<'it, R: 'it>(
     }
     .flat_map(move |w| match w {
         WrappedCase::AttributeCollection(attrs) => {
-            let result = Ok(handle_item(OutputSheetContent::QualifiedRule(attrs)));
-            Box::new(std::iter::once(result)) as Box<dyn '_ + Iterator<Item = _>>
-        }
-        WrappedCase::AtRule(r) => {
-            let result = Ok(handle_item(r.fold_in_context(context.clone())));
+            let result = Ok(OutputSheetContent::QualifiedRule(attrs));
             Box::new(std::iter::once(result))
         }
-        WrappedCase::Qualified(b) => {
-            let nested = b.fold_in_context(context.clone());
-            Box::new(nested.map(move |i| i.map(|c| handle_item(c))))
+        WrappedCase::AtRule(r) => {
+            let result = Ok(r.fold_in_context(context.clone()));
+            Box::new(std::iter::once(result))
         }
+        WrappedCase::Qualified(b) => b.fold_in_context(context.clone()),
     })
+}
+
+fn reify_scope_contents<
+    O: From<OutputSheetContent> + Reify,
+    It: Iterator<Item = ParseResult<OutputSheetContent>>,
+>(
+    scope: It,
+) -> Vec<TokenStream> {
+    scope.map(|i| i.map(O::from).reify()).collect()
+}
+
+impl From<OutputSheetContent> for OutputRuleContent {
+    fn from(c: OutputSheetContent) -> Self {
+        match c {
+            OutputSheetContent::QualifiedRule(block) => Self::Block(block),
+            OutputSheetContent::AtRule(rule) => Self::AtRule(rule),
+        }
+    }
+}
+
+impl From<OutputSheetContent> for OutputScopeContent {
+    fn from(c: OutputSheetContent) -> Self {
+        match c {
+            OutputSheetContent::QualifiedRule(block) => Self::Block(block),
+            OutputSheetContent::AtRule(rule) => Self::AtRule(rule),
+        }
+    }
 }
 
 impl CssQualifiedRule {
@@ -438,8 +460,7 @@ impl CssQualifiedRule {
         } else {
             ctx
         };
-        let collected = fold_tokens_impl(relevant_ctx, self.scope.contents, |c| c);
-        Box::new(collected)
+        Box::new(fold_tokens_impl(relevant_ctx, self.scope.contents))
     }
 }
 
@@ -447,12 +468,9 @@ impl CssAtRule {
     fn fold_in_context(self, ctx: CssScopeQualifier) -> OutputSheetContent {
         let contents = match self.contents {
             CssAtRuleContent::Empty(_) => Vec::new(),
-            CssAtRuleContent::Scope(scope) => fold_tokens_impl(ctx, scope.contents, |c| match c {
-                OutputSheetContent::QualifiedRule(block) => OutputRuleContent::Block(block),
-                OutputSheetContent::AtRule(rule) => OutputRuleContent::AtRule(rule),
-            })
-            .map(|c| c.reify())
-            .collect(),
+            CssAtRuleContent::Scope(scope) => {
+                reify_scope_contents::<OutputRuleContent, _>(fold_tokens_impl(ctx, scope.contents))
+            }
         };
         let name_lit = self.name.quote_at_rule();
         OutputSheetContent::AtRule(OutputAtRule {
@@ -465,12 +483,9 @@ impl CssAtRule {
 
 impl CssRootNode {
     pub fn into_output(self) -> OutputSheet {
-        let contents = fold_normalized_scope_hierarchy(self.root_contents, |c| match c {
-            OutputSheetContent::QualifiedRule(block) => OutputScopeContent::Block(block),
-            OutputSheetContent::AtRule(rule) => OutputScopeContent::AtRule(rule),
-        })
-        .map(|c| c.reify())
-        .collect();
+        let contents = reify_scope_contents::<OutputScopeContent, _>(
+            fold_normalized_scope_hierarchy(self.root_contents),
+        );
         OutputSheet { contents }
     }
 }
@@ -485,7 +500,7 @@ impl CssScopeQualifier {
 
 impl CssAttribute {
     fn into_output(self) -> OutputAttribute {
-        let key_tokens = self.name.reify();
+        let key_tokens = self.name.reify_name();
         let values = self.value.values;
 
         OutputAttribute {
@@ -496,7 +511,7 @@ impl CssAttribute {
 }
 
 impl CssAttributeName {
-    pub fn reify(self) -> TokenStream {
+    fn reify_name(self) -> TokenStream {
         match self {
             Self::Identifier(name) => {
                 let quoted_literal = name.quote_attribute();
