@@ -31,7 +31,3 @@ pub use stylist_core::ast::*;
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::sheet;
-
-mod sheet_ref;
-
-pub use sheet_ref::SheetRef;

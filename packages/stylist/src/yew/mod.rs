@@ -3,7 +3,7 @@
 use yew::html::Classes;
 use yew::html::IntoPropValue;
 
-use crate::ast::SheetRef;
+use crate::ast::Sheet;
 use crate::{Style, StyleSource};
 
 mod global;
@@ -26,7 +26,7 @@ impl From<StyleSource<'_>> for Classes {
     }
 }
 
-impl IntoPropValue<StyleSource<'static>> for SheetRef {
+impl IntoPropValue<StyleSource<'static>> for Sheet {
     fn into_prop_value(self) -> StyleSource<'static> {
         self.into()
     }
@@ -63,14 +63,14 @@ mod feat_parser {
         }
     }
 
-    impl<'a> IntoPropValue<StyleSource<'static>> for &'static str {
-        fn into_prop_value(self) -> StyleSource<'static> {
+    impl<'a> IntoPropValue<StyleSource<'a>> for &'a str {
+        fn into_prop_value(self) -> StyleSource<'a> {
             self.into()
         }
     }
 
-    impl<'a> IntoPropValue<StyleSource<'static>> for Cow<'static, str> {
-        fn into_prop_value(self) -> StyleSource<'static> {
+    impl<'a> IntoPropValue<StyleSource<'a>> for Cow<'a, str> {
+        fn into_prop_value(self) -> StyleSource<'a> {
             self.into()
         }
     }

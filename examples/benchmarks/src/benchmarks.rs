@@ -1,4 +1,4 @@
-use stylist::ast::SheetRef;
+use stylist::ast::Sheet;
 use stylist::Style;
 
 use crate::utils::now;
@@ -6,7 +6,7 @@ use crate::utils::now;
 pub fn bench_parse_simple() -> f64 {
     let start_time = now();
     for _ in 0..1_000_000 {
-        let _sheet: SheetRef = "color:red;".parse().expect("Failed to parse stylesheet.");
+        let _sheet: Sheet = "color:red;".parse().expect("Failed to parse stylesheet.");
     }
 
     now() - start_time
@@ -15,7 +15,7 @@ pub fn bench_parse_simple() -> f64 {
 pub fn bench_parse_simple_no_cache() -> f64 {
     let start_time = now();
     for i in 0..100_000 {
-        let _sheet: SheetRef = format!("height: {}px;", i)
+        let _sheet: Sheet = format!("height: {}px;", i)
             .parse()
             .expect("Failed to parse stylesheet.");
     }
@@ -26,7 +26,7 @@ pub fn bench_parse_simple_no_cache() -> f64 {
 pub fn bench_parse_complex() -> f64 {
     let start_time = now();
     for _ in 0..100_000 {
-        let _sheet: SheetRef = r#"
+        let _sheet: Sheet = r#"
             color:red;
 
             .class-name-a {
@@ -56,7 +56,7 @@ pub fn bench_parse_complex() -> f64 {
 pub fn bench_parse_complex_no_cache() -> f64 {
     let start_time = now();
     for i in 0..10_000 {
-        let _sheet: SheetRef = format!(
+        let _sheet: Sheet = format!(
             r#"
                 color:red;
                 height: {}px;
@@ -92,7 +92,7 @@ pub fn bench_cached_lookup() -> f64 {
     let mut sheets = Vec::new();
 
     for i in 1..100 {
-        let sheet: SheetRef = {
+        let sheet: Sheet = {
             let mut s = String::new();
             for _ in 0..i {
                 s.push_str(snippet);
@@ -123,7 +123,7 @@ pub fn bench_cached_lookup_big_sheet() -> f64 {
     let mut sheets = Vec::new();
 
     for i in 1..100 {
-        let sheet: SheetRef = {
+        let sheet: Sheet = {
             let mut s = String::new();
             for _ in 0..i {
                 s.push_str(snippet);
@@ -154,7 +154,7 @@ pub fn bench_mounting() -> f64 {
     let mut sheets = Vec::new();
 
     for i in 1..1001 {
-        let sheet: SheetRef = {
+        let sheet: Sheet = {
             let mut s = String::new();
             for _ in 0..i {
                 s.push_str(snippet);

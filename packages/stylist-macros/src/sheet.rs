@@ -7,7 +7,6 @@ use proc_macro_error::{abort, abort_call_site};
 use std::convert::TryFrom;
 
 use stylist_core::ast::Sheet;
-use stylist_parser::Parser;
 
 use crate::argument::Argument;
 use crate::to_tokens_with_args::ToTokensWithArgs;
@@ -25,7 +24,7 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
         Err(e) => return e.to_compile_error2(),
     };
 
-    let sheet: Sheet = match Parser::parse(s_literal.value()) {
+    let sheet: Sheet = match s_literal.value().parse() {
         Ok(m) => m,
 
         Err(e) => abort!(first_token, "{}", e.to_string()),

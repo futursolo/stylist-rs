@@ -1,5 +1,9 @@
 use std::borrow::Cow;
 
+use crate::ast::{
+    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StyleAttribute,
+};
+use crate::{Error, Result};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while, take_while1},
@@ -10,17 +14,13 @@ use nom::{
     sequence::{delimited, pair, preceded, separated_pair, terminated},
     IResult,
 };
-use stylist_core::ast::{
-    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StyleAttribute,
-};
-use stylist_core::{Error, Result};
 
 #[cfg(test)]
 use log::trace;
 
 /// A lightweight CSS Parser.
 #[derive(Debug)]
-pub struct Parser {}
+pub(crate) struct Parser {}
 
 #[allow(clippy::let_and_return)]
 impl Parser {

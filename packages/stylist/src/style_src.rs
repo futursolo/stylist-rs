@@ -1,17 +1,25 @@
 #[cfg(feature = "parser")]
 use std::borrow::Cow;
 
-use crate::ast::SheetRef;
+#[cfg(not(feature = "parser"))]
+use std::marker::PhantomData;
+
+use crate::ast::Sheet;
 use crate::Result;
 #[cfg(feature = "yew_integration")]
 use crate::Style;
 
+#[cfg(feature = "parser")]
 #[derive(Debug, Clone, PartialEq)]
 enum SheetSource<'a> {
-    #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
-    #[cfg(feature = "parser")]
     String(Cow<'a, str>),
-    Sheet(SheetRef),
+    Sheet(Sheet),
+}
+
+#[cfg(not(feature = "parser"))]
+#[derive(Debug, Clone, PartialEq)]
+enum SheetSource {
+    Sheet(Sheet),
 }
 
 /// A struct that can be used as a source to create a [`Style`](crate::Style) or
@@ -19,7 +27,7 @@ enum SheetSource<'a> {
 ///
 /// This struct is usually created by [`css!`](crate::css) macro.
 ///
-/// You can also get a StyleSource instance from a string or a [`SheetRef`] by calling `.into()`.
+/// You can also get a StyleSource instance from a string or a [`Sheet`] by calling `.into()`.
 ///
 /// ```rust
 /// use stylist::StyleSource;
@@ -34,16 +42,22 @@ enum SheetSource<'a> {
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct StyleSource<'a> {
+    #[cfg(feature = "parser")]
     inner: SheetSource<'a>,
+
+    #[cfg(not(feature = "parser"))]
+    inner: SheetSource,
+    #[cfg(not(feature = "parser"))]
+    _marker: PhantomData<&'a ()>,
 }
 
 impl StyleSource<'_> {
-    pub fn try_to_sheet(&self) -> Result<SheetRef> {
+    pub fn try_to_sheet(&self) -> Result<Sheet> {
         match self.inner {
             SheetSource::Sheet(ref m) => Ok(m.clone()),
             #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
             #[cfg(feature = "parser")]
-            SheetSource::String(ref m) => m.parse::<SheetRef>(),
+            SheetSource::String(ref m) => m.parse::<Sheet>(),
         }
     }
 
@@ -54,10 +68,12 @@ impl StyleSource<'_> {
     }
 }
 
-impl From<SheetRef> for StyleSource<'_> {
-    fn from(other: SheetRef) -> StyleSource<'static> {
+impl From<Sheet> for StyleSource<'_> {
+    fn from(other: Sheet) -> StyleSource<'static> {
         StyleSource {
             inner: SheetSource::Sheet(other),
+            #[cfg(not(feature = "parser"))]
+            _marker: PhantomData,
         }
     }
 }

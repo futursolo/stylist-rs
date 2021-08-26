@@ -63,12 +63,12 @@ Alternatively, any struct that implements `YieldStyle` trait can call
 `self.style()` to get a `Style` instance.
 
 ```rust
-use stylist::{css, IntoStyle, YieldStyle};
+use stylist::{css, StyleSource, YieldStyle};
 
 pub struct Component;
 
 impl YieldStyle for Component {
-    fn style_from(&self) -> IntoStyle {
+    fn style_from(&self) -> StyleSource<'static> {
         css!("color: red;")
     }
 }

@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::ast::SheetRef;
+use crate::ast::Sheet;
 use crate::style::StyleContent;
 
 /// A [`StyleKey`].
@@ -13,7 +13,7 @@ use crate::style::StyleContent;
 pub(crate) struct StyleKey {
     pub is_global: bool,
     pub prefix: Cow<'static, str>,
-    pub ast: SheetRef,
+    pub ast: Sheet,
 }
 
 /// The style registry is a registry that keeps an instance of all styles for current manager.
@@ -48,7 +48,7 @@ mod tests {
     use crate::manager::StyleManager;
     use crate::*;
 
-    fn sample_scopes() -> SheetRef {
+    fn sample_scopes() -> Sheet {
         "color: red;".parse().expect("Failed to Parse style.")
     }
 

@@ -17,13 +17,13 @@ keywords = [
 categories = ["wasm", "web-programming"]
 readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
+resolver = "2"
 
 [lib]
 proc-macro = true
 
 [dependencies]
-stylist-core = { path = "../stylist-core", version = "0.9.0" }
-stylist-parser = { path = "../stylist-parser", version = "0.9.0" }
+stylist-core = { path = "../stylist-core", version = "0.9.0", features = ["parser"] }
 
 litrs = "0.2.3"
 proc-macro-error = "1.0.4"

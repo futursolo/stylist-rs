@@ -234,10 +234,10 @@ impl ToTokensWithArgs for Sheet {
         if args.is_empty() {
             quote! { {
                 use ::stylist::vendor::once_cell::sync::Lazy;
-                use ::stylist::ast::{Sheet, SheetRef};
+                use ::stylist::ast::Sheet;
 
-                static SHEET_REF: Lazy<SheetRef> = Lazy::new(
-                    || SheetRef::from(Sheet::from(vec![#scope_tokens]))
+                static SHEET_REF: Lazy<Sheet> = Lazy::new(
+                    || Sheet::from(vec![#scope_tokens])
                 );
 
 
@@ -245,9 +245,9 @@ impl ToTokensWithArgs for Sheet {
             } }
         } else {
             quote! { {
-                use ::stylist::ast::{Sheet, SheetRef};
+                use ::stylist::ast::Sheet;
 
-                SheetRef::from(Sheet::from(vec![#scope_tokens]))
+                Sheet::from(vec![#scope_tokens])
             } }
         }
     }

@@ -153,7 +153,7 @@ impl Style {
         manager: StyleManager,
     ) -> Result<Self> {
         #[cfg(all(debug_assertions, feature = "parser"))]
-        use crate::ast::SheetRef;
+        use crate::ast::Sheet;
 
         let css = css.try_to_sheet()?;
 
@@ -178,7 +178,7 @@ impl Style {
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.
         #[cfg(all(debug_assertions, feature = "parser"))]
-        style_str.parse::<SheetRef>()?;
+        style_str.parse::<Sheet>()?;
 
         let new_style = Self {
             inner: StyleContent {

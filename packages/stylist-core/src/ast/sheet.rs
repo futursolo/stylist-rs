@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::fmt;
 use std::ops::Deref;
+use std::sync::Arc;
 
 use super::{ScopeContent, ToStyleStr};
 
@@ -9,7 +10,7 @@ use crate::Result;
 /// The top node of a style string.
 // Once a sheet is constructed, it becomes immutable.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Sheet(Cow<'static, [ScopeContent]>);
+pub struct Sheet(Arc<Cow<'static, [ScopeContent]>>);
 
 impl Deref for Sheet {
     type Target = [ScopeContent];
@@ -21,25 +22,25 @@ impl Deref for Sheet {
 
 impl Sheet {
     pub fn new() -> Self {
-        Self(Cow::Borrowed(&[]))
+        Self(Arc::new(Cow::Borrowed(&[])))
     }
 }
 
 impl From<Vec<ScopeContent>> for Sheet {
     fn from(v: Vec<ScopeContent>) -> Self {
-        Self(v.into())
+        Self(Arc::new(v.into()))
     }
 }
 
 impl From<&'static [ScopeContent]> for Sheet {
     fn from(v: &'static [ScopeContent]) -> Self {
-        Self(v.into())
+        Self(Arc::new(v.into()))
     }
 }
 
 impl From<Cow<'static, [ScopeContent]>> for Sheet {
     fn from(v: Cow<'static, [ScopeContent]>) -> Self {
-        Self(v)
+        Self(Arc::new(v))
     }
 }
 
@@ -57,5 +58,39 @@ impl ToStyleStr for Sheet {
         }
 
         Ok(())
+    }
+}
+
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
+mod feat_parser {
+    use once_cell::sync::Lazy;
+    use std::collections::HashMap;
+    use std::str::FromStr;
+    use std::sync::{Arc, Mutex};
+
+    use super::*;
+
+    static CACHED_SHEETS: Lazy<Arc<Mutex<HashMap<String, Sheet>>>> = Lazy::new(Arc::default);
+
+    impl FromStr for Sheet {
+        type Err = crate::Error;
+
+        fn from_str(s: &str) -> crate::Result<Self> {
+            use crate::parser::Parser;
+
+            let cached_sheets = CACHED_SHEETS.clone();
+            let mut cached_sheets = cached_sheets.lock().unwrap();
+
+            if let Some(m) = cached_sheets.get(s) {
+                return Ok(m.clone());
+            }
+
+            let m: Sheet = Parser::parse(s)?.into();
+
+            cached_sheets.insert(s.to_string(), m.clone());
+
+            Ok(m)
+        }
     }
 }

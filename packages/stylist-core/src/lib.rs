@@ -8,3 +8,7 @@
 mod error;
 pub use error::{Error, Result};
 pub mod ast;
+
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
+mod parser;

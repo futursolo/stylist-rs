@@ -16,7 +16,7 @@
 - Parsed results are now cached.
 - Updated `nom` to `v7`.
 - Runtime parser is now optional (disabling `parser` will make the bundle
-  ~60K smaller).
+  ~70K smaller).
 
 ## v0.8
 
