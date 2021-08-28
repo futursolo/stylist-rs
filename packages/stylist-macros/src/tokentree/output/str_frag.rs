@@ -84,10 +84,13 @@ impl Reify for OutputFragment {
 pub fn fragment_spacing(l: &OutputFragment, r: &OutputFragment) -> Option<OutputFragment> {
     use OutputFragment::*;
     use PreservedToken::*;
-    match (l, r) {
-        (Delimiter(_, false), Token(Ident(_))) => true,
-        (Token(Ident(_)) | Token(Literal(_)), Token(Ident(_)) | Token(Literal(_))) => true,
-        _ => false,
-    }
-    .then(|| ' '.into())
+    let needs_spacing = matches!(
+        (l, r),
+        (Delimiter(_, false), Token(Ident(_)))
+            | (
+                Token(Ident(_)) | Token(Literal(_)),
+                Token(Ident(_)) | Token(Literal(_))
+            )
+    );
+    needs_spacing.then(|| ' '.into())
 }
