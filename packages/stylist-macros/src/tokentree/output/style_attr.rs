@@ -1,4 +1,5 @@
-use super::{super::component_value::ComponentValue, fragment_spacing, Reify};
+use super::{super::component_value::ComponentValue, fragment_coalesce, fragment_spacing, Reify};
+use itertools::Itertools;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use stylist_macro_utils::SpacedIterator;
@@ -21,6 +22,7 @@ impl Reify for OutputAttribute {
                 Ok(c) => c.reify_parts().into_iter().collect(),
             })
             .spaced_with(fragment_spacing)
+            .coalesce(fragment_coalesce)
             .map(|e| e.reify());
         quote! {
             ::stylist::ast::StyleAttribute {

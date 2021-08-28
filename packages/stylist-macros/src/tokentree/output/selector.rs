@@ -1,6 +1,6 @@
 use super::{
     super::component_value::{ComponentValue, PreservedToken},
-    fragment_spacing, Reify,
+    fragment_coalesce, fragment_spacing, Reify,
 };
 use itertools::Itertools;
 use proc_macro2::{Span, TokenStream};
@@ -28,6 +28,7 @@ impl Reify for OutputQualifier {
             let parts = selector_parts
                 .flat_map(|p| p.reify_parts())
                 .spaced_with(fragment_spacing)
+                .coalesce(fragment_coalesce)
                 .map(|e| e.reify());
             quote! {
                 {

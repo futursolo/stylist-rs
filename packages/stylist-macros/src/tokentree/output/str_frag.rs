@@ -65,18 +65,25 @@ impl OutputFragment {
             (Delimiter::None, _) => unreachable!("only actual delimiters allowed"),
         }
     }
+    /// Return the string literal that will be quoted, or a full tokenstream
+    fn reify_str_value(self) -> Result<LitStr, TokenStream> {
+        match self {
+            Self::Raw(t) => Err(t),
+            Self::Str(s) => Ok(s),
+            Self::Token(t) => Ok(t.quote_literal()),
+            Self::Delimiter(kind, start) => Ok(LitStr::new(
+                Self::str_for_delim(kind, start),
+                Span::call_site(),
+            )),
+        }
+    }
 }
 
 impl Reify for OutputFragment {
     fn reify(self) -> TokenStream {
-        match self {
-            Self::Raw(t) => t,
-            Self::Str(lit) => quote! { #lit.into() },
-            Self::Token(t) => Self::from(t.quote_literal()).reify(),
-            Self::Delimiter(kind, start) => {
-                let lit = LitStr::new(Self::str_for_delim(kind, start), Span::call_site());
-                Self::from(lit).reify()
-            }
+        match self.reify_str_value() {
+            Err(t) => t,
+            Ok(lit) => quote! { #lit.into() },
         }
     }
 }
@@ -93,4 +100,20 @@ pub fn fragment_spacing(l: &OutputFragment, r: &OutputFragment) -> Option<Output
             )
     );
     needs_spacing.then(|| ' '.into())
+}
+
+pub fn fragment_coalesce(
+    l: OutputFragment,
+    r: OutputFragment,
+) -> Result<OutputFragment, (OutputFragment, OutputFragment)> {
+    match (l.reify_str_value(), r.reify_str_value()) {
+        (Err(lt), Err(rt)) => Err((OutputFragment::Raw(lt), OutputFragment::Raw(rt))),
+        (Ok(lt), Err(rt)) => Err((OutputFragment::Str(lt), OutputFragment::Raw(rt))),
+        (Err(lt), Ok(rt)) => Err((OutputFragment::Raw(lt), OutputFragment::Str(rt))),
+        (Ok(lt), Ok(rt)) => {
+            let combined = lt.value() + &rt.value();
+            let lit = LitStr::new(&combined, Span::call_site());
+            Ok(OutputFragment::Str(lit))
+        }
+    }
 }

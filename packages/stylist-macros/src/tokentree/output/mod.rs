@@ -15,7 +15,7 @@ pub use rule_content::OutputRuleContent;
 mod style_attr;
 pub use style_attr::OutputAttribute;
 mod str_frag;
-pub use str_frag::{fragment_spacing, OutputFragment};
+pub use str_frag::{fragment_coalesce, fragment_spacing, OutputFragment};
 
 /// Reify a structure into an expression of a specific type.
 pub(crate) trait Reify {
