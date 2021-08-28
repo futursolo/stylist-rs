@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use stylist::{ast::*, Style};
+use stylist::ast::*;
 
 fn init() {
     let _ = env_logger::builder().is_test(true).try_init();
@@ -47,7 +47,11 @@ fn test_sheet_interpolation() {
             .into(),
         }),
         ScopeContent::Block(Block {
-            condition: vec![".nested".into(), ".some-selector".into()].into(),
+            condition: vec![
+                vec![".nested".into()].into(),
+                vec![".some-selector".into()].into(),
+            ]
+            .into(),
             style_attributes: vec![
                 StyleAttribute {
                     key: "background-color".into(),
@@ -107,7 +111,7 @@ fn test_sheet_escaped() {
 
     let expected = Sheet::from(vec![ScopeContent::Block(Block {
         condition: vec![
-            ".nested".into(),
+            vec![".nested".into()].into(),
             Selector {
                 fragments: vec!["\"".into(), "${".into(), "var_a}\"".into()].into(),
             },

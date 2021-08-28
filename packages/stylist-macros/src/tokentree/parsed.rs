@@ -463,6 +463,15 @@ impl CssQualifiedRule {
         let own_ctx = self.qualifier;
         if !own_ctx.qualifiers.is_empty() && !ctx.qualifiers.is_empty() {
             // TODO: figure out how to combine contexts
+            // !Warning!: simply duplicating the containing blocks will (if no special care is taken)
+            // also duplicate injected expressions, which will evaluate them multiple times, which can be
+            // unexpected and confusing to the user.
+            // !Warning!: when the qualifiers contain several selectors each, this can lead to an explosion
+            // of emitted blocks. Consider
+            // .one, .two, .three { .inner-one, .inner-two, .inner-three { background: ${injected_expr} } }
+            // Following emotion, this would expand to 9 blocks and evaluate `injected_expr` 9 times.
+            // A possibility would be collecting appearing expressions once up front and putting replacements
+            // into the blocks.
             let err = ParseError::new_spanned(own_ctx, "Can not nest qualified blocks (yet)");
             return Box::new(std::iter::once(Err(err)));
         }

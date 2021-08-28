@@ -186,129 +186,18 @@ pub use style::Style;
 pub use style_src::StyleSource;
 pub use yield_style::YieldStyle;
 
-/// A procedural macro that parses a string literal into a [`Style`].
-///
-/// This macro supports string interpolation, please see documentation of [`css!`] macro for
-/// usage.
-///
-/// # Example
-///
-/// ```
-/// use stylist::style;
-///
-/// // Returns a Style instance.
-/// let style = style!("color: red;");
-/// ```
-#[doc(inline)]
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::style;
-
-/// A procedural macro that parses a string literal into a [`GlobalStyle`].
-///
-/// This macro supports string interpolation, please see documentation of [`css!`] macro for
-/// usage.
-///
-/// # Example
-///
-/// ```
-/// use stylist::global_style;
-///
-/// // Returns a GlobalStyle instance.
-/// let style = global_style!("color: red;");
-/// ```
-#[doc(inline)]
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::global_style;
-
-/// A procedural macro that parses a string literal into a [`StyleSource`].
-///
-/// # Example
-///
-/// ```
-/// use stylist::css;
-/// use stylist::yew::Global;
-/// use yew::prelude::*;
-///
-/// let rendered = html! {<div class=css!("color: red;") />};
-/// let rendered_global = html! {<Global css=css!("color: red;") />};
-/// ```
-///
-/// # String Interpolation
-///
-/// This macro supports string interpolation on values of style attributes, selectors, `@supports` and `@media` rules.
-///
-/// Interpolated strings are denoted with `${ident}` and any type that implements [`std::fmt::Display`] can be
-/// used as value. Only named argument are supported at this moment.
-///
-/// If you do need to output a `${` sequence, you may use `$${` to escape to a `${`.
-///
-///
-/// ## Example
-/// ```css
-/// content: "$${}";
-/// ```
-///
-/// Will be turned into:
-/// ```css
-/// content: "${}";
-/// ```
-///
-/// ## Note: `$${` escape can only present where `${` is valid in the css stylesheet.
-///
-/// Stylist currently does not check or escape the content of interpolated strings. It is possible
-/// to pass invalid strings that would result in an invalid stylesheet. In debug mode, if feature `parser` is
-/// enabled, Stylist will attempt to parse the stylesheet again after interpolated strings are
-/// substituted with its actual value to check if the final stylesheet is invalid.
-///
-/// ## Example
-///
-/// ```
-/// use stylist::{Style, css};
-/// use yew::prelude::*;
-///
-/// let s = css!(
-///     r#"
-///         color: ${color};
-///
-///         span, ${sel_div} {
-///             background-color: blue;
-///         }
-///
-///         @media screen and ${breakpoint} {
-///             display: flex;
-///         }
-///     "#,
-///     color = "red",
-///     sel_div = "div.selected",
-///     breakpoint = "(max-width: 500px)",
-/// );
-///
-/// let style = Style::new(s).expect("Failed to create style");
-///
-/// // Example Output:
-/// // .stylist-fIEWv6EP {
-/// // color: red;
-/// // }
-/// // stylist-fIEWv6EP span, .stylist-fIEWv6EP div.selected {
-/// // background-color: blue;
-/// // }
-/// // @media screen and (max-width: 500px) {
-/// // .stylist-fIEWv6EP {
-/// // display: flex;
-/// // }
-/// // }
-/// println!("{}", style.get_style_str());
-/// ```
-#[doc(inline)]
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::css;
-
 #[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
 #[cfg(feature = "yew_integration")]
 pub mod yew;
+
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub mod macros;
+
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+#[doc(no_inline)]
+pub use macros::{css, global_style, style};
 
 #[doc(inline)]
 pub use stylist_core::{Error, Result};
