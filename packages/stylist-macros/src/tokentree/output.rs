@@ -1,10 +1,14 @@
-use super::component_value::{ComponentValue, PreservedToken};
+use super::{
+    component_value::{ComponentValue, PreservedToken},
+    css_ident::CssIdent,
+    spacing_iterator::SpacedIterator,
+};
 use itertools::Itertools;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::{Delimiter, Span, TokenStream};
 use quote::quote;
 use syn::{
     parse::{Error as ParseError, Result as ParseResult},
-    Ident,
+    Ident, LitStr,
 };
 // =====================================================================
 // =====================================================================
@@ -41,6 +45,52 @@ pub struct OutputAttribute {
     pub key: TokenStream,
     pub values: Vec<ParseResult<ComponentValue>>,
 }
+#[derive(Debug)]
+pub enum OutputFragment {
+    Raw(TokenStream),
+    Token(PreservedToken),
+    Str(LitStr),
+    Delimiter(Delimiter, /*start:*/ bool),
+}
+
+impl From<char> for OutputFragment {
+    fn from(c: char) -> Self {
+        match c {
+            '{' => Self::Delimiter(Delimiter::Brace, true),
+            '}' => Self::Delimiter(Delimiter::Brace, false),
+            '[' => Self::Delimiter(Delimiter::Bracket, true),
+            ']' => Self::Delimiter(Delimiter::Bracket, false),
+            '(' => Self::Delimiter(Delimiter::Parenthesis, true),
+            ')' => Self::Delimiter(Delimiter::Parenthesis, false),
+            ' ' => Self::Str(LitStr::new(" ", Span::call_site())),
+            _ => unreachable!("Delimiter {} not recognized", c),
+        }
+    }
+}
+
+impl From<TokenStream> for OutputFragment {
+    fn from(t: TokenStream) -> Self {
+        Self::Raw(t)
+    }
+}
+
+impl From<PreservedToken> for OutputFragment {
+    fn from(t: PreservedToken) -> Self {
+        Self::Token(t)
+    }
+}
+
+impl From<LitStr> for OutputFragment {
+    fn from(t: LitStr) -> Self {
+        Self::Str(t)
+    }
+}
+
+impl From<CssIdent> for OutputFragment {
+    fn from(i: CssIdent) -> Self {
+        PreservedToken::Ident(i).into()
+    }
+}
 
 /// Reify a structure into an expression of a specific type.
 pub(crate) trait Reify {
@@ -76,6 +126,17 @@ impl Reify for OutputSheet {
     }
 }
 
+fn fragment_spacing(l: &OutputFragment, r: &OutputFragment) -> Option<OutputFragment> {
+    use OutputFragment::*;
+    use PreservedToken::*;
+    match (l, r) {
+        (Delimiter(_, false), Token(Ident(_))) => true,
+        (Token(Ident(_)) | Token(Literal(_)), Token(Ident(_)) | Token(Literal(_))) => true,
+        _ => false,
+    }
+    .then(|| ' '.into())
+}
+
 impl Reify for OutputAtRule {
     fn reify(self) -> TokenStream {
         let ident_condition = Ident::new("at_condition", Span::mixed_site());
@@ -87,7 +148,11 @@ impl Reify for OutputAtRule {
             errors,
         } = self;
 
-        let prelude_parts = prelude.into_iter().flat_map(|p| p.reify_parts());
+        let prelude_parts = prelude
+            .iter()
+            .flat_map(|p| p.reify_parts())
+            .spaced_with(fragment_spacing)
+            .map(|e| e.reify());
         let errors = errors.into_iter().map(|e| e.into_compile_error());
         quote! {
             ::stylist::ast::Rule {
@@ -143,7 +208,10 @@ impl Reify for OutputQualifier {
         ) -> TokenStream {
             let ident_selector = Ident::new("selector", Span::mixed_site());
             let ident_assert_string = Ident::new("as_string", Span::mixed_site());
-            let parts = selector_parts.flat_map(|p| p.reify_parts());
+            let parts = selector_parts
+                .flat_map(|p| p.reify_parts())
+                .spaced_with(fragment_spacing)
+                .map(|e| e.reify());
             quote! {
                 {
                     use ::std::fmt::Write;
@@ -216,10 +284,14 @@ impl Reify for OutputAttribute {
         let ident_writable_value = Ident::new("writer_value", Span::mixed_site());
         let Self { key, values } = self;
 
-        let value_parts = values.iter().flat_map(|p| match p {
-            Err(e) => vec![e.to_compile_error()],
-            Ok(c) => c.reify_parts(),
-        });
+        let value_parts = values
+            .iter()
+            .flat_map(|p| match p {
+                Err(e) => vec![e.to_compile_error().into()],
+                Ok(c) => c.reify_parts().into_iter().collect(),
+            })
+            .spaced_with(fragment_spacing)
+            .map(|e| e.reify());
         quote! {
             ::stylist::ast::StyleAttribute {
                 key: #key,
@@ -228,6 +300,34 @@ impl Reify for OutputAttribute {
                     #( #ident_writable_value.push(#value_parts); )*
                     #ident_writable_value.into()
                 },
+            }
+        }
+    }
+}
+
+impl OutputFragment {
+    fn str_for_delim(d: Delimiter, start: bool) -> &'static str {
+        match (d, start) {
+            (Delimiter::Brace, true) => "{",
+            (Delimiter::Brace, false) => "}",
+            (Delimiter::Bracket, true) => "[",
+            (Delimiter::Bracket, false) => "]",
+            (Delimiter::Parenthesis, true) => "(",
+            (Delimiter::Parenthesis, false) => ")",
+            (Delimiter::None, _) => unreachable!("only actual delimiters allowed"),
+        }
+    }
+}
+
+impl Reify for OutputFragment {
+    fn reify(self) -> TokenStream {
+        match self {
+            Self::Raw(t) => t,
+            Self::Str(lit) => quote! { #lit.into() },
+            Self::Token(t) => Self::from(t.quote_literal()).reify(),
+            Self::Delimiter(kind, start) => {
+                let lit = LitStr::new(Self::str_for_delim(kind, start), Span::call_site());
+                Self::from(lit).reify()
             }
         }
     }

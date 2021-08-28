@@ -23,12 +23,6 @@ error: unexpected punctuation in selector
   |                                      ^
 
 error: unexpected punctuation in selector
- --> $DIR/illegal_qualifiers-fail.rs:3:40
-  |
-3 |         (not a function) 42 117.9f32 / ^ @ .okay ::also(okay) {
-  |                                        ^
-
-error: unexpected punctuation in selector
  --> $DIR/illegal_qualifiers-fail.rs:3:42
   |
 3 |         (not a function) 42 117.9f32 / ^ @ .okay ::also(okay) {

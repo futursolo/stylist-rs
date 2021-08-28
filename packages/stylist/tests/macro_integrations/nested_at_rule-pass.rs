@@ -6,7 +6,7 @@ fn main() {
                 background-color: grey;
             }
             @supports (display: grid) {
-                margin: ${"2cm"};
+                margin: 2cm;
             }
         }
     }

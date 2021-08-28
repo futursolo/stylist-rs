@@ -1,6 +1,6 @@
-use super::css_ident::CssIdent;
+use super::{css_ident::CssIdent, output::OutputFragment};
 use proc_macro2::{Literal, Punct, Span, TokenStream};
-use quote::{quote, quote_spanned, ToTokens};
+use quote::{quote_spanned, ToTokens};
 use std::{iter::FromIterator, ops::Deref};
 use syn::{
     braced, bracketed, parenthesized,
@@ -122,7 +122,7 @@ impl ToTokens for InjectedExpression {
 
 impl Parse for PreservedToken {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        if CssIdent::peek(&input.lookahead1()) {
+        if CssIdent::peek(input) {
             Ok(Self::Ident(input.parse()?))
         } else if input.cursor().punct().is_some() {
             Ok(Self::Punct(input.parse()?))
@@ -189,15 +189,13 @@ impl FunctionToken {
 
 impl Parse for ComponentValue {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        let lookahead = input.lookahead1();
-        let is_group = lookahead.peek(token::Brace)
-            || lookahead.peek(token::Bracket)
-            || lookahead.peek(token::Paren);
+        let is_group =
+            input.peek(token::Brace) || input.peek(token::Bracket) || input.peek(token::Paren);
         if is_group {
             Ok(Self::Block(input.parse()?))
-        } else if lookahead.peek(token::Dollar) {
+        } else if input.peek(token::Dollar) && input.peek2(token::Brace) {
             Ok(Self::Expr(input.parse()?))
-        } else if !CssIdent::peek(&lookahead) {
+        } else if !CssIdent::peek(input) {
             Ok(Self::Token(input.parse()?))
         } else {
             let ident = input.parse()?;
@@ -272,7 +270,7 @@ impl InjectedExpression {
 }
 
 impl PreservedToken {
-    fn quote_literal(&self) -> LitStr {
+    pub fn quote_literal(&self) -> LitStr {
         match self {
             Self::Ident(i) => i.quote_literal(),
             Self::Literal(l) => LitStr::new(&format!("{}", l), l.span()),
@@ -325,46 +323,32 @@ impl ComponentValue {
     // Reifies into a Vec of TokenStreams of type
     // for<I: Into<Cow<'static, str>>> T: From<I>
     // including ::stylist::ast::Selector and ::stylist::ast::StringFragment
-    pub fn reify_parts(&self) -> Vec<TokenStream> {
+    pub fn reify_parts(&self) -> impl '_ + IntoIterator<Item = OutputFragment> {
+        use std::iter::once;
         match self {
             Self::Token(token) => {
-                let quoted_literal = token.quote_literal();
-                vec![quote! { #quoted_literal.into() }]
+                Box::new(once(token.clone().into())) as Box<dyn Iterator<Item = _>>
             }
-            Self::Expr(expr) => {
-                vec![expr.reify()]
+            Self::Expr(expr) => Box::new(once(expr.reify().into())),
+            Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
+                let inner_parts = contents.iter().flat_map(|c| c.reify_parts());
+                Box::new(once('['.into()).chain(inner_parts).chain(once(']'.into())))
+            }
+            Self::Block(SimpleBlock::Paren { contents, .. }) => {
+                let inner_parts = contents.iter().flat_map(|c| c.reify_parts());
+                Box::new(once('('.into()).chain(inner_parts).chain(once(')'.into())))
+            }
+            Self::Function(FunctionToken { name, args, .. }) => {
+                let inner_args = args.iter().flat_map(|arg| arg.reify_parts());
+                Box::new(
+                    once(name.clone().into())
+                        .chain(once('('.into()))
+                        .chain(inner_args)
+                        .chain(once(')'.into())),
+                )
             }
             Self::Block(SimpleBlock::Braced { .. }) => {
                 unreachable!("blocks should not get reified");
-            }
-            Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
-                let mut inner_args = contents
-                    .iter()
-                    .flat_map(|c| c.reify_parts())
-                    .collect::<Vec<_>>();
-                inner_args.insert(0, quote! { "[".into() });
-                inner_args.push(quote! { "]".into() });
-                inner_args
-            }
-            Self::Block(SimpleBlock::Paren { contents, .. }) => {
-                let mut inner_args = contents
-                    .iter()
-                    .flat_map(|c| c.reify_parts())
-                    .collect::<Vec<_>>();
-                inner_args.insert(0, quote! { "(".into() });
-                inner_args.push(quote! { ")".into() });
-                inner_args
-            }
-            Self::Function(FunctionToken { name, args, .. }) => {
-                let name_toks = name.quote_literal();
-                let mut write_args = args
-                    .iter()
-                    .flat_map(|arg| arg.reify_parts())
-                    .collect::<Vec<_>>();
-                write_args.insert(0, quote! { #name_toks.into() });
-                write_args.insert(1, quote! { "(".into() });
-                write_args.push(quote! { ")".into() });
-                write_args
             }
         }
     }
@@ -378,7 +362,7 @@ impl ComponentValue {
                 args.iter().all(|a| a.is_attribute_token())
             }
             Self::Block(_) => false,
-            Self::Token(PreservedToken::Punct(p)) => "/:,#".contains(p.as_char()),
+            Self::Token(PreservedToken::Punct(p)) => "-/%:,#".contains(p.as_char()),
         }
     }
 
@@ -408,7 +392,7 @@ impl ComponentValue {
                 }
             }
             Self::Token(PreservedToken::Punct(p)) => {
-                if "&>+~|$*=.:,".contains(p.as_char()) {
+                if "&>+~|$*=^#.:,".contains(p.as_char()) {
                     SelectorValidation::Valid
                 } else if p.as_char() == ';' {
                     SelectorValidation::TerminalError(ParseError::new_spanned(

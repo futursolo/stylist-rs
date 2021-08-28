@@ -3,7 +3,7 @@ use proc_macro2::{Punct, Spacing, TokenStream};
 use quote::ToTokens;
 use syn::{
     ext::IdentExt,
-    parse::{Lookahead1, Parse, ParseBuffer, Result as ParseResult},
+    parse::{Parse, ParseBuffer, Result as ParseResult},
     spanned::Spanned,
     token, Ident, LitStr,
 };
@@ -22,7 +22,7 @@ pub struct CssIdent {
 }
 
 impl IdentPart {
-    pub fn peek(lookahead: &Lookahead1, accept_dash: bool, accept_ident: bool) -> bool {
+    pub fn peek(lookahead: &ParseBuffer, accept_dash: bool, accept_ident: bool) -> bool {
         let peek_dash = accept_dash && (lookahead.peek(token::Sub) || lookahead.peek(DoubleSub));
         let peek_ident = accept_ident && lookahead.peek(Ident::peek_any);
         peek_dash || peek_ident
@@ -30,8 +30,13 @@ impl IdentPart {
 }
 
 impl CssIdent {
-    pub fn peek(lookahead: &Lookahead1) -> bool {
-        IdentPart::peek(lookahead, true, true)
+    pub fn peek(lookahead: &ParseBuffer) -> bool {
+        if lookahead.peek(token::Sub) {
+            // A single dash is not an identifier
+            lookahead.peek2(token::Sub) || lookahead.peek2(Ident::peek_any)
+        } else {
+            IdentPart::peek(lookahead, true, true)
+        }
     }
 
     pub fn stringify(&self) -> String {
@@ -90,7 +95,7 @@ impl Parse for CssIdent {
                 // Identifiers join dashes, but never other dashes
                 IdentPart::Ident(_) => (true, false),
             };
-            if !IdentPart::peek(&input.lookahead1(), joins_dash, joins_idents) {
+            if !IdentPart::peek(input, joins_dash, joins_idents) {
                 break;
             }
             parts.push(IdentPart::parse_part(input, joins_dash, joins_idents)?);
