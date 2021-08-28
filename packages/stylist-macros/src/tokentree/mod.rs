@@ -2,7 +2,6 @@ mod component_value;
 mod css_ident;
 mod output;
 mod parsed;
-mod spacing_iterator;
 
 use log::debug;
 use output::Reify;

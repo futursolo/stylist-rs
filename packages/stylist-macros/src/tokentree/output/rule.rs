@@ -1,9 +1,7 @@
-use super::{
-    super::{component_value::ComponentValue, spacing_iterator::SpacedIterator},
-    fragment_spacing, Reify,
-};
+use super::{super::component_value::ComponentValue, fragment_spacing, Reify};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
+use stylist_macro_utils::SpacedIterator;
 use syn::{parse::Error as ParseError, Ident};
 
 pub struct OutputAtRule {

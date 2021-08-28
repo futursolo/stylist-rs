@@ -5,7 +5,7 @@ use std::iter::FusedIterator;
 pub trait SpacedIterator: Iterator {
     /// Space a sequence of items by sometimes inserting another item.
     /// ```
-    /// # use stylist_macros::tokentree::spacing_iterator::SpacedIterator;
+    /// use stylist_macro_utils::SpacedIterator;
     /// let it = (1..7).spaced_with(|l, _| (*l == 4).then(|| 2000));
     /// itertools::assert_equal(it, vec![1, 2, 3, 4, 2000, 5, 6]);
     /// ```
@@ -20,14 +20,6 @@ pub trait SpacedIterator: Iterator {
             spacer,
         }
     }
-}
-
-#[cfg(test)]
-#[test]
-fn test_spacer() {
-    use self::SpacedIterator;
-    let it = (1..7).spaced_with(|l, _| (*l == 4).then(|| 2000));
-    itertools::assert_equal(it, vec![1, 2, 3, 4, 2000, 5, 6]);
 }
 
 impl<I: Iterator> SpacedIterator for I {}

@@ -1,0 +1,25 @@
+[package]
+name = "stylist-macro-utils"
+version = "0.1.0"
+edition = "2018"
+license = "MIT"
+repository = "https://github.com/futursolo/stylist-rs"
+authors = [
+    "Martin Molzer <ga65guy@mytum.de>",
+]
+description = "Stylist is a CSS-in-Rust styling solution for WebAssembly Applications."
+keywords = [
+    "CSS",
+    "web",
+    "css-in-rust",
+    "yew"
+]
+categories = ["wasm", "web-programming"]
+readme = "README.md"
+homepage = "https://github.com/futursolo/stylist-rs"
+resolver = "2"
+
+[dependencies]
+
+[dev-dependencies]
+itertools = "0.10"

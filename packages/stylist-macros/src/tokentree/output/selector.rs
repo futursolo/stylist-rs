@@ -1,13 +1,11 @@
 use super::{
-    super::{
-        component_value::{ComponentValue, PreservedToken},
-        spacing_iterator::SpacedIterator,
-    },
+    super::component_value::{ComponentValue, PreservedToken},
     fragment_spacing, Reify,
 };
 use itertools::Itertools;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
+use stylist_macro_utils::SpacedIterator;
 use syn::{parse::Error as ParseError, Ident};
 
 #[derive(Clone)]
