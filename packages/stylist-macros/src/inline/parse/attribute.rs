@@ -3,10 +3,8 @@ use super::super::{
         ComponentValue, ComponentValueStream, InjectedExpression, PreservedToken, SimpleBlock,
     },
     css_ident::CssIdent,
-    output::{MaybeStatic, OutputAttribute, Reify},
+    output::{OutputAttribute, OutputFragment, Reify},
 };
-use proc_macro2::TokenStream;
-use quote::quote;
 use syn::{
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
     spanned::Spanned,
@@ -105,7 +103,7 @@ impl ComponentValue {
 
 impl CssAttribute {
     pub(super) fn into_output(self) -> OutputAttribute {
-        let key_tokens = self.name.reify_name();
+        let key_tokens = self.name.into_output().into_token_stream();
         let values = self.value.values;
 
         OutputAttribute {
@@ -116,13 +114,10 @@ impl CssAttribute {
 }
 
 impl CssAttributeName {
-    fn reify_name(self) -> MaybeStatic<TokenStream> {
+    fn into_output(self) -> OutputFragment {
         match self {
-            Self::Identifier(name) => {
-                let quoted_literal = name.quote_attribute();
-                MaybeStatic::statick(quote! { #quoted_literal.into() })
-            }
-            Self::InjectedExpr(expr) => expr.to_output_fragment().into_token_stream(),
+            Self::Identifier(name) => name.to_lit_str().into(),
+            Self::InjectedExpr(expr) => expr.to_output_fragment(),
         }
     }
 }

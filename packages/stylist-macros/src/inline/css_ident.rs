@@ -1,8 +1,6 @@
-use std::fmt::{Display, Formatter};
-
-use convert_case::{Case, Casing};
 use proc_macro2::{Punct, Spacing, TokenStream};
 use quote::ToTokens;
+use std::fmt::{Display, Formatter};
 use syn::{
     ext::IdentExt,
     parse::{Parse, ParseBuffer, Result as ParseResult},
@@ -58,24 +56,8 @@ impl CssIdent {
             .collect()
     }
 
-    pub fn quote_literal(&self) -> LitStr {
+    pub fn to_lit_str(&self) -> LitStr {
         let formatted = self.to_name_string();
-        LitStr::new(&formatted, self.span())
-    }
-
-    pub fn quote_at_rule(&self) -> LitStr {
-        let formatted = self
-            .to_name_string()
-            .from_case(Case::Camel)
-            .to_case(Case::Kebab);
-        LitStr::new(&formatted, self.span())
-    }
-
-    pub fn quote_attribute(&self) -> LitStr {
-        let formatted = self
-            .to_name_string()
-            .from_case(Case::Camel)
-            .to_case(Case::Kebab);
         LitStr::new(&formatted, self.span())
     }
 }

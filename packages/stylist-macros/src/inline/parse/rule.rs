@@ -38,6 +38,8 @@ impl Parse for CssAtRule {
         let mut prelude = vec![];
         let mut errors = vec![];
 
+        // Recognize the type of @-rule
+        // TODO: be sensitive to this detected type when validating the prelude and contained attributes
         if !["media", "supports"].contains(&name.to_name_string().as_str()) {
             errors.push(ParseError::new_spanned(
                 &name,
@@ -94,7 +96,7 @@ impl CssAtRule {
                 .collect(),
         };
         OutputSheetContent::AtRule(OutputAtRule {
-            name: self.name.quote_at_rule().value(),
+            name: self.name,
             prelude: self.prelude,
             contents,
             errors: self.errors,

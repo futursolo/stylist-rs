@@ -1,17 +1,16 @@
-use std::iter::once;
-
 use super::{
-    super::component_value::ComponentValue, fragment_coalesce, fragment_spacing, MaybeStatic,
-    OutputFragment, Reify,
+    super::{component_value::ComponentValue, css_ident::CssIdent},
+    fragment_coalesce, fragment_spacing, MaybeStatic, OutputFragment, Reify,
 };
 use crate::spacing_iterator::SpacedIterator;
 use itertools::Itertools;
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
+use std::iter::once;
 use syn::{parse::Error as ParseError, LitStr};
 
 pub struct OutputAtRule {
-    pub name: String,
+    pub name: CssIdent,
     pub prelude: Vec<ComponentValue>,
     pub contents: MaybeStatic<Vec<TokenStream>>,
     pub errors: Vec<ParseError>,
@@ -36,7 +35,7 @@ impl Reify for OutputAtRule {
             .into_cow_vec_tokens(quote! {::stylist::ast::RuleContent})
             .into_value();
 
-        let printed_name = LitStr::new(&format!("@{} ", name), Span::call_site());
+        let printed_name = LitStr::new(&format!("@{} ", name.to_name_string()), Span::call_site());
         let at_name = OutputFragment::Str(printed_name);
         let (condition, static_condition) = once(at_name)
             .chain(prelude_parts)

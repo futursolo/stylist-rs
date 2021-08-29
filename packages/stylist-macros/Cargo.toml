@@ -32,7 +32,6 @@ proc-macro2 = "1.0.28"
 quote = "1.0.9"
 nom = "7.0.0"
 syn = { version = "1.0", features = ["full", "extra-traits"] }
-convert_case = "0.4"
 itertools = "0.10"
 log = "0.4.14"
 

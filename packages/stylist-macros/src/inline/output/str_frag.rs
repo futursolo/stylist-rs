@@ -70,7 +70,7 @@ impl OutputFragment {
         match self {
             Self::Raw(t) => Err(t),
             Self::Str(s) => Ok(s),
-            Self::Token(t) => Ok(t.quote_literal()),
+            Self::Token(t) => Ok(t.to_lit_str()),
             Self::Delimiter(kind, start) => Ok(LitStr::new(
                 Self::str_for_delim(kind, start),
                 Span::call_site(),
@@ -111,6 +111,7 @@ pub fn fragment_coalesce(
         (Ok(lt), Err(rt)) => Err((OutputFragment::Str(lt), OutputFragment::Raw(rt))),
         (Err(lt), Ok(rt)) => Err((OutputFragment::Raw(lt), OutputFragment::Str(rt))),
         (Ok(lt), Ok(rt)) => {
+            // Two successive string literals can be combined into a single one
             let combined = lt.value() + &rt.value();
             let lit = LitStr::new(&combined, Span::call_site());
             Ok(OutputFragment::Str(lit))
