@@ -1,3 +1,6 @@
+//! This module intentionally mirrors stylist_core::ast in structure and
+//! is responsible for transforming finished macro outputs into the TokenStream
+//! emitted by the different macros.
 use proc_macro2::TokenStream;
 
 mod sheet;

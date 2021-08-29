@@ -110,7 +110,7 @@ impl ComponentValue {
     }
 
     // Overly simplified parsing of a css attribute
-    #[must_use]
+    #[must_use = "validation errors should not be discarded"]
     pub fn validate_attribute_token(&self) -> impl IntoIterator<Item = ParseError> {
         match self {
             Self::Expr(_)
@@ -144,7 +144,6 @@ impl ComponentValue {
     }
 
     // Overly simplified version of parsing a css selector :)
-    #[must_use]
     pub fn validate_selector_token(&self) -> ParseResult<impl IntoIterator<Item = ParseError>> {
         match self {
             Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => Ok(vec![]),
