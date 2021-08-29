@@ -235,6 +235,7 @@ impl ToTokensWithArgs for Sheet {
             quote! { {
                 use ::stylist::vendor::once_cell::sync::Lazy;
                 use ::stylist::ast::Sheet;
+                use ::std::vec;
 
                 static SHEET_REF: Lazy<Sheet> = Lazy::new(
                     || Sheet::from(vec![#scope_tokens])
@@ -246,6 +247,7 @@ impl ToTokensWithArgs for Sheet {
         } else {
             quote! { {
                 use ::stylist::ast::Sheet;
+                use ::std::vec;
 
                 Sheet::from(vec![#scope_tokens])
             } }
