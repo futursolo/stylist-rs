@@ -17,28 +17,16 @@ pub use style_attr::OutputAttribute;
 mod str_frag;
 pub use str_frag::{fragment_coalesce, fragment_spacing, OutputFragment};
 
+mod maybe_static;
+pub use maybe_static::MaybeStatic;
+
 /// Reify a structure into an expression of a specific type.
 pub(crate) trait Reify {
-    fn into_token_stream(self) -> TokenStream;
-}
-
-impl Reify for TokenStream {
-    fn into_token_stream(self) -> Self {
-        self
-    }
+    fn into_token_stream(self) -> MaybeStatic<TokenStream>;
 }
 
 impl Reify for syn::Error {
-    fn into_token_stream(self) -> TokenStream {
-        self.into_compile_error()
-    }
-}
-
-impl<E: Reify> Reify for Result<E, syn::Error> {
-    fn into_token_stream(self) -> TokenStream {
-        match self {
-            Ok(o) => o.into_token_stream(),
-            Err(e) => e.to_compile_error(),
-        }
+    fn into_token_stream(self) -> MaybeStatic<TokenStream> {
+        MaybeStatic::statick(self.into_compile_error())
     }
 }

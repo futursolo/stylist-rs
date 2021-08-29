@@ -1,6 +1,6 @@
 use super::{
     super::{component_value::PreservedToken, css_ident::CssIdent},
-    Reify,
+    MaybeStatic, Reify,
 };
 use proc_macro2::{Delimiter, Span, TokenStream};
 use quote::quote;
@@ -80,10 +80,10 @@ impl OutputFragment {
 }
 
 impl Reify for OutputFragment {
-    fn into_token_stream(self) -> TokenStream {
+    fn into_token_stream(self) -> MaybeStatic<TokenStream> {
         match self.reify_str_value() {
-            Err(t) => t,
-            Ok(lit) => quote! { #lit.into() },
+            Err(t) => MaybeStatic::dynamic(t),
+            Ok(lit) => MaybeStatic::statick(quote! { #lit.into() }),
         }
     }
 }

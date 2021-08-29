@@ -1,4 +1,4 @@
-use super::output::{OutputAtRule, OutputQualifiedRule, Reify};
+use super::output::{MaybeStatic, OutputAtRule, OutputQualifiedRule, Reify};
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use syn::parse::Error as ParseError;
@@ -73,7 +73,7 @@ fn normalize_hierarchy_impl<'it>(
 
     // Helper enum appearing in intermediate step
     enum ScopeItem {
-        Attributes(Vec<TokenStream>),
+        Attributes(Vec<MaybeStatic<TokenStream>>),
         AtRule(CssAtRule),
         Block(CssQualifiedRule),
     }
@@ -97,7 +97,7 @@ fn normalize_hierarchy_impl<'it>(
             ScopeItem::Attributes(attributes) => {
                 let result = OutputSheetContent::QualifiedRule(OutputQualifiedRule {
                     qualifier: qualifier.clone().into_token_stream(),
-                    attributes,
+                    attributes: attributes.into_iter().collect(),
                 });
                 Box::new(std::iter::once(result))
             }

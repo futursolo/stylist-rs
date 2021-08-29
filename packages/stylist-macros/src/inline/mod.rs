@@ -15,5 +15,5 @@ pub fn macro_fn(input: TokenStream) -> TokenStream {
     };
     debug!("Parsed as: {:?}", root);
 
-    root.into_output().into_token_stream()
+    root.into_output().into_token_stream().into_value().0
 }
