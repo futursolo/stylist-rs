@@ -9,3 +9,19 @@ log = "0.4.14"
 console_log = { version = "0.2.0", features = ["color"] }
 yew = "0.18.0"
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.26"
+wasm-bindgen = "0.2"
+
+[dev-dependencies.web-sys]
+version = "0.3.53"
+features = [
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlHeadElement",
+    "HtmlStyleElement",
+    "CssStyleDeclaration",
+]

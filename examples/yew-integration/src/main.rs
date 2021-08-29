@@ -115,7 +115,7 @@ impl Component for App {
                     }
                 "# />
                 <h1>{"Yew Integration"}</h1>
-                <div class=self.style.clone()>
+                <div class=self.style.clone() id="yew-sample-content">
                     {"The quick brown fox jumps over the lazy dog"}
                     <Inside />
                 </div>
@@ -127,4 +127,34 @@ impl Component for App {
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
     yew::start_app::<App>();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
+    use web_sys::window;
+
+    #[wasm_bindgen_test]
+    fn test_simple() {
+        yew::app::App::<App>::new()
+            .mount(yew::utils::document().get_element_by_id("output").unwrap());
+        let window = window().unwrap();
+        let doc = window.document().unwrap();
+        let body = window.document().unwrap().body().unwrap();
+
+        let content = doc.query_selector("#yew-sample-content").unwrap().unwrap();
+
+        let body_style = window.get_computed_style(&body).unwrap().unwrap();
+        let content_style = window.get_computed_style(&content).unwrap().unwrap();
+
+        let bg_color = body_style.get_property_value("background-color").unwrap();
+        assert_eq!(bg_color, "rgb(237, 244, 255)");
+
+        let content_display = content_style.get_property_value("display").unwrap();
+        assert_eq!(content_display, "flex");
+    }
 }

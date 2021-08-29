@@ -65,6 +65,12 @@ jobs:
         env:
           RUSTFLAGS: "--cfg releasing"
 
+      - name: Install wasm-pack
+        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+      - name: Run Browser Tests
+        run: wasm-pack test --headless --chrome --firefox examples/yew-integration
+
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
