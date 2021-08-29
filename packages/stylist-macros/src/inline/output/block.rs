@@ -19,8 +19,8 @@ impl Reify for OutputQualifiedRule {
             ::stylist::ast::Block {
                 condition: #qualifier,
                 style_attributes: ::std::vec![
-                        #( #attributes, )*
-                    ].into(),
+                    #( #attributes, )*
+                ].into(),
             }
         }
     }

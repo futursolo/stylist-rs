@@ -1,11 +1,11 @@
 mod component_value;
 mod css_ident;
 mod output;
-mod parsed;
+mod parse;
 
 use log::debug;
 use output::Reify;
-use parsed::CssRootNode;
+use parse::CssRootNode;
 use proc_macro2::TokenStream;
 
 pub fn macro_fn(input: TokenStream) -> TokenStream {
