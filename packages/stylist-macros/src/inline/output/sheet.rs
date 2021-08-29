@@ -21,7 +21,7 @@ impl Reify for OutputSheet {
                 ::stylist::ast::Sheet::from(#contents)
             }
         };
-        if content_context > ExpressionContext::Static {
+        if ExpressionContext::Static <= content_context {
             MaybeStatic::statick(quote! { {
                 use ::stylist::vendor::once_cell::sync::Lazy;
 

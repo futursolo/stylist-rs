@@ -8,7 +8,7 @@ use quote::quote;
 use syn::parse::Result as ParseResult;
 
 pub struct OutputAttribute {
-    pub key: TokenStream,
+    pub key: MaybeStatic<TokenStream>,
     pub values: Vec<ParseResult<ComponentValue>>,
 }
 
@@ -16,11 +16,12 @@ impl Reify for OutputAttribute {
     fn into_token_stream(self) -> MaybeStatic<TokenStream> {
         let Self { key, values } = self;
 
+        let (key, key_context) = key.into_value();
         let (value_parts, value_context) = values
             .iter()
             .flat_map(|p| match p {
                 Err(e) => vec![e.to_compile_error().into()],
-                Ok(c) => c.reify_parts().into_iter().collect(),
+                Ok(c) => c.to_output_fragments().into_iter().collect(),
             })
             .spaced_with(fragment_spacing)
             .coalesce(fragment_coalesce)
@@ -29,7 +30,7 @@ impl Reify for OutputAttribute {
             .into_cow_vec_tokens(quote! {::stylist::ast::StringFragment})
             .into_value();
         MaybeStatic::in_context(
-            value_context,
+            key_context & value_context,
             quote! {
                 ::stylist::ast::StyleAttribute {
                     key: #key,

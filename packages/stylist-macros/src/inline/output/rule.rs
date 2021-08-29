@@ -28,7 +28,7 @@ impl Reify for OutputAtRule {
 
         let prelude_parts = prelude
             .iter()
-            .flat_map(|p| p.reify_parts())
+            .flat_map(|p| p.to_output_fragments())
             .spaced_with(fragment_spacing)
             .coalesce(fragment_coalesce);
         let errors = errors.into_iter().map(|e| e.into_compile_error());

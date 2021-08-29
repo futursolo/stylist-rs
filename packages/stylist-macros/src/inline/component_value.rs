@@ -5,7 +5,7 @@ use std::ops::Deref;
 use syn::{
     braced, bracketed, parenthesized,
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
-    token, Expr, Ident, Lit, LitStr,
+    token, Expr, ExprLit, Ident, Lit, LitStr,
 };
 
 #[derive(Debug, Clone)]
@@ -251,11 +251,19 @@ impl ComponentValue {
 }
 
 impl InjectedExpression {
-    pub fn reify(&self) -> TokenStream {
+    pub fn to_output_fragment(&self) -> OutputFragment {
         let injected = &self.expr;
+        if let Expr::Lit(ExprLit {
+            lit: Lit::Str(ref litstr),
+            ..
+        }) = **injected
+        {
+            return OutputFragment::Str(litstr.clone());
+        }
+
         let ident_result = Ident::new("expr", Span::mixed_site());
         let ident_write_expr = Ident::new("write_expr", Span::mixed_site());
-        quote_spanned! {self.braces.span=>
+        let quoted = quote_spanned! {self.braces.span=>
             {
                 fn #ident_write_expr<V: ::std::fmt::Display>(v: V) -> ::std::string::String {
                     use ::std::fmt::Write;
@@ -265,7 +273,8 @@ impl InjectedExpression {
                 }
                 #ident_write_expr(#injected).into()
             }
-        }
+        };
+        OutputFragment::Raw(quoted)
     }
 }
 
@@ -283,23 +292,23 @@ impl ComponentValue {
     // Reifies into a Vec of TokenStreams of type
     // for<I: Into<Cow<'static, str>>> T: From<I>
     // including ::stylist::ast::Selector and ::stylist::ast::StringFragment
-    pub fn reify_parts(&self) -> impl '_ + IntoIterator<Item = OutputFragment> {
+    pub fn to_output_fragments(&self) -> impl '_ + IntoIterator<Item = OutputFragment> {
         use std::iter::once;
         match self {
             Self::Token(token) => {
                 Box::new(once(token.clone().into())) as Box<dyn Iterator<Item = _>>
             }
-            Self::Expr(expr) => Box::new(once(expr.reify().into())),
+            Self::Expr(expr) => Box::new(once(expr.to_output_fragment())),
             Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
-                let inner_parts = contents.iter().flat_map(|c| c.reify_parts());
+                let inner_parts = contents.iter().flat_map(|c| c.to_output_fragments());
                 Box::new(once('['.into()).chain(inner_parts).chain(once(']'.into())))
             }
             Self::Block(SimpleBlock::Paren { contents, .. }) => {
-                let inner_parts = contents.iter().flat_map(|c| c.reify_parts());
+                let inner_parts = contents.iter().flat_map(|c| c.to_output_fragments());
                 Box::new(once('('.into()).chain(inner_parts).chain(once(')'.into())))
             }
             Self::Function(FunctionToken { name, args, .. }) => {
-                let inner_args = args.iter().flat_map(|arg| arg.reify_parts());
+                let inner_args = args.iter().flat_map(|arg| arg.to_output_fragments());
                 Box::new(
                     once(name.clone().into())
                         .chain(once('('.into()))

@@ -3,7 +3,7 @@ use super::super::{
         ComponentValue, ComponentValueStream, InjectedExpression, PreservedToken, SimpleBlock,
     },
     css_ident::CssIdent,
-    output::OutputAttribute,
+    output::{MaybeStatic, OutputAttribute, Reify},
 };
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -116,13 +116,13 @@ impl CssAttribute {
 }
 
 impl CssAttributeName {
-    fn reify_name(self) -> TokenStream {
+    fn reify_name(self) -> MaybeStatic<TokenStream> {
         match self {
             Self::Identifier(name) => {
                 let quoted_literal = name.quote_attribute();
-                quote! { #quoted_literal.into() }
+                MaybeStatic::statick(quote! { #quoted_literal.into() })
             }
-            Self::InjectedExpr(expr) => expr.reify(),
+            Self::InjectedExpr(expr) => expr.to_output_fragment().into_token_stream(),
         }
     }
 }

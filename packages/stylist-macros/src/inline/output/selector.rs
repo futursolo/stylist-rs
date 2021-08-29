@@ -25,7 +25,7 @@ impl Reify for OutputQualifier {
         ) -> MaybeStatic<TokenStream> {
             let (parts, parts_context) = selector_parts
                 // reify the individual parts
-                .flat_map(|p| p.reify_parts())
+                .flat_map(|p| p.to_output_fragments())
                 // space them correctly
                 .spaced_with(fragment_spacing)
                 // optimize successive (string) literals
