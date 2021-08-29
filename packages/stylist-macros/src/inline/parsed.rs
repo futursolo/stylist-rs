@@ -1,7 +1,6 @@
 use super::{
     component_value::{
-        ComponentValue, ComponentValueStream, InjectedExpression, PreservedToken,
-        SelectorValidation, SimpleBlock,
+        ComponentValue, ComponentValueStream, InjectedExpression, PreservedToken, SimpleBlock,
     },
     css_ident::CssIdent,
     output::{
@@ -28,7 +27,6 @@ pub struct CssRootNode {
 #[derive(Debug, Clone)]
 pub struct CssScopeQualifier {
     qualifiers: Vec<ComponentValue>,
-    // additional errors to emit, if any
     qualifier_errors: Vec<ParseError>,
 }
 
@@ -223,11 +221,8 @@ impl Parse for CssScopeQualifier {
             let next_token = component_iter
                 .next()
                 .ok_or_else(|| input.error("ScopeQualifier: unexpected end of input"))??;
-            match next_token.validate_selector_token() {
-                SelectorValidation::Error(e) => qualifier_errors.push(e),
-                SelectorValidation::TerminalError(e) => return Err(e),
-                SelectorValidation::Valid => qualifiers.push(next_token),
-            }
+            qualifier_errors.extend(next_token.validate_selector_token()?);
+            qualifiers.push(next_token);
         }
         // FIXME: reparse scope qualifiers for more validation?
         Ok(Self {
@@ -244,7 +239,6 @@ impl Parse for CssQualifiedRule {
         Ok(Self { qualifier, scope })
     }
 }
-
 impl Parse for CssAtRule {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
         let at = input.parse()?;
@@ -254,10 +248,11 @@ impl Parse for CssAtRule {
         let mut component_iter = ComponentValueStream::from(input).peekable();
         let mut prelude = vec![];
         let mut errors = vec![];
-        if !["media", "supports"].contains(&name.stringify().as_str()) {
+
+        if !["media", "supports"].contains(&name.to_name_string().as_str()) {
             errors.push(ParseError::new_spanned(
                 &name,
-                format!("@-rule '{}' not supported", name.stringify()),
+                format!("@-rule '{}' not supported", name),
             ));
         }
 
@@ -393,10 +388,10 @@ fn fold_tokens_impl<'it>(
                         .it
                         .next_if(|i| matches!(i, CssScopeContent::Attribute(_)))
                     {
-                        attributes.push(attr.into_output().reify());
+                        attributes.push(attr.into_output().into_token_stream());
                     }
                     let replacement = OutputQualifiedRule {
-                        qualifier: self.qualifier.clone().reify(),
+                        qualifier: self.qualifier.clone().into_token_stream(),
                         attributes,
                     };
                     return Some(WrappedCase::AttributeCollection(replacement));
@@ -434,7 +429,7 @@ fn reify_scope_contents<
 >(
     scope: It,
 ) -> Vec<TokenStream> {
-    scope.map(|i| i.map(O::from).reify()).collect()
+    scope.map(|i| i.map(O::from).into_token_stream()).collect()
 }
 
 impl From<OutputSheetContent> for OutputRuleContent {
@@ -492,9 +487,8 @@ impl CssAtRule {
                 reify_scope_contents::<OutputRuleContent, _>(fold_tokens_impl(ctx, scope.contents))
             }
         };
-        let name_lit = self.name.quote_at_rule();
         OutputSheetContent::AtRule(OutputAtRule {
-            name: quote! { #name_lit.into() },
+            name: self.name.quote_at_rule().value(),
             prelude: self.prelude,
             contents,
             errors: self.errors,
@@ -513,9 +507,10 @@ impl CssRootNode {
 
 impl CssScopeQualifier {
     fn into_output(self) -> OutputQualifier {
-        let selectors = self.qualifiers;
-        let errors = self.qualifier_errors;
-        OutputQualifier { selectors, errors }
+        OutputQualifier {
+            selectors: self.qualifiers,
+            errors: self.qualifier_errors,
+        }
     }
 }
 

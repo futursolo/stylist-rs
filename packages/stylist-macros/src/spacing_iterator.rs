@@ -1,14 +1,14 @@
 //! Provide an iterator inserting optional items between items
 
-use std::iter::FusedIterator;
+#[test]
+fn test_spacing_iterator() {
+    use SpacedIterator;
+    let it = (1..7).spaced_with(|l, _| (*l == 4).then(|| 2000));
+    itertools::assert_equal(it, vec![1, 2, 3, 4, 2000, 5, 6]);
+}
 
 pub trait SpacedIterator: Iterator {
     /// Space a sequence of items by sometimes inserting another item.
-    /// ```
-    /// use stylist_macro_utils::SpacedIterator;
-    /// let it = (1..7).spaced_with(|l, _| (*l == 4).then(|| 2000));
-    /// itertools::assert_equal(it, vec![1, 2, 3, 4, 2000, 5, 6]);
-    /// ```
     fn spaced_with<F>(self, spacer: F) -> Spacing<Self, F>
     where
         Self: Sized,
@@ -98,22 +98,4 @@ where
         self.state = new_state;
         next
     }
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        // Allow for at most one item of spacing in between
-        match self.it.size_hint() {
-            (lower, None) => (lower, None),
-            (lower, Some(upper)) => (lower, upper.checked_mul(2)),
-        }
-    }
-    fn last(self) -> Option<Self::Item> {
-        // Last item is never spacing
-        self.it.last()
-    }
-}
-
-impl<It, F> FusedIterator for Spacing<It, F>
-where
-    It: Iterator,
-    F: FnMut(&It::Item, &It::Item) -> Option<It::Item>,
-{
 }

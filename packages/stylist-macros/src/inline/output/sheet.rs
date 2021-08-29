@@ -8,18 +8,17 @@ pub struct OutputSheet {
 }
 
 impl Reify for OutputSheet {
-    fn reify(self) -> TokenStream {
+    fn into_token_stream(self) -> TokenStream {
         let ident_scopes = Ident::new("scopes", Span::mixed_site());
         let Self { contents } = self;
 
         quote! {
-            ::stylist::ast::Sheet::from(
-                {
-                    let mut #ident_scopes = ::std::vec::Vec::<::stylist::ast::ScopeContent>::new();
-                    #( #ident_scopes.push( #contents ); )*
-                    #ident_scopes
-                }
-            )
+            {
+                let #ident_scopes: ::std::vec::Vec::<::stylist::ast::ScopeContent> = ::std::vec![
+                    #( #contents, )*
+                ];
+                ::stylist::ast::Sheet::from(#ident_scopes)
+            }
         }
     }
 }

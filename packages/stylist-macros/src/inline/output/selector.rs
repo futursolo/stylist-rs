@@ -2,11 +2,11 @@ use super::{
     super::component_value::{ComponentValue, PreservedToken},
     fragment_coalesce, fragment_spacing, Reify,
 };
+use crate::spacing_iterator::SpacedIterator;
 use itertools::Itertools;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
-use stylist_macro_utils::SpacedIterator;
-use syn::{parse::Error as ParseError, Ident};
+use syn::parse::Error as ParseError;
 
 #[derive(Clone)]
 pub struct OutputQualifier {
@@ -15,7 +15,7 @@ pub struct OutputQualifier {
 }
 
 impl Reify for OutputQualifier {
-    fn reify(self) -> TokenStream {
+    fn into_token_stream(self) -> TokenStream {
         fn is_not_comma(q: &&ComponentValue) -> bool {
             !matches!(q, ComponentValue::Token(PreservedToken::Punct(ref p)) if p.as_char() == ',')
         }
@@ -23,20 +23,18 @@ impl Reify for OutputQualifier {
         fn reify_selector<'c>(
             selector_parts: impl Iterator<Item = &'c ComponentValue>,
         ) -> TokenStream {
-            let ident_selector = Ident::new("selector", Span::mixed_site());
-            let ident_assert_string = Ident::new("as_string", Span::mixed_site());
             let parts = selector_parts
                 .flat_map(|p| p.reify_parts())
                 .spaced_with(fragment_spacing)
                 .coalesce(fragment_coalesce)
-                .map(|e| e.reify());
+                .map(|e| e.into_token_stream());
             quote! {
                 {
-                    use ::std::fmt::Write;
-                    fn #ident_assert_string(s: ::std::string::String) -> ::std::string::String { s }
-                    let mut #ident_selector = ::std::string::String::new();
-                    #( ::std::write!(&mut #ident_selector, "{}", #ident_assert_string(#parts)).expect(""); )*
-                    ::stylist::ast::Selector::from(#ident_selector)
+                    ::stylist::ast::Selector::from(
+                        ::std::vec![
+                            #( #parts, )*
+                        ]
+                    )
                 }
             }
         }
@@ -44,6 +42,7 @@ impl Reify for OutputQualifier {
         let Self {
             selectors, errors, ..
         } = self;
+
         let selectors = selectors.iter().peekable().batching(|it| {
             // Return if no items left
             it.peek()?;
@@ -55,14 +54,11 @@ impl Reify for OutputQualifier {
         });
         let errors = errors.into_iter().map(|e| e.into_compile_error());
 
-        let ident_selector = Ident::new("conditions", Span::mixed_site());
         quote! {
-            {
-                let mut #ident_selector = ::std::vec::Vec::<::stylist::ast::Selector>::new();
-                #( #errors )*
-                #( #ident_selector.push(#selectors); )*
-                #ident_selector.into()
-            }
+            ::std::vec![
+                #( #errors, )*
+                #( #selectors, )*
+            ].into()
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use convert_case::{Case, Casing};
 use proc_macro2::{Punct, Spacing, TokenStream};
 use quote::ToTokens;
@@ -29,6 +31,13 @@ impl IdentPart {
     }
 }
 
+impl Display for CssIdent {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        let name = self.to_name_string();
+        f.write_str(&name)
+    }
+}
+
 impl CssIdent {
     pub fn peek(lookahead: &ParseBuffer) -> bool {
         if lookahead.peek(token::Sub) {
@@ -39,7 +48,7 @@ impl CssIdent {
         }
     }
 
-    pub fn stringify(&self) -> String {
+    pub fn to_name_string(&self) -> String {
         self.parts
             .iter()
             .map(|p| match p {
@@ -50,17 +59,23 @@ impl CssIdent {
     }
 
     pub fn quote_literal(&self) -> LitStr {
-        let formatted = self.stringify();
+        let formatted = self.to_name_string();
         LitStr::new(&formatted, self.span())
     }
 
     pub fn quote_at_rule(&self) -> LitStr {
-        let formatted = self.stringify().from_case(Case::Camel).to_case(Case::Kebab);
+        let formatted = self
+            .to_name_string()
+            .from_case(Case::Camel)
+            .to_case(Case::Kebab);
         LitStr::new(&formatted, self.span())
     }
 
     pub fn quote_attribute(&self) -> LitStr {
-        let formatted = self.stringify().from_case(Case::Camel).to_case(Case::Kebab);
+        let formatted = self
+            .to_name_string()
+            .from_case(Case::Camel)
+            .to_case(Case::Kebab);
         LitStr::new(&formatted, self.span())
     }
 }

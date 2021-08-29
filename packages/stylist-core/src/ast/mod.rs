@@ -39,7 +39,7 @@ mod tests {
                 .into(),
             }),
             ScopeContent::Block(Block {
-                condition: vec![".inner".into()].into(),
+                condition: vec![vec![".inner".into()].into()].into(),
                 style_attributes: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["red".into()].into(),
@@ -96,7 +96,7 @@ width: 200px;
                     .into(),
                 }),
                 RuleContent::Block(Block {
-                    condition: vec![".inner".into()].into(),
+                    condition: vec![vec![".inner".into()].into()].into(),
                     style_attributes: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["red".into()].into(),

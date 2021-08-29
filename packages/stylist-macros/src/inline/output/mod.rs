@@ -19,25 +19,25 @@ pub use str_frag::{fragment_coalesce, fragment_spacing, OutputFragment};
 
 /// Reify a structure into an expression of a specific type.
 pub(crate) trait Reify {
-    fn reify(self) -> TokenStream;
+    fn into_token_stream(self) -> TokenStream;
 }
 
 impl Reify for TokenStream {
-    fn reify(self) -> Self {
+    fn into_token_stream(self) -> Self {
         self
     }
 }
 
 impl Reify for syn::Error {
-    fn reify(self) -> TokenStream {
+    fn into_token_stream(self) -> TokenStream {
         self.into_compile_error()
     }
 }
 
 impl<E: Reify> Reify for Result<E, syn::Error> {
-    fn reify(self) -> TokenStream {
+    fn into_token_stream(self) -> TokenStream {
         match self {
-            Ok(o) => o.reify(),
+            Ok(o) => o.into_token_stream(),
             Err(e) => e.to_compile_error(),
         }
     }

@@ -80,7 +80,7 @@ impl OutputFragment {
 }
 
 impl Reify for OutputFragment {
-    fn reify(self) -> TokenStream {
+    fn into_token_stream(self) -> TokenStream {
         match self.reify_str_value() {
             Err(t) => t,
             Ok(lit) => quote! { #lit.into() },

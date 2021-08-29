@@ -9,12 +9,13 @@
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 
-mod stringly;
-mod tokentree;
+mod inline;
+mod literal;
 
 mod css;
 mod global_style;
 mod sheet;
+mod spacing_iterator;
 mod style;
 
 #[proc_macro]
@@ -39,25 +40,4 @@ pub fn global_style(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 pub fn css(input: TokenStream) -> TokenStream {
     css::macro_fn(input.into()).into()
-}
-
-#[cfg(test)]
-mod test {
-    use log::debug;
-
-    fn init() {
-        let _ = env_logger::builder().is_test(true).try_init();
-    }
-
-    #[test]
-    fn test_parse() {
-        init();
-        let input = r#"
-        &, .some-class, --someid, struct, .${color_red} {
-            color: ${color_red};
-        }
-        "#;
-        let output = super::sheet::macro_fn(input.parse().unwrap());
-        debug!("{}", output);
-    }
 }

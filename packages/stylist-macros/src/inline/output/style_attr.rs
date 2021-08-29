@@ -1,9 +1,9 @@
 use super::{super::component_value::ComponentValue, fragment_coalesce, fragment_spacing, Reify};
+use crate::spacing_iterator::SpacedIterator;
 use itertools::Itertools;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
-use stylist_macro_utils::SpacedIterator;
-use syn::{parse::Result as ParseResult, Ident};
+use syn::parse::Result as ParseResult;
 
 pub struct OutputAttribute {
     pub key: TokenStream,
@@ -11,8 +11,7 @@ pub struct OutputAttribute {
 }
 
 impl Reify for OutputAttribute {
-    fn reify(self) -> TokenStream {
-        let ident_writable_value = Ident::new("writer_value", Span::mixed_site());
+    fn into_token_stream(self) -> TokenStream {
         let Self { key, values } = self;
 
         let value_parts = values
@@ -23,15 +22,13 @@ impl Reify for OutputAttribute {
             })
             .spaced_with(fragment_spacing)
             .coalesce(fragment_coalesce)
-            .map(|e| e.reify());
+            .map(|e| e.into_token_stream());
         quote! {
             ::stylist::ast::StyleAttribute {
                 key: #key,
-                value: {
-                    let mut #ident_writable_value = ::std::vec::Vec::<::stylist::ast::StringFragment>::new();
-                    #( #ident_writable_value.push(#value_parts); )*
-                    #ident_writable_value.into()
-                },
+                value: ::std::vec![
+                    #( #value_parts, )*
+                ].into(),
             }
         }
     }
