@@ -1,10 +1,7 @@
-use super::output::{
-    OutputAtRule, OutputQualifiedRule, OutputQualifier, OutputRuleContent, OutputScopeContent,
-    Reify,
-};
+use super::output::{OutputAtRule, OutputQualifiedRule, Reify};
+use itertools::Itertools;
 use proc_macro2::TokenStream;
-use std::iter::Peekable;
-use syn::parse::Result as ParseResult;
+use syn::parse::Error as ParseError;
 
 mod root;
 pub use root::CssRootNode;
@@ -55,102 +52,59 @@ pub use attribute::{CssAttribute, CssAttributeName, CssAttributeValue};
 ///
 /// Errors in nested items are reported as spanned TokenStreams.
 ///
-fn fold_normalized_scope_hierarchy<'it>(
+fn normalize_scope_hierarchy<'it>(
     it: impl 'it + IntoIterator<Item = CssScopeContent>,
-) -> impl 'it + Iterator<Item = ParseResult<OutputSheetContent>> {
-    fold_tokens_impl(Default::default(), it)
+) -> impl 'it + Iterator<Item = OutputSheetContent> {
+    normalize_hierarchy_impl(Default::default(), it)
 }
 
 enum OutputSheetContent {
     AtRule(OutputAtRule),
     QualifiedRule(OutputQualifiedRule),
+    Error(ParseError),
 }
 
-fn fold_tokens_impl<'it>(
+// Collect attributes into blocks, also flatten and lift nested blocks.
+fn normalize_hierarchy_impl<'it>(
     context: CssBlockQualifier,
     it: impl 'it + IntoIterator<Item = CssScopeContent>,
-) -> impl 'it + Iterator<Item = ParseResult<OutputSheetContent>> {
-    // Step one: collect attributes into blocks, flatten and lift nested blocks
-    struct Wrapper<I: Iterator> {
-        it: Peekable<I>,
-        qualifier: OutputQualifier,
-    }
+) -> impl 'it + Iterator<Item = OutputSheetContent> {
+    let qualifier = context.clone().into_output();
 
-    enum WrappedCase {
-        AttributeCollection(OutputQualifiedRule),
+    // Helper enum appearing in intermediate step
+    enum ScopeItem {
+        Attributes(Vec<TokenStream>),
         AtRule(CssAtRule),
-        Qualified(CssQualifiedRule),
+        Block(CssQualifiedRule),
     }
-
-    impl<I: Iterator<Item = CssScopeContent>> Iterator for Wrapper<I> {
-        type Item = WrappedCase;
-        fn next(&mut self) -> Option<Self::Item> {
-            match self.it.peek() {
-                None => return None,
-                Some(CssScopeContent::Attribute(_)) => {
-                    let mut attributes = Vec::new();
-                    while let Some(CssScopeContent::Attribute(attr)) = self
-                        .it
-                        .next_if(|i| matches!(i, CssScopeContent::Attribute(_)))
-                    {
-                        attributes.push(attr.into_output().into_token_stream());
-                    }
-                    let replacement = OutputQualifiedRule {
-                        qualifier: self.qualifier.clone().into_token_stream(),
-                        attributes,
-                    };
-                    return Some(WrappedCase::AttributeCollection(replacement));
-                }
-                _ => {}
+    it.into_iter()
+        .map(|c| match c {
+            CssScopeContent::Attribute(a) => {
+                ScopeItem::Attributes(vec![a.into_output().into_token_stream()])
             }
-            match self.it.next() {
-                Some(CssScopeContent::AtRule(r)) => Some(WrappedCase::AtRule(r)),
-                Some(CssScopeContent::Nested(b)) => Some(WrappedCase::Qualified(b)),
-                _ => unreachable!("Should have returned after peeking"),
+            CssScopeContent::AtRule(r) => ScopeItem::AtRule(r),
+            CssScopeContent::Nested(b) => ScopeItem::Block(b),
+        })
+        // collect runs of attributes together into a single item
+        .coalesce(|l, r| match (l, r) {
+            (ScopeItem::Attributes(mut ls), ScopeItem::Attributes(rs)) => {
+                ls.extend(rs);
+                Ok(ScopeItem::Attributes(ls))
             }
-        }
-    }
-
-    Wrapper {
-        it: it.into_iter().peekable(),
-        qualifier: context.clone().into_output(),
-    }
-    .flat_map(move |w| match w {
-        WrappedCase::AttributeCollection(attrs) => {
-            let result = Ok(OutputSheetContent::QualifiedRule(attrs));
-            Box::new(std::iter::once(result))
-        }
-        WrappedCase::AtRule(r) => {
-            let result = Ok(r.fold_in_context(context.clone()));
-            Box::new(std::iter::once(result))
-        }
-        WrappedCase::Qualified(b) => b.fold_in_context(context.clone()),
-    })
-}
-
-fn reify_scope_contents<
-    O: From<OutputSheetContent> + Reify,
-    It: Iterator<Item = ParseResult<OutputSheetContent>>,
->(
-    scope: It,
-) -> Vec<TokenStream> {
-    scope.map(|i| i.map(O::from).into_token_stream()).collect()
-}
-
-impl From<OutputSheetContent> for OutputRuleContent {
-    fn from(c: OutputSheetContent) -> Self {
-        match c {
-            OutputSheetContent::QualifiedRule(block) => Self::Block(block),
-            OutputSheetContent::AtRule(rule) => Self::AtRule(rule),
-        }
-    }
-}
-
-impl From<OutputSheetContent> for OutputScopeContent {
-    fn from(c: OutputSheetContent) -> Self {
-        match c {
-            OutputSheetContent::QualifiedRule(block) => Self::Block(block),
-            OutputSheetContent::AtRule(rule) => Self::AtRule(rule),
-        }
-    }
+            (l, r) => Err((l, r)),
+        })
+        .flat_map(move |w| match w {
+            ScopeItem::Attributes(attributes) => {
+                let result = OutputSheetContent::QualifiedRule(OutputQualifiedRule {
+                    qualifier: qualifier.clone().into_token_stream(),
+                    attributes,
+                });
+                Box::new(std::iter::once(result))
+            }
+            ScopeItem::AtRule(r) => {
+                let result = r.fold_in_context(context.clone());
+                Box::new(std::iter::once(result))
+            }
+            ScopeItem::Block(b) => b.fold_in_context(context.clone()),
+        })
 }

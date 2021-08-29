@@ -1,4 +1,4 @@
-use super::{fold_tokens_impl, CssBlockQualifier, CssScope, OutputSheetContent};
+use super::{normalize_hierarchy_impl, CssBlockQualifier, CssScope, OutputSheetContent};
 use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
 
 #[derive(Debug)]
@@ -19,7 +19,7 @@ impl CssQualifiedRule {
     pub(super) fn fold_in_context(
         self,
         ctx: CssBlockQualifier,
-    ) -> Box<dyn Iterator<Item = ParseResult<OutputSheetContent>>> {
+    ) -> Box<dyn Iterator<Item = OutputSheetContent>> {
         let own_ctx = self.qualifier;
         if !own_ctx.is_empty() && !ctx.is_empty() {
             // TODO: figure out how to combine contexts
@@ -32,10 +32,11 @@ impl CssQualifiedRule {
             // Following emotion, this would expand to 9 blocks and evaluate `injected_expr` 9 times.
             // A possibility would be collecting appearing expressions once up front and putting replacements
             // into the blocks.
-            let err = ParseError::new_spanned(own_ctx, "Can not nest qualified blocks (yet)");
-            return Box::new(std::iter::once(Err(err)));
+            return Box::new(std::iter::once(OutputSheetContent::Error(
+                ParseError::new_spanned(own_ctx, "Can not nest qualified blocks (yet)"),
+            )));
         }
         let relevant_ctx = if !own_ctx.is_empty() { own_ctx } else { ctx };
-        Box::new(fold_tokens_impl(relevant_ctx, self.scope.contents))
+        Box::new(normalize_hierarchy_impl(relevant_ctx, self.scope.contents))
     }
 }
