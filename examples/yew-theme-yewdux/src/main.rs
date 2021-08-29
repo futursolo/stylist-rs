@@ -48,7 +48,7 @@ impl Component for BaseInside {
 
         html! {
             <div class=self.style()>
-                <button onclick=switch_theme>{"Switch to "}{theme_str}</button>
+                <button onclick=switch_theme id="yew-sample-button">{"Switch to "}{theme_str}</button>
             </div>
         }
     }
@@ -126,7 +126,7 @@ impl Component for App {
                     ft_color = theme.current().font_color,
                 ) />
                 <h1>{"Yew Theming w/ Yewdux"}</h1>
-                <div class=self.style()>
+                <div class=self.style() id="yew-sample-content">
                     {"You are now using the "}{theme_str}{"!"}
                     <Inside />
                 </div>
@@ -165,4 +165,46 @@ impl YieldStyle for App {
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
     yew::start_app::<WithDispatch<App>>();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wasm_bindgen::JsCast;
+    use wasm_bindgen_test::*;
+
+    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+
+    use web_sys::window;
+
+    #[wasm_bindgen_test]
+    fn test_simple() {
+        yew::app::App::<WithDispatch<App>>::new()
+            .mount(yew::utils::document().get_element_by_id("output").unwrap());
+        let window = window().unwrap();
+        let doc = window.document().unwrap();
+        let body = window.document().unwrap().body().unwrap();
+
+        let content = doc.query_selector("#yew-sample-content").unwrap().unwrap();
+
+        let body_style = window.get_computed_style(&body).unwrap().unwrap();
+        let content_style = window.get_computed_style(&content).unwrap().unwrap();
+
+        let bg_color = body_style.get_property_value("background-color").unwrap();
+        assert_eq!(bg_color, "rgb(237, 244, 255)");
+
+        let content_display = content_style.get_property_value("display").unwrap();
+        assert_eq!(content_display, "flex");
+
+        let button = doc
+            .query_selector("#yew-sample-button")
+            .unwrap()
+            .unwrap()
+            .dyn_into::<web_sys::HtmlElement>()
+            .unwrap();
+        button.click();
+
+        let bg_color = body_style.get_property_value("background-color").unwrap();
+        assert_eq!(bg_color, "rgb(0, 0, 0)");
+    }
 }
