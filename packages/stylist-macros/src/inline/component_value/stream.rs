@@ -2,7 +2,7 @@ use super::ComponentValue;
 use std::ops::Deref;
 use syn::parse::{ParseBuffer, Result as ParseResult};
 
-// Implements an iterator over parsed component values instead of rust tokens
+// Implements an iterator over parsed component values instead of rust tokens.
 #[derive(Debug)]
 pub struct ComponentValueStream<'a> {
     input: &'a ParseBuffer<'a>,

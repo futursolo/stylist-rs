@@ -1,3 +1,14 @@
+//! The most prominent token in the css spec is called "component values".
+//! You can think of this as being either a block, a function or a preserved (atomic) token.
+//!
+//! This guides our inline parser as follows:
+//! - first re-tokenize the TokenStream into a stream of ComponentValues. For this step see
+//!   also [`ComponentValueStream`].
+//! - parse and verify the component values into blocks, @-rules and attributes.
+//!
+//! In general, only a parse error in the first step should be fatal and panic immediately,
+//! while a parse error in the second step can recover and display a small precise error location
+//! to the user, then continue parsing the rest of the input.
 use super::{css_ident::CssIdent, output::OutputFragment};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
@@ -91,26 +102,49 @@ impl ComponentValue {
                 )
             }
             Self::Block(SimpleBlock::Braced { .. }) => {
-                unreachable!("blocks should not get reified");
+                // this kind of block is not supposed to appear in @-rule preludes, block qualifiers
+                // or attribute values and as such should not get emitted
+                unreachable!("braced blocks should not get reified");
             }
         }
     }
 
     // Overly simplified parsing of a css attribute
-    pub fn is_attribute_token(&self) -> bool {
+    #[must_use]
+    pub fn validate_attribute_token(&self) -> impl IntoIterator<Item = ParseError> {
         match self {
             Self::Expr(_)
             | Self::Token(PreservedToken::Ident(_))
-            | Self::Token(PreservedToken::Literal(_)) => true,
-            Self::Function(FunctionToken { args, .. }) => {
-                args.iter().all(|a| a.is_attribute_token())
+            | Self::Token(PreservedToken::Literal(_)) => vec![],
+            Self::Function(FunctionToken { args, .. }) => args
+                .iter()
+                .flat_map(|a| a.validate_attribute_token())
+                .collect(),
+            Self::Block(_) => {
+                let error = ParseError::new_spanned(
+                    self,
+                    concat!(
+                        "expected a valid part of an attribute, got a block. ",
+                        "Did you mean to write `${..}` to inject an expression?"
+                    ),
+                );
+                vec![error]
             }
-            Self::Block(_) => false,
-            Self::Token(PreservedToken::Punct(p)) => "-/%:,#".contains(p.as_char()),
+            Self::Token(PreservedToken::Punct(p)) => {
+                if !"-/%:,#".contains(p.as_char()) {
+                    vec![ParseError::new_spanned(
+                        self,
+                        "expected a valid part of an attribute",
+                    )]
+                } else {
+                    vec![]
+                }
+            }
         }
     }
 
     // Overly simplified version of parsing a css selector :)
+    #[must_use]
     pub fn validate_selector_token(&self) -> ParseResult<impl IntoIterator<Item = ParseError>> {
         match self {
             Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => Ok(vec![]),

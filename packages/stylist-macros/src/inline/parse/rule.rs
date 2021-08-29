@@ -34,7 +34,7 @@ impl Parse for CssAtRule {
         let name = input.parse::<CssIdent>()?;
 
         // Consume all tokens till the next ';' or the next block
-        let mut component_iter = ComponentValueStream::from(input).peekable();
+        let mut component_iter = ComponentValueStream::from(input);
         let mut prelude = vec![];
         let mut errors = vec![];
 
@@ -59,7 +59,6 @@ impl Parse for CssAtRule {
             let next_token = component_iter
                 .next()
                 .ok_or_else(|| input.error("AtRule: unexpected end of input"))??;
-            // unwrap okay, since we already peeked
             prelude.push(next_token);
         };
 

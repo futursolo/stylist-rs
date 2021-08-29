@@ -1,7 +1,5 @@
 use super::super::{
-    component_value::{
-        ComponentValue, ComponentValueStream, InjectedExpression, PreservedToken, SimpleBlock,
-    },
+    component_value::{ComponentValue, ComponentValueStream, InjectedExpression, PreservedToken},
     css_ident::CssIdent,
     output::{OutputAttribute, OutputFragment, Reify},
 };
@@ -19,7 +17,8 @@ pub enum CssAttributeName {
 
 #[derive(Debug)]
 pub struct CssAttributeValue {
-    values: Vec<ParseResult<ComponentValue>>,
+    values: Vec<ComponentValue>,
+    errors: Vec<ParseError>,
 }
 
 #[derive(Debug)]
@@ -59,33 +58,28 @@ impl Parse for CssAttribute {
 
 impl Parse for CssAttributeValue {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        // Consume all tokens till the next ';'
-        let mut component_iter = ComponentValueStream::from(input).peekable();
+        let mut component_iter = ComponentValueStream::from(input);
         let mut values = vec![];
+        let mut errors = vec![];
+
         loop {
+            // Consume all tokens till the next ';'
             if input.peek(token::Semi) {
                 break;
             }
             let next_token = component_iter
                 .next()
                 .ok_or_else(|| input.error("AttributeValue: unexpected end of input"))??;
-            let parsed_token = if !next_token.is_attribute_token() {
-                let error_message = if matches!(
-                    next_token,
-                    ComponentValue::Block(SimpleBlock::Braced { .. })
-                ) {
-                    "expected a valid part of an attribute, got a block. Did you mean to write `${..}` to inject an expression?"
-                } else {
-                    "expected a valid part of an attribute"
-                };
-                Err(ParseError::new_spanned(next_token, error_message))
-            } else {
-                Ok(next_token)
-            };
-            // unwrap okay, since we already peeked
-            values.push(parsed_token);
+            let token_errors = next_token
+                .validate_attribute_token()
+                .into_iter()
+                .collect::<Vec<_>>();
+            if token_errors.is_empty() {
+                values.push(next_token);
+            }
+            errors.extend(token_errors);
         }
-        Ok(Self { values })
+        Ok(Self { values, errors })
     }
 }
 
@@ -105,10 +99,12 @@ impl CssAttribute {
     pub(super) fn into_output(self) -> OutputAttribute {
         let key_tokens = self.name.into_output().into_token_stream();
         let values = self.value.values;
+        let errors = self.value.errors;
 
         OutputAttribute {
             key: key_tokens,
             values,
+            errors,
         }
     }
 }

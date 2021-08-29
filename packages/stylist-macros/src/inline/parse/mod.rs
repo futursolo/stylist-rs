@@ -24,8 +24,8 @@ pub use attribute::{CssAttribute, CssAttributeName, CssAttributeValue};
 /// ```css
 /// outer-attribute: some;
 /// foo-bar: zet;
-/// .nested {
-///     @media print {
+/// @media print {
+///     .nested {
 ///         only-in-print: foo;
 ///     }
 ///     and-always: red;
@@ -43,11 +43,10 @@ pub use attribute::{CssAttribute, CssAttributeName, CssAttributeValue};
 ///     .nested {
 ///         only-in-print: foo;
 ///     }
+///     {
+///         and-always: red;
+///     }
 /// }
-/// .nested {
-///     and-always: red;
-/// }
-///
 /// ```
 ///
 /// Errors in nested items are reported as spanned TokenStreams.

@@ -16,7 +16,9 @@ impl Reify for OutputRuleContent {
                 })
             }),
             Self::Block(block) => block.into_token_stream().flat_map(|block_tokens| {
-                MaybeStatic::statick(quote! { ::stylist::ast::RuleContent::Block(#block_tokens) })
+                MaybeStatic::statick(quote! {
+                    ::stylist::ast::RuleContent::Block(#block_tokens)
+                })
             }),
         }
     }

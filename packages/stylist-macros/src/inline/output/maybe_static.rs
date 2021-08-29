@@ -11,11 +11,22 @@ use quote::quote;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ExpressionContext {
+    // ```
+    // let width = 500;
+    // style! { width: ${width}; }
+    // //               ^^^^^^ dynamic expression, can't wrap style in Lazy
+    // ```
     Dynamic,
+    // ```
+    // style! { width: 500px; }
+    // //       ------------- everything is static, do wrap style in Lazy
     Static,
     // TODO: we can probably avoid a few allocations if we track which parts
-    // of the ast can be constructed statically (with const methods).
-    // Keep in mind to change Self::MAX and adjust the generation of cow-vec tokens.
+    // of the ast can be constructed statically (with const methods), which is
+    // even stronger than constructing it in the global context in a Lazy.
+    // Should you decide to implement this, keep in mind to change Self::MAX
+    // and adjust the generation of cow-vec tokens. Also check the usages of
+    // MaybeStatic::statick if they can be upgraded to Const.
     // Const,
 }
 
@@ -37,7 +48,7 @@ impl BitAndAssign for ExpressionContext {
     }
 }
 
-// Used to decide whether a sheet can be statically cached or must be
+// Used e.g. to decide whether a sheet can be statically cached in a Lazy or must be
 // created everytime anew.
 pub struct MaybeStatic<T> {
     value: T,
@@ -67,6 +78,10 @@ impl<T> MaybeStatic<T> {
 }
 
 impl MaybeStatic<Vec<TokenStream>> {
+    // Get a TokenStream of an expression of type Cow<'_, [typ]>, containing
+    // as elements the expressions form from the Vec<_> in this MaybeStatic.
+    // Depending on the context in which the expression can be expanded,
+    // uses either Cow::Owned or Cow::Borrowed (currently always Cow::Owned).
     pub fn into_cow_vec_tokens(self, typ: TokenStream) -> MaybeStatic<TokenStream> {
         let contents = self.value.into_iter();
         let quoted = quote! {

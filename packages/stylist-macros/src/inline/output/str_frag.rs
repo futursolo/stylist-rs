@@ -3,8 +3,8 @@ use super::{
     MaybeStatic, Reify,
 };
 use proc_macro2::{Delimiter, Span, TokenStream};
-use quote::quote;
-use syn::LitStr;
+use quote::{quote, quote_spanned};
+use syn::{spanned::Spanned, Expr, ExprLit, Ident, Lit, LitStr};
 
 #[derive(Debug)]
 pub enum OutputFragment {
@@ -50,6 +50,34 @@ impl From<LitStr> for OutputFragment {
 impl From<CssIdent> for OutputFragment {
     fn from(i: CssIdent) -> Self {
         PreservedToken::Ident(i).into()
+    }
+}
+
+impl<'a> From<&'a Expr> for OutputFragment {
+    fn from(expr: &Expr) -> Self {
+        if let Expr::Lit(ExprLit {
+            lit: Lit::Str(ref litstr),
+            ..
+        }) = expr
+        {
+            return Self::Str(litstr.clone());
+        }
+
+        let ident_result = Ident::new("expr", Span::mixed_site());
+        let ident_write_expr = Ident::new("write_expr", Span::mixed_site());
+        // quote spanned here so that errors related to calling #ident_write_expr show correctly
+        let quoted = quote_spanned! {expr.span()=>
+            {
+                fn #ident_write_expr<V: ::std::fmt::Display>(v: V) -> ::std::string::String {
+                    use ::std::fmt::Write;
+                    let mut #ident_result = ::std::string::String::new();
+                    ::std::write!(&mut #ident_result, "{}", v).expect("");
+                    #ident_result
+                }
+                #ident_write_expr(#expr).into()
+            }
+        };
+        Self::Raw(quoted)
     }
 }
 

@@ -19,11 +19,11 @@ pub struct CssBlockQualifier {
 
 impl Parse for CssBlockQualifier {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        // Consume all tokens till the next '{'-block
-        let mut component_iter = ComponentValueStream::from(input).peekable();
+        let mut component_iter = ComponentValueStream::from(input);
         let mut qualifiers = vec![];
         let mut qualifier_errors = vec![];
         loop {
+            // Consume all tokens till the next '{'-block
             if input.peek(token::Brace) {
                 break;
             }
@@ -33,7 +33,6 @@ impl Parse for CssBlockQualifier {
             qualifier_errors.extend(next_token.validate_selector_token()?);
             qualifiers.push(next_token);
         }
-        // FIXME: reparse scope qualifiers for more validation?
         Ok(Self {
             qualifiers,
             qualifier_errors,

@@ -14,14 +14,15 @@ pub enum CssScopeContent {
 
 impl Parse for CssScopeContent {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
-        // Fork the stream. Peeking a component value will still consume tokens from the stream!
+        // Fork the stream. Peeking a component value might still consume tokens from the stream!
         let forked_input = input.fork();
         let mut component_peek = ComponentValueStream::from(&forked_input).multipeek();
         let next_input = component_peek
             .peek()
             .cloned()
             .ok_or_else(|| forked_input.error("Scope: unexpected end of input"))??;
-        // Steps from 5.4.4. Consume a list of declarations
+        // Steps roughly follow Css-Syntax-Level 3, §5.4.4: Consume a list of declarations
+        // Allows for directly nested attributes though
         // At-rule first
         if let ComponentValue::Token(PreservedToken::Punct(ref p)) = next_input {
             if p.as_char() == '@' {
@@ -47,7 +48,7 @@ impl Parse for CssScopeContent {
 }
 
 impl CssScopeContent {
-    // (5.4.1) Consume a list of rules
+    // §5.4.1: Consume a list of rules
     pub fn consume_list_of_rules(input: &ParseBuffer) -> ParseResult<Vec<Self>> {
         let mut contents = Vec::new();
         while !input.is_empty() {

@@ -35,8 +35,10 @@ impl Reify for OutputAtRule {
             .into_cow_vec_tokens(quote! {::stylist::ast::RuleContent})
             .into_value();
 
-        let printed_name = LitStr::new(&format!("@{} ", name.to_name_string()), Span::call_site());
-        let at_name = OutputFragment::Str(printed_name);
+        let at_name = OutputFragment::Str(LitStr::new(
+            &format!("@{} ", name.to_name_string()),
+            Span::call_site(),
+        ));
         let (condition, static_condition) = once(at_name)
             .chain(prelude_parts)
             .map(|e| e.into_token_stream())

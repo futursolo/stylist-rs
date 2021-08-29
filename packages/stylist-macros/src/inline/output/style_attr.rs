@@ -5,24 +5,27 @@ use crate::spacing_iterator::SpacedIterator;
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse::Result as ParseResult;
+use syn::parse::Error as ParseError;
 
 pub struct OutputAttribute {
     pub key: MaybeStatic<TokenStream>,
-    pub values: Vec<ParseResult<ComponentValue>>,
+    pub values: Vec<ComponentValue>,
+    pub errors: Vec<ParseError>,
 }
 
 impl Reify for OutputAttribute {
     fn into_token_stream(self) -> MaybeStatic<TokenStream> {
-        let Self { key, values } = self;
+        let Self {
+            key,
+            values,
+            errors,
+        } = self;
+        let errors = errors.into_iter().map(|e| e.into_compile_error());
 
         let (key, key_context) = key.into_value();
         let (value_parts, value_context) = values
             .iter()
-            .flat_map(|p| match p {
-                Err(e) => vec![e.to_compile_error().into()],
-                Ok(c) => c.to_output_fragments().into_iter().collect(),
-            })
+            .flat_map(|p| p.to_output_fragments())
             .spaced_with(fragment_spacing)
             .coalesce(fragment_coalesce)
             .map(|e| e.into_token_stream())
@@ -34,7 +37,10 @@ impl Reify for OutputAttribute {
             quote! {
                 ::stylist::ast::StyleAttribute {
                     key: #key,
-                    value: #value_parts,
+                    value: {
+                        #( #errors )*
+                        #value_parts
+                    },
                 }
             },
         )

@@ -7,10 +7,22 @@ use syn::{
     token,
 };
 
-// Already the consumed version of a function, not the parsed one.
-// This should not be a problem since we make no effort to handle
-// the insane special handling of 'url()' functions that's in the
-// css syntax spec
+// Css-syntax parses like
+// v----v function token
+// foobar( arg1 , arg2 )
+//         ---- - ---- ^-- closing bracket
+//         arguments
+//
+// while this parses like
+//
+// v-------------------v function token
+// foobar( arg1 , arg2 )
+//         ---- - ----
+//         arguments
+//
+// This should not lead to noticable differences since we make no effort to
+// do the insane special handling of 'url()' functions that's in the
+// css spec
 #[derive(Debug, Clone)]
 pub struct FunctionToken {
     pub(super) name: CssIdent,
