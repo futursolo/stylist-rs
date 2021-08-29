@@ -1,6 +1,5 @@
 use gloo::timers::callback::Timeout;
-use stylist::yew::Global;
-use stylist::{StyleSource, YieldStyle};
+use stylist::{yew::Global, StyleSource, YieldStyle};
 use yew::prelude::*;
 
 use log::Level;
@@ -23,9 +22,11 @@ static GLOBAL_STYLE: &str = r#"
 pub enum BenchMsg {
     ParseSimpleFinish(f64),
     MacroSimpleFinish(f64),
+    MacroInlineSimpleFinish(f64),
     ParseSimpleNoCacheFinish(f64),
     ParseComplexFinish(f64),
     MacroComplexFinish(f64),
+    MacroInlineComplexFinish(f64),
     ParseComplexNoCacheFinish(f64),
     CachedLookupFinish(f64),
     CachedLookupBigSheetFinish(f64),
@@ -38,9 +39,11 @@ pub struct Benchmarks {
 
     parse_simple: Option<f64>,
     macro_simple: Option<f64>,
+    macro_inline_simple: Option<f64>,
     parse_simple_no_cache: Option<f64>,
     parse_complex: Option<f64>,
     macro_complex: Option<f64>,
+    macro_inline_complex: Option<f64>,
     parse_complex_no_cache: Option<f64>,
 
     cached_lookup: Option<f64>,
@@ -57,11 +60,13 @@ impl Component for Benchmarks {
         Self {
             link,
             finished: false,
-            macro_simple: None,
             parse_simple: None,
+            macro_simple: None,
+            macro_inline_simple: None,
             parse_simple_no_cache: None,
             parse_complex: None,
             macro_complex: None,
+            macro_inline_complex: None,
             parse_complex_no_cache: None,
             cached_lookup: None,
             cached_lookup_big_sheet: None,
@@ -91,6 +96,14 @@ impl Component for Benchmarks {
             BenchMsg::MacroSimpleFinish(m) => {
                 self.macro_simple = Some(m);
                 let cb = self.link.callback(|_| {
+                    BenchMsg::MacroInlineSimpleFinish(benchmarks::bench_macro_inline_simple())
+                });
+
+                Timeout::new(100, move || cb.emit(())).forget();
+            }
+            BenchMsg::MacroInlineSimpleFinish(m) => {
+                self.macro_inline_simple = Some(m);
+                let cb = self.link.callback(|_| {
                     BenchMsg::ParseSimpleNoCacheFinish(benchmarks::bench_parse_simple_no_cache())
                 });
 
@@ -116,6 +129,15 @@ impl Component for Benchmarks {
             }
             BenchMsg::MacroComplexFinish(m) => {
                 self.macro_complex = Some(m);
+
+                let cb = self.link.callback(|_| {
+                    BenchMsg::MacroInlineComplexFinish(benchmarks::bench_macro_inline_complex())
+                });
+
+                Timeout::new(100, move || cb.emit(())).forget();
+            }
+            BenchMsg::MacroInlineComplexFinish(m) => {
+                self.macro_inline_complex = Some(m);
 
                 let cb = self.link.callback(|_| {
                     BenchMsg::ParseComplexNoCacheFinish(benchmarks::bench_parse_complex_no_cache())
@@ -188,24 +210,32 @@ impl Component for Benchmarks {
                     </thead>
                     <tbody>
                         <tr>
-                            <th>{"Parse Simple (1,000,000 iterations): "}</th>
+                            <th>{"Parse Simple (10,000,000 iterations): "}</th>
                             <th>{self.parse_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Macro Simple (1,000,000 iterations): "}</th>
+                            <th>{"Macro Simple (10,000,000 iterations): "}</th>
                             <th>{self.macro_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+                        <tr>
+                            <th>{"Macro Inline Simple (10,000,000 iterations): "}</th>
+                            <th>{self.macro_inline_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
                             <th>{"Parse Simple, No Cache (100,000 iterations): "}</th>
                             <th>{self.parse_simple_no_cache.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Parse Complex (100,000 iterations): "}</th>
+                            <th>{"Parse Complex (1,000,000 iterations): "}</th>
                             <th>{self.parse_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Macro Complex (100,000 iterations): "}</th>
+                            <th>{"Macro Complex (1,000,000 iterations): "}</th>
                             <th>{self.macro_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                        </tr>
+                        <tr>
+                            <th>{"Macro Inline Complex (1,000,000 iterations): "}</th>
+                            <th>{self.macro_inline_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
                             <th>{"Parse Complex, No Cache (100,000 iterations): "}</th>

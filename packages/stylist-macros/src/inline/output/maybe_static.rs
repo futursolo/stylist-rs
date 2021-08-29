@@ -20,6 +20,7 @@ pub enum ExpressionContext {
     // ```
     // style! { width: 500px; }
     // //       ------------- everything is static, do wrap style in Lazy
+    // ```
     Static,
     // TODO: we can probably avoid a few allocations if we track which parts
     // of the ast can be constructed statically (with const methods), which is
