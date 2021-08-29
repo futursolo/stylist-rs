@@ -242,12 +242,27 @@ pub use stylist_macros::global_style;
 /// Interpolated strings are denoted with `${ident}` and any type that implements [`std::fmt::Display`] can be
 /// used as value. Only named argument are supported at this moment.
 ///
+/// If you do need to output a `${` sequence, you may use `$${` to escape to a `${`.
+///
+///
+/// ## Example
+/// ```css
+/// content: "$${}";
+/// ```
+///
+/// Will be turned into:
+/// ```css
+/// content: "${}";
+/// ```
+///
+/// ## Note: `$${` escape can only present where `${` is valid in the css stylesheet.
+///
 /// Stylist currently does not check or escape the content of interpolated strings. It is possible
 /// to pass invalid strings that would result in an invalid stylesheet. In debug mode, if feature `parser` is
 /// enabled, Stylist will attempt to parse the stylesheet again after interpolated strings are
 /// substituted with its actual value to check if the final stylesheet is invalid.
 ///
-/// # Example
+/// ## Example
 ///
 /// ```
 /// use stylist::{Style, css};

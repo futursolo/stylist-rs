@@ -1250,4 +1250,66 @@ mod tests {
 
         assert_eq!(parsed, expected);
     }
+
+    #[test]
+    fn test_pseudo_sel_escaped() {
+        init();
+        let test_str = r#"
+                color: "$${color}";
+
+                span, ${sel_div} {
+                    background-color: blue;
+                }
+
+                :not(${sel_root}) {
+                    background-color: black;
+                }
+
+                @media screen and ${breakpoint} {
+                    display: flex;
+                }
+            "#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![
+            ScopeContent::Block(Block {
+                condition: Cow::Borrowed(&[]),
+                style_attributes: vec![StyleAttribute {
+                    key: "color".into(),
+                    value: vec!["\"$${color}\"".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec!["span".into(), "${sel_div}".into()].into(),
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".into(),
+                    value: vec!["blue".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec![":not(${sel_root})".into()].into(),
+                style_attributes: vec![StyleAttribute {
+                    key: "background-color".into(),
+                    value: vec!["black".into()].into(),
+                }]
+                .into(),
+            }),
+            ScopeContent::Rule(Rule {
+                condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
+                content: vec![RuleContent::Block(Block {
+                    condition: Cow::Borrowed(&[]),
+                    style_attributes: vec![StyleAttribute {
+                        key: "display".into(),
+                        value: vec!["flex".into()].into(),
+                    }]
+                    .into(),
+                })]
+                .into(),
+            }),
+        ]);
+
+        assert_eq!(parsed, expected);
+    }
 }

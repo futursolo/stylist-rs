@@ -111,7 +111,12 @@ impl Parser {
     }
 
     fn fragments(i: &str) -> IResult<&str, Vec<Fragment>, VerboseError<&str>> {
-        all_consuming(many0(alt((Self::literal, Self::interpolation))))(i)
+        all_consuming(many0(alt((
+            // match escape sequence first.
+            map(tag("$${"), |_m: &str| Fragment::Literal("${".to_string())),
+            Self::literal,
+            Self::interpolation,
+        ))))(i)
     }
 
     pub fn parse(s: &str) -> Result<Vec<Fragment>> {

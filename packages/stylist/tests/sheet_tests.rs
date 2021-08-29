@@ -88,3 +88,30 @@ fn test_sheet_interpolation() {
     ]);
     assert_eq!(parsed, expected.into());
 }
+
+#[test]
+fn test_sheet_escaped() {
+    let parsed = sheet!(
+        r#"
+            .nested, "$${var_a}" {
+                content: "$${var_b}";
+            }
+        "#,
+    );
+
+    let expected = Sheet::from(vec![ScopeContent::Block(Block {
+        condition: vec![
+            ".nested".into(),
+            Selector {
+                fragments: vec!["\"".into(), "${".into(), "var_a}\"".into()].into(),
+            },
+        ]
+        .into(),
+        style_attributes: vec![StyleAttribute {
+            key: "content".into(),
+            value: vec!["\"".into(), "${".into(), "var_b}\"".into()].into(),
+        }]
+        .into(),
+    })]);
+    assert_eq!(parsed, expected.into());
+}
