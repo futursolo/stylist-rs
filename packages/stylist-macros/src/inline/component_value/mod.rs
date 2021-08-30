@@ -77,6 +77,9 @@ impl ComponentValue {
 }
 
 impl ComponentValue {
+    // clippy is of course right, it's just making the code less readable for negligable
+    // performance gains
+    #[allow(clippy::vec_init_then_push)]
     pub fn to_output_fragments(&self) -> Vec<OutputFragment> {
         match self {
             Self::Token(token) => {
