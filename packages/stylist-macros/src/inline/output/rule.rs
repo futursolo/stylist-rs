@@ -1,6 +1,7 @@
 use super::{
     super::{component_value::ComponentValue, css_ident::CssIdent},
-    fragment_coalesce, fragment_spacing, MaybeStatic, OutputFragment, Reify,
+    fragment_coalesce, fragment_spacing, ContextRecorder, IntoCowVecTokens, OutputFragment,
+    OutputRuleContent, Reify,
 };
 use crate::spacing_iterator::SpacedIterator;
 use itertools::Itertools;
@@ -12,12 +13,12 @@ use syn::parse::Error as ParseError;
 pub struct OutputAtRule {
     pub name: CssIdent,
     pub prelude: Vec<ComponentValue>,
-    pub contents: MaybeStatic<Vec<TokenStream>>,
+    pub contents: Vec<OutputRuleContent>,
     pub errors: Vec<ParseError>,
 }
 
 impl Reify for OutputAtRule {
-    fn into_token_stream(self) -> MaybeStatic<TokenStream> {
+    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         let Self {
             name,
             prelude,
@@ -25,35 +26,24 @@ impl Reify for OutputAtRule {
             errors,
         } = self;
 
+        let at_name = OutputFragment::Str(format!("@{} ", name.to_output_string()));
         let prelude_parts = prelude
-            .iter()
+            .into_iter()
             .flat_map(|p| p.to_output_fragments())
             .spaced_with(fragment_spacing)
             .coalesce(fragment_coalesce);
+        let condition = once(at_name).chain(prelude_parts).into_cow_vec_tokens(ctx);
+        let content = contents.into_cow_vec_tokens(ctx);
         let errors = errors.into_iter().map(|e| e.into_compile_error());
-        let (content, static_content) = contents
-            .into_cow_vec_tokens(quote! {::stylist::ast::RuleContent})
-            .into_value();
 
-        let at_name = OutputFragment::Str(format!("@{} ", name.to_output_string()));
-        let (condition, static_condition) = once(at_name)
-            .chain(prelude_parts)
-            .map(|e| e.into_token_stream())
-            .collect::<MaybeStatic<_>>()
-            .into_cow_vec_tokens(quote! {::stylist::ast::StringFragment})
-            .into_value();
-
-        MaybeStatic::in_context(
-            static_content & static_condition,
-            quote! {
-                ::stylist::ast::Rule {
-                    condition: {
-                        #( #errors )*
-                        #condition
-                    },
-                    content: #content,
-                }
-            },
-        )
+        quote! {
+            ::stylist::ast::Rule {
+                condition: {
+                    #( #errors )*
+                    #condition
+                },
+                content: #content,
+            }
+        }
     }
 }

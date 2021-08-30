@@ -1,6 +1,6 @@
 use super::{
     super::output::{OutputScopeContent, OutputSheet},
-    normalize_scope_hierarchy, CssScopeContent, OutputSheetContent, Reify,
+    normalize_scope_hierarchy, CssScopeContent, OutputSheetContent,
 };
 use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 
@@ -20,13 +20,9 @@ impl CssRootNode {
     pub fn into_output(self) -> OutputSheet {
         let contents = normalize_scope_hierarchy(self.root_contents)
             .map(|c| match c {
-                OutputSheetContent::QualifiedRule(block) => {
-                    OutputScopeContent::Block(block).into_token_stream()
-                }
-                OutputSheetContent::AtRule(rule) => {
-                    OutputScopeContent::AtRule(rule).into_token_stream()
-                }
-                OutputSheetContent::Error(err) => err.into_token_stream(),
+                OutputSheetContent::QualifiedRule(block) => OutputScopeContent::Block(block),
+                OutputSheetContent::AtRule(rule) => OutputScopeContent::AtRule(rule),
+                OutputSheetContent::Error(err) => OutputScopeContent::Err(err),
             })
             .collect();
         OutputSheet { contents }

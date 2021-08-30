@@ -1,51 +1,29 @@
-//! This module implements a type abstractly tracking in what kind of expression context
-//! an item appears. This information is leverage to provide improved performance and
-//! static caching of parts of the generated output.
-use std::{
-    iter::FromIterator,
-    ops::{BitAnd, BitAndAssign},
-};
-
+use super::{AllowedUsage, ContextRecorder, Reify};
 use proc_macro2::TokenStream;
 use quote::quote;
+use std::iter::FromIterator;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum ExpressionContext {
-    // ```
-    // let width = 500;
-    // style! { width: ${width}; }
-    // //               ^^^^^^ dynamic expression, can't wrap style in Lazy
-    // ```
-    Dynamic,
-    // ```
-    // style! { width: 500px; }
-    // //       ------------- everything is static, do wrap style in Lazy
-    // ```
-    Static,
-    // TODO: we can probably avoid a few allocations if we track which parts
-    // of the ast can be constructed statically (with const methods), which is
-    // even stronger than constructing it in the global context in a Lazy.
-    // Should you decide to implement this, keep in mind to change Self::MAX
-    // and adjust the generation of cow-vec tokens. Also check the usages of
-    // MaybeStatic::statick if they can be upgraded to Const.
-    // Const,
+pub trait IntoCowVecTokens: IntoIterator
+where
+    Self::Item: Reify,
+{
+    // Get a TokenStream of an expression of type Cow<'_, [typ]>, containing
+    // as elements the values formed by the expressions in this stream.
+    // Depending on the context in which the expression can be expanded,
+    // uses either Cow::Owned or Cow::Borrowed (currently always Cow::Owned).
+    fn into_cow_vec_tokens(self, ctx: &mut ContextRecorder) -> TokenStream;
 }
 
-impl ExpressionContext {
-    const MAX: Self = Self::Static;
-}
-
-impl BitAnd for ExpressionContext {
-    type Output = Self;
-
-    fn bitand(self, rhs: Self) -> Self::Output {
-        self.min(rhs)
-    }
-}
-
-impl BitAndAssign for ExpressionContext {
-    fn bitand_assign(&mut self, rhs: Self) {
-        *self = *self & rhs
+impl<I> IntoCowVecTokens for I
+where
+    I: IntoIterator,
+    I::Item: Reify,
+{
+    fn into_cow_vec_tokens(self, ctx: &mut ContextRecorder) -> TokenStream {
+        self.into_iter()
+            .map(|e| e.into_context_aware_tokens())
+            .collect::<MaybeStatic<_>>()
+            .into_cow_vec_tokens_impl(ctx)
     }
 }
 
@@ -53,28 +31,15 @@ impl BitAndAssign for ExpressionContext {
 // created everytime anew.
 pub struct MaybeStatic<T> {
     value: T,
-    context: ExpressionContext,
+    context: ContextRecorder,
 }
 
 impl<T> MaybeStatic<T> {
-    pub fn in_context(context: ExpressionContext, value: T) -> Self {
+    pub fn in_context(value: T, context: ContextRecorder) -> Self {
         Self { value, context }
     }
-    pub fn statick(value: T) -> Self {
-        Self::in_context(ExpressionContext::Static, value)
-    }
-    pub fn dynamic(value: T) -> Self {
-        Self::in_context(ExpressionContext::Dynamic, value)
-    }
-    pub fn into_value(self) -> (T, ExpressionContext) {
-        (self.value, self.context)
-    }
-    pub fn flat_map<V>(self, f: impl FnOnce(T) -> MaybeStatic<V>) -> MaybeStatic<V> {
-        let mapped = f(self.value);
-        MaybeStatic {
-            value: mapped.value,
-            context: self.context & mapped.context,
-        }
+    pub fn into_value(self) -> (T, AllowedUsage) {
+        (self.value, self.context.usage())
     }
 }
 
@@ -83,36 +48,21 @@ impl MaybeStatic<Vec<TokenStream>> {
     // as elements the expressions form from the Vec<_> in this MaybeStatic.
     // Depending on the context in which the expression can be expanded,
     // uses either Cow::Owned or Cow::Borrowed (currently always Cow::Owned).
-    pub fn into_cow_vec_tokens(self, typ: TokenStream) -> MaybeStatic<TokenStream> {
-        let contents = self.value.into_iter();
-        let quoted = quote! {
-            ::std::borrow::Cow::<'_, [#typ]>::Owned(
-                ::std::vec![
-                    #( #contents, )*
-                ]
-            )
-        };
-        // using the vec![] macro means this is at best static context, not const
-        MaybeStatic::in_context(self.context & ExpressionContext::Static, quoted)
-        // if self.can_be_const {
-        //     let len = contents.len();
-        //     let ident = Ident::new("v", Span::mixed_site());
-        //     MaybeStatic::konst(quote! {
-        //         {
-        //             static #ident: [#typ; #len] = [
-        //                 #( #contents, )*
-        //             ];
-        //             &#ident.into()
-        //         }
-        //     })
-        // }
+    fn into_cow_vec_tokens_impl(self, ctx: &mut ContextRecorder) -> TokenStream {
+        ctx.merge_with(&self.context);
+        let contents = self.value;
+        quote! {
+            ::std::vec![
+                #( #contents, )*
+            ].into()
+        }
     }
 }
 
 // compare to the implementation of Result<V, E>: FromIterator + Extend
 struct StaticShun<'a, I> {
     iter: I,
-    context: &'a mut ExpressionContext,
+    context: &'a mut ContextRecorder,
 }
 
 impl<'a, T, I: Iterator<Item = MaybeStatic<T>>> Iterator for StaticShun<'a, I> {
@@ -122,7 +72,7 @@ impl<'a, T, I: Iterator<Item = MaybeStatic<T>>> Iterator for StaticShun<'a, I> {
         match self.iter.next() {
             None => None,
             Some(MaybeStatic { value, context }) => {
-                *self.context &= context;
+                self.context.merge_with(&context);
                 Some(value)
             }
         }
@@ -131,12 +81,12 @@ impl<'a, T, I: Iterator<Item = MaybeStatic<T>>> Iterator for StaticShun<'a, I> {
 
 impl<T, V: FromIterator<T>> FromIterator<MaybeStatic<T>> for MaybeStatic<V> {
     fn from_iter<I: IntoIterator<Item = MaybeStatic<T>>>(iter: I) -> Self {
-        let mut context = ExpressionContext::MAX;
+        let mut context = Default::default();
         let v = StaticShun {
             iter: iter.into_iter(),
             context: &mut context,
         }
         .collect();
-        MaybeStatic::in_context(context, v)
+        MaybeStatic::in_context(v, context)
     }
 }

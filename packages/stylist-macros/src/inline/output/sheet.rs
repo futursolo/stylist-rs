@@ -1,38 +1,22 @@
-use crate::inline::output::maybe_static::ExpressionContext;
-
-use super::{MaybeStatic, Reify};
+use super::{ContextRecorder, IntoCowVecTokens, OutputScopeContent, Reify};
 use proc_macro2::TokenStream;
 use quote::quote;
 
 pub struct OutputSheet {
-    pub contents: MaybeStatic<Vec<TokenStream>>,
+    pub contents: Vec<OutputScopeContent>,
 }
 
 impl Reify for OutputSheet {
-    fn into_token_stream(self) -> MaybeStatic<TokenStream> {
+    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         let Self { contents } = self;
-        let (contents, content_context) = contents
-            .into_cow_vec_tokens(quote! {::stylist::ast::ScopeContent})
-            .into_value();
+        let contents = contents.into_cow_vec_tokens(ctx);
 
-        let quoted_sheet = quote! {
+        quote! {
             {
                 use ::std::convert::{From, Into};
-                ::stylist::ast::Sheet::from(#contents)
+                use ::stylist::ast::Sheet;
+                <Sheet as From<Sheet>>::from(#contents)
             }
-        };
-        if ExpressionContext::Static <= content_context {
-            MaybeStatic::statick(quote! { {
-                use ::stylist::vendor::once_cell::sync::Lazy;
-
-                static SHEET_REF: Lazy<::stylist::ast::Sheet> = Lazy::new(
-                    || #quoted_sheet
-                );
-
-                SHEET_REF.clone()
-            } })
-        } else {
-            MaybeStatic::dynamic(quoted_sheet)
         }
     }
 }

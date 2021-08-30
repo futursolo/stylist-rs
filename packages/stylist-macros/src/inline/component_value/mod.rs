@@ -77,29 +77,39 @@ impl ComponentValue {
 }
 
 impl ComponentValue {
-    pub fn to_output_fragments(&self) -> impl '_ + IntoIterator<Item = OutputFragment> {
-        use std::iter::once;
+    pub fn to_output_fragments(&self) -> Vec<OutputFragment> {
         match self {
             Self::Token(token) => {
-                Box::new(once(token.clone().into())) as Box<dyn Iterator<Item = _>>
+                vec![token.clone().into()]
             }
-            Self::Expr(expr) => Box::new(once(expr.to_output_fragment())),
+            Self::Expr(expr) => vec![expr.to_output_fragment()],
             Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
-                let inner_parts = contents.iter().flat_map(|c| c.to_output_fragments());
-                Box::new(once('['.into()).chain(inner_parts).chain(once(']'.into())))
+                let mut output = vec![];
+                output.push('['.into());
+                for c in contents {
+                    output.extend(c.to_output_fragments());
+                }
+                output.push(']'.into());
+                output
             }
             Self::Block(SimpleBlock::Paren { contents, .. }) => {
-                let inner_parts = contents.iter().flat_map(|c| c.to_output_fragments());
-                Box::new(once('('.into()).chain(inner_parts).chain(once(')'.into())))
+                let mut output = vec![];
+                output.push('('.into());
+                for c in contents {
+                    output.extend(c.to_output_fragments());
+                }
+                output.push(')'.into());
+                output
             }
             Self::Function(FunctionToken { name, args, .. }) => {
-                let inner_args = args.iter().flat_map(|arg| arg.to_output_fragments());
-                Box::new(
-                    once(name.clone().into())
-                        .chain(once('('.into()))
-                        .chain(inner_args)
-                        .chain(once(')'.into())),
-                )
+                let mut output = vec![];
+                output.push(name.clone().into());
+                output.push('('.into());
+                for c in args {
+                    output.extend(c.to_output_fragments());
+                }
+                output.push(')'.into());
+                output
             }
             Self::Block(SimpleBlock::Braced { .. }) => {
                 // this kind of block is not supposed to appear in @-rule preludes, block qualifiers
@@ -125,7 +135,7 @@ impl ComponentValue {
                     self,
                     concat!(
                         "expected a valid part of an attribute, got a block. ",
-                        "Did you mean to write `${..}` to inject an expression?"
+                        "Did you mean to write `${..}` to interpolate an expression?"
                     ),
                 );
                 vec![error]

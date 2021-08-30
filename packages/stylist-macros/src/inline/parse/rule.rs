@@ -4,7 +4,7 @@ use super::{
         css_ident::CssIdent,
         output::{OutputAtRule, OutputRuleContent},
     },
-    normalize_hierarchy_impl, CssBlockQualifier, CssScope, MaybeStatic, OutputSheetContent, Reify,
+    normalize_hierarchy_impl, CssBlockQualifier, CssScope, OutputSheetContent,
 };
 use proc_macro2::TokenStream;
 use quote::ToTokens;
@@ -81,16 +81,12 @@ impl CssAtRule {
             ));
         }
         let contents = match self.contents {
-            CssAtRuleContent::Empty(_) => MaybeStatic::statick(Vec::new()),
+            CssAtRuleContent::Empty(_) => Vec::new(),
             CssAtRuleContent::Scope(scope) => normalize_hierarchy_impl(ctx, scope.contents)
                 .map(|c| match c {
-                    OutputSheetContent::AtRule(rule) => {
-                        OutputRuleContent::AtRule(rule).into_token_stream()
-                    }
-                    OutputSheetContent::QualifiedRule(block) => {
-                        OutputRuleContent::Block(block).into_token_stream()
-                    }
-                    OutputSheetContent::Error(err) => err.into_token_stream(),
+                    OutputSheetContent::AtRule(rule) => OutputRuleContent::AtRule(rule),
+                    OutputSheetContent::QualifiedRule(block) => OutputRuleContent::Block(block),
+                    OutputSheetContent::Error(err) => OutputRuleContent::Err(err),
                 })
                 .collect(),
         };

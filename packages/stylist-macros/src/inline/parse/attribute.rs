@@ -3,7 +3,7 @@ use super::super::{
         ComponentValue, ComponentValueStream, InterpolatedExpression, PreservedToken,
     },
     css_ident::CssIdent,
-    output::{OutputAttribute, OutputFragment, Reify},
+    output::{OutputAttribute, OutputFragment},
 };
 use syn::{
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
@@ -96,14 +96,10 @@ impl ComponentValue {
 
 impl CssAttribute {
     pub(super) fn into_output(self) -> OutputAttribute {
-        let key_tokens = self.name.into_output().into_token_stream();
-        let values = self.value.values;
-        let errors = self.value.errors;
-
         OutputAttribute {
-            key: key_tokens,
-            values,
-            errors,
+            key: self.name.into_output(),
+            values: self.value.values,
+            errors: self.value.errors,
         }
     }
 }

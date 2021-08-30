@@ -1,10 +1,10 @@
 use super::{
     super::{component_value::PreservedToken, css_ident::CssIdent},
-    MaybeStatic, Reify,
+    ContextRecorder, Reify,
 };
 use proc_macro2::{Delimiter, Span, TokenStream};
 use quote::{quote, quote_spanned};
-use syn::{spanned::Spanned, Expr, ExprLit, Ident, Lit, LitStr};
+use syn::{spanned::Spanned, Expr, ExprLit, Lit, LitStr};
 
 #[derive(Debug, Clone)]
 pub enum OutputFragment {
@@ -57,17 +57,10 @@ impl<'a> From<&'a Expr> for OutputFragment {
             return Self::Str(litstr.value());
         }
 
-        let ident_write_expr = Ident::new("write_expr", Span::mixed_site());
         // quote spanned here so that errors related to calling #ident_write_expr show correctly
-        let quoted = quote_spanned! {expr.span()=>
-            {
-                fn #ident_write_expr<V: ::std::fmt::Display>(v: V) -> ::std::string::String {
-                    <V as ::std::string::ToString>::to_string(&v)
-                }
-                #ident_write_expr(#expr).into()
-            }
-        };
-        Self::Raw(quoted)
+        Self::Raw(quote_spanned! {expr.span()=>
+            (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
+        })
     }
 }
 
@@ -98,13 +91,16 @@ impl OutputFragment {
 }
 
 impl Reify for OutputFragment {
-    fn into_token_stream(self) -> MaybeStatic<TokenStream> {
+    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         match self.try_into_string() {
-            Err(t) => MaybeStatic::dynamic(t),
-            Ok(lit) => MaybeStatic::statick({
+            Err(t) => {
+                ctx.uses_dynamic_argument();
+                t
+            }
+            Ok(lit) => {
                 let lit_str = LitStr::new(lit.as_ref(), Span::call_site());
                 quote! { #lit_str.into() }
-            }),
+            }
         }
     }
 }

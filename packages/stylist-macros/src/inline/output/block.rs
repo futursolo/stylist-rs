@@ -1,32 +1,26 @@
-use super::{MaybeStatic, Reify};
+use super::{ContextRecorder, IntoCowVecTokens, OutputAttribute, OutputQualifier, Reify};
 use proc_macro2::TokenStream;
 use quote::quote;
 
 pub struct OutputQualifiedRule {
-    pub qualifier: MaybeStatic<TokenStream>,
-    pub attributes: MaybeStatic<Vec<TokenStream>>,
+    pub qualifier: OutputQualifier,
+    pub attributes: Vec<OutputAttribute>,
 }
 
 impl Reify for OutputQualifiedRule {
-    fn into_token_stream(self) -> MaybeStatic<TokenStream> {
+    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         let Self {
             qualifier,
             attributes,
-            ..
         } = self;
-        let (qualifier, qualifier_context) = qualifier.into_value();
-        let (attributes, attributes_context) = attributes
-            .into_cow_vec_tokens(quote! {::stylist::ast::StyleAttribute})
-            .into_value();
+        let qualifier = qualifier.into_token_stream(ctx);
+        let attributes = attributes.into_cow_vec_tokens(ctx);
 
-        MaybeStatic::in_context(
-            qualifier_context & attributes_context,
-            quote! {
-                ::stylist::ast::Block {
-                    condition: #qualifier,
-                    style_attributes: #attributes,
-                }
-            },
-        )
+        quote! {
+            ::stylist::ast::Block {
+                condition: #qualifier,
+                style_attributes: #attributes,
+            }
+        }
     }
 }
