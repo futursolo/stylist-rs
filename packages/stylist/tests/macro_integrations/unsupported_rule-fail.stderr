@@ -1,0 +1,17 @@
+error: @-rule 'page' not supported
+ --> $DIR/unsupported_rule-fail.rs:4:10
+  |
+4 |         @page {
+  |          ^^^^
+
+error: @-rule 'property' not supported
+ --> $DIR/unsupported_rule-fail.rs:7:10
+  |
+7 |         @property property-name {
+  |          ^^^^^^^^
+
+error: @-rule 'completely-unknown' not supported
+  --> $DIR/unsupported_rule-fail.rs:12:10
+   |
+12 |         @completely-unknown {
+   |          ^^^^^^^^^^^^^^^^^^

@@ -1,5 +1,4 @@
-use std::borrow::Cow;
-use std::fmt;
+use std::{borrow::Cow, fmt};
 
 use super::{StringFragment, ToStyleStr};
 use crate::Result;
@@ -57,10 +56,10 @@ impl ToStyleStr for Selector {
     }
 }
 
-impl<T: Into<Cow<'static, str>>> From<T> for Selector {
+impl<T: Into<Cow<'static, [StringFragment]>>> From<T> for Selector {
     fn from(s: T) -> Self {
         Self {
-            fragments: vec![s.into().into()].into(),
+            fragments: s.into(),
         }
     }
 }
@@ -71,7 +70,7 @@ mod tests {
 
     #[test]
     fn test_selector_gen_simple() -> Result<()> {
-        let s: Selector = ".abc".into();
+        let s: Selector = vec![".abc".into()].into();
 
         assert_eq!(
             s.to_style_str(Some("stylist-abcdefgh"))?,
@@ -83,7 +82,7 @@ mod tests {
 
     #[test]
     fn test_selector_pseduo() -> Result<()> {
-        let s: Selector = ":hover".into();
+        let s: Selector = vec![":hover".into()].into();
 
         assert_eq!(
             s.to_style_str(Some("stylist-abcdefgh"))?,
@@ -95,7 +94,7 @@ mod tests {
 
     #[test]
     fn test_selector_root_pseduo() -> Result<()> {
-        let s: Selector = ":root.big".into();
+        let s: Selector = vec![":root.big".into()].into();
 
         assert_eq!(
             s.to_style_str(Some("stylist-abcdefgh"))?,
@@ -107,7 +106,7 @@ mod tests {
 
     #[test]
     fn test_selector_gen_current() -> Result<()> {
-        let s: Selector = "&.big".into();
+        let s: Selector = vec!["&.big".into()].into();
 
         assert_eq!(
             s.to_style_str(Some("stylist-abcdefgh"))?,

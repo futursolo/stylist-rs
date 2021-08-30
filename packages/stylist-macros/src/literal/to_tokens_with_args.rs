@@ -7,8 +7,8 @@ use quote::quote;
 
 use stylist_core::ast::*;
 
-use crate::argument::Argument;
-use crate::fstring;
+use super::argument::Argument;
+use super::fstring;
 
 pub(crate) trait ToTokensWithArgs {
     fn to_tokens_with_args(
@@ -152,7 +152,7 @@ impl ToTokensWithArgs for StringFragment {
 
                     let current_tokens = quote! {
                         ::stylist::ast::StringFragment {
-                            inner: { #arg_tokens }.to_string().into(),
+                            inner: (&{ #arg_tokens } as &dyn ::std::fmt::Display).to_string().into(),
                         },
                     };
 

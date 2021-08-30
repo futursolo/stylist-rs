@@ -1,0 +1,11 @@
+error: expected a valid part of an attribute, got a block. Did you mean to write `${..}` to interpolate an expression?
+ --> $DIR/block_in_attribute-fail.rs:6:31
+  |
+6 |             background-color: {should_be_expression};
+  |                               ^^^^^^^^^^^^^^^^^^^^^^
+
+error: expected a valid part of an attribute, got a block. Did you mean to write `${..}` to interpolate an expression?
+ --> $DIR/block_in_attribute-fail.rs:7:20
+  |
+7 |             color: {another_expression};
+  |                    ^^^^^^^^^^^^^^^^^^^^

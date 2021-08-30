@@ -1,8 +1,7 @@
-use stylist::ast::ToStyleStr;
-use stylist::*;
-
 #[test]
 fn test_sheet_interpolation() {
+    use stylist::ast::ToStyleStr;
+    use stylist::*;
     let parsed = css!(
         r#"
             color: ${color};

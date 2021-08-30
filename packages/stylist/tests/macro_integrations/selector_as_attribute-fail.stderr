@@ -1,0 +1,5 @@
+error: unexpected ';' in selector, did you mean to write an attribute?
+ --> $DIR/selector_as_attribute-fail.rs:3:36
+  |
+3 |         looks_like_selector(): blue;
+  |                                    ^

@@ -1,12 +1,32 @@
-use stylist::ast::Sheet;
-use stylist::Style;
+use stylist::{
+    ast::{sheet, Sheet},
+    Style,
+};
 
 use crate::utils::now;
 
 pub fn bench_parse_simple() -> f64 {
     let start_time = now();
-    for _ in 0..1_000_000 {
+    for _ in 0..10_000_000 {
         let _sheet: Sheet = "color:red;".parse().expect("Failed to parse stylesheet.");
+    }
+
+    now() - start_time
+}
+
+pub fn bench_macro_simple() -> f64 {
+    let start_time = now();
+    for _ in 0..10_000_000 {
+        let _sheet: Sheet = sheet!("color:red;");
+    }
+
+    now() - start_time
+}
+
+pub fn bench_macro_inline_simple() -> f64 {
+    let start_time = now();
+    for _ in 0..10_000_000 {
+        let _sheet: Sheet = sheet!(color:red;);
     }
 
     now() - start_time
@@ -25,8 +45,42 @@ pub fn bench_parse_simple_no_cache() -> f64 {
 
 pub fn bench_parse_complex() -> f64 {
     let start_time = now();
-    for _ in 0..100_000 {
-        let _sheet: Sheet = r#"
+    for i in 0..1_000_000 {
+        let _sheet: Sheet = format!(
+            r#"
+            color:red;
+
+            .class-name-a {{
+                background: red;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }}
+
+            @media screen and (max-width: {i}px;) {{
+                font-size: 0.9rem;
+
+                .class-name-b {{
+                    flex-direction: row;
+                }}
+            }}
+        "#,
+            i = i / 1000
+        )
+        .parse()
+        .expect("Failed to parse stylesheet.");
+    }
+
+    now() - start_time
+}
+
+pub fn bench_macro_complex() -> f64 {
+    let start_time = now();
+    for i in 0..1_000_000 {
+        let _sheet: Sheet = sheet!(
+            r#"
             color:red;
 
             .class-name-a {
@@ -38,16 +92,44 @@ pub fn bench_parse_complex() -> f64 {
                 align-items: center;
             }
 
-            @media screen and (max-width: 500px;) {
+            @media screen and (max-width: ${i}px;) {
                 font-size: 0.9rem;
 
                 .class-name-b {
                     flex-direction: row;
                 }
             }
-        "#
-        .parse()
-        .expect("Failed to parse stylesheet.");
+        "#,
+            i = (i / 1000).to_string()
+        );
+    }
+
+    now() - start_time
+}
+
+pub fn bench_macro_inline_complex() -> f64 {
+    let start_time = now();
+    for i in 0..1_000_000 {
+        let _sheet: Sheet = sheet!(
+            color: red;
+
+            .class-name-a {
+                background: red;
+
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+
+            @media screen and (max-width: ${i / 1000}px;) {
+                font-size: 0.9rem;
+
+                .class-name-b {
+                    flex-direction: row;
+                }
+            }
+        );
     }
 
     now() - start_time

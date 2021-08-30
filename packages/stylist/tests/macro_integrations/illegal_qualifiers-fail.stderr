@@ -1,0 +1,29 @@
+error: expected a valid part of a scope qualifier, not a block
+ --> $DIR/illegal_qualifiers-fail.rs:3:9
+  |
+3 |         (not a function) 42 117.9f32 / ^ @ .okay ::also(okay) {
+  |         ^^^^^^^^^^^^^^^^
+
+error: only string literals are allowed in selectors
+ --> $DIR/illegal_qualifiers-fail.rs:3:26
+  |
+3 |         (not a function) 42 117.9f32 / ^ @ .okay ::also(okay) {
+  |                          ^^
+
+error: only string literals are allowed in selectors
+ --> $DIR/illegal_qualifiers-fail.rs:3:29
+  |
+3 |         (not a function) 42 117.9f32 / ^ @ .okay ::also(okay) {
+  |                             ^^^^^^^^
+
+error: unexpected punctuation in selector
+ --> $DIR/illegal_qualifiers-fail.rs:3:38
+  |
+3 |         (not a function) 42 117.9f32 / ^ @ .okay ::also(okay) {
+  |                                      ^
+
+error: unexpected punctuation in selector
+ --> $DIR/illegal_qualifiers-fail.rs:3:42
+  |
+3 |         (not a function) 42 117.9f32 / ^ @ .okay ::also(okay) {
+  |                                          ^

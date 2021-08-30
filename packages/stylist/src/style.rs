@@ -178,7 +178,9 @@ impl Style {
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.
         #[cfg(all(debug_assertions, feature = "parser"))]
-        style_str.parse::<Sheet>()?;
+        style_str
+            .parse::<Sheet>()
+            .expect("debug: emitted style should parse");
 
         let new_style = Self {
             inner: StyleContent {
