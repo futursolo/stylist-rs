@@ -1,10 +1,7 @@
 use super::super::css_ident::CssIdent;
 use proc_macro2::{Literal, Punct, TokenStream};
 use quote::ToTokens;
-use syn::{
-    parse::{Parse, ParseBuffer, Result as ParseResult},
-    LitStr,
-};
+use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 
 #[derive(Debug, Clone)]
 pub enum PreservedToken {
@@ -38,11 +35,11 @@ impl Parse for PreservedToken {
 }
 
 impl PreservedToken {
-    pub fn to_lit_str(&self) -> LitStr {
+    pub fn to_output_string(&self) -> String {
         match self {
-            Self::Ident(i) => i.to_lit_str(),
-            Self::Literal(l) => LitStr::new(&format!("{}", l), l.span()),
-            Self::Punct(p) => LitStr::new(&format!("{}", p.as_char()), p.span()),
+            Self::Ident(i) => i.to_output_string(),
+            Self::Literal(l) => format!("{}", l),
+            Self::Punct(p) => format!("{}", p.as_char()),
         }
     }
 }

@@ -1,5 +1,7 @@
 use super::super::{
-    component_value::{ComponentValue, ComponentValueStream, InjectedExpression, PreservedToken},
+    component_value::{
+        ComponentValue, ComponentValueStream, InterpolatedExpression, PreservedToken,
+    },
     css_ident::CssIdent,
     output::{OutputAttribute, OutputFragment, Reify},
 };
@@ -12,7 +14,7 @@ use syn::{
 #[derive(Debug)]
 pub enum CssAttributeName {
     Identifier(CssIdent),
-    InjectedExpr(InjectedExpression),
+    InjectedExpr(InterpolatedExpression),
 }
 
 #[derive(Debug)]
@@ -70,10 +72,7 @@ impl Parse for CssAttributeValue {
             let next_token = component_iter
                 .next()
                 .ok_or_else(|| input.error("AttributeValue: unexpected end of input"))??;
-            let token_errors = next_token
-                .validate_attribute_token()
-                .into_iter()
-                .collect::<Vec<_>>();
+            let token_errors = next_token.validate_attribute_token();
             if token_errors.is_empty() {
                 values.push(next_token);
             }
@@ -112,7 +111,7 @@ impl CssAttribute {
 impl CssAttributeName {
     fn into_output(self) -> OutputFragment {
         match self {
-            Self::Identifier(name) => name.to_lit_str().into(),
+            Self::Identifier(name) => name.into(),
             Self::InjectedExpr(expr) => expr.to_output_fragment(),
         }
     }

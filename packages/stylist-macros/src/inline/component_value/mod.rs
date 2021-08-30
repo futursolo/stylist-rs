@@ -25,15 +25,15 @@ mod function_token;
 pub use function_token::FunctionToken;
 mod stream;
 pub use stream::ComponentValueStream;
-mod injected_expression;
-pub use injected_expression::InjectedExpression;
+mod interpolated_expression;
+pub use interpolated_expression::InterpolatedExpression;
 
 #[derive(Debug, Clone)]
 pub enum ComponentValue {
     Function(FunctionToken),
     Token(PreservedToken),
     Block(SimpleBlock),
-    Expr(InjectedExpression),
+    Expr(InterpolatedExpression),
 }
 
 impl ToTokens for ComponentValue {
@@ -111,7 +111,7 @@ impl ComponentValue {
 
     // Overly simplified parsing of a css attribute
     #[must_use = "validation errors should not be discarded"]
-    pub fn validate_attribute_token(&self) -> impl IntoIterator<Item = ParseError> {
+    pub fn validate_attribute_token(&self) -> Vec<ParseError> {
         match self {
             Self::Expr(_)
             | Self::Token(PreservedToken::Ident(_))
@@ -144,7 +144,7 @@ impl ComponentValue {
     }
 
     // Overly simplified version of parsing a css selector :)
-    pub fn validate_selector_token(&self) -> ParseResult<impl IntoIterator<Item = ParseError>> {
+    pub fn validate_selector_token(&self) -> ParseResult<Vec<ParseError>> {
         match self {
             Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => Ok(vec![]),
             Self::Block(SimpleBlock::Bracketed { contents, .. }) => {

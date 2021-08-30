@@ -40,7 +40,7 @@ impl Parse for CssAtRule {
 
         // Recognize the type of @-rule
         // TODO: be sensitive to this detected type when validating the prelude and contained attributes
-        if !["media", "supports"].contains(&name.to_name_string().as_str()) {
+        if !["media", "supports"].contains(&name.to_output_string().as_str()) {
             errors.push(ParseError::new_spanned(
                 &name,
                 format!("@-rule '{}' not supported", name),

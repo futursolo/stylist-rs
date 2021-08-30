@@ -8,13 +8,13 @@ use syn::{
 };
 
 #[derive(Debug, Clone)]
-pub struct InjectedExpression {
+pub struct InterpolatedExpression {
     dollar: token::Dollar,
     braces: token::Brace,
     expr: Box<Expr>,
 }
 
-impl ToTokens for InjectedExpression {
+impl ToTokens for InterpolatedExpression {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         self.dollar.to_tokens(tokens);
         self.braces.surround(tokens, |toks| {
@@ -23,13 +23,13 @@ impl ToTokens for InjectedExpression {
     }
 }
 
-impl Parse for InjectedExpression {
+impl Parse for InterpolatedExpression {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
         let dollar = input.parse()?;
         let inner;
         let braces = braced!(inner in input);
         let expr = Box::new(inner.parse()?);
-        Ok(InjectedExpression {
+        Ok(InterpolatedExpression {
             dollar,
             braces,
             expr,
@@ -37,7 +37,7 @@ impl Parse for InjectedExpression {
     }
 }
 
-impl InjectedExpression {
+impl InterpolatedExpression {
     pub fn to_output_fragment(&self) -> OutputFragment {
         (&*self.expr).into()
     }

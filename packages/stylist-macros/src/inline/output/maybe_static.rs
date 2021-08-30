@@ -140,14 +140,3 @@ impl<T, V: FromIterator<T>> FromIterator<MaybeStatic<T>> for MaybeStatic<V> {
         MaybeStatic::in_context(context, v)
     }
 }
-
-impl<A, T: Extend<A>> Extend<MaybeStatic<A>> for MaybeStatic<T> {
-    fn extend<I: IntoIterator<Item = MaybeStatic<A>>>(&mut self, iter: I) {
-        let mut extend_context = ExpressionContext::MAX;
-        self.value.extend(StaticShun {
-            iter: iter.into_iter(),
-            context: &mut extend_context,
-        });
-        self.context &= extend_context;
-    }
-}

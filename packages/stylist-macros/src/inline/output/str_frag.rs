@@ -6,11 +6,11 @@ use proc_macro2::{Delimiter, Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{spanned::Spanned, Expr, ExprLit, Ident, Lit, LitStr};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum OutputFragment {
     Raw(TokenStream),
     Token(PreservedToken),
-    Str(LitStr),
+    Str(String),
     Delimiter(Delimiter, /*start:*/ bool),
 }
 
@@ -23,7 +23,7 @@ impl From<char> for OutputFragment {
             ']' => Self::Delimiter(Delimiter::Bracket, false),
             '(' => Self::Delimiter(Delimiter::Parenthesis, true),
             ')' => Self::Delimiter(Delimiter::Parenthesis, false),
-            ' ' => Self::Str(LitStr::new(" ", Span::call_site())),
+            ' ' => Self::Str(" ".into()),
             _ => unreachable!("Delimiter {} not recognized", c),
         }
     }
@@ -41,12 +41,6 @@ impl From<PreservedToken> for OutputFragment {
     }
 }
 
-impl From<LitStr> for OutputFragment {
-    fn from(t: LitStr) -> Self {
-        Self::Str(t)
-    }
-}
-
 impl From<CssIdent> for OutputFragment {
     fn from(i: CssIdent) -> Self {
         PreservedToken::Ident(i).into()
@@ -60,19 +54,15 @@ impl<'a> From<&'a Expr> for OutputFragment {
             ..
         }) = expr
         {
-            return Self::Str(litstr.clone());
+            return Self::Str(litstr.value());
         }
 
-        let ident_result = Ident::new("expr", Span::mixed_site());
         let ident_write_expr = Ident::new("write_expr", Span::mixed_site());
         // quote spanned here so that errors related to calling #ident_write_expr show correctly
         let quoted = quote_spanned! {expr.span()=>
             {
                 fn #ident_write_expr<V: ::std::fmt::Display>(v: V) -> ::std::string::String {
-                    use ::std::fmt::Write;
-                    let mut #ident_result = ::std::string::String::new();
-                    ::std::write!(&mut #ident_result, "{}", v).expect("");
-                    #ident_result
+                    <V as ::std::string::ToString>::to_string(&v)
                 }
                 #ident_write_expr(#expr).into()
             }
@@ -94,24 +84,27 @@ impl OutputFragment {
         }
     }
     /// Return the string literal that will be quoted, or a full tokenstream
-    fn reify_str_value(self) -> Result<LitStr, TokenStream> {
+    fn try_into_string(self) -> Result<String, TokenStream> {
         match self {
             Self::Raw(t) => Err(t),
             Self::Str(s) => Ok(s),
-            Self::Token(t) => Ok(t.to_lit_str()),
-            Self::Delimiter(kind, start) => Ok(LitStr::new(
-                Self::str_for_delim(kind, start),
-                Span::call_site(),
-            )),
+            Self::Token(t) => Ok(t.to_output_string()),
+            Self::Delimiter(kind, start) => Ok(Self::str_for_delim(kind, start).into()),
         }
+    }
+    fn as_str(&self) -> Option<String> {
+        self.clone().try_into_string().ok()
     }
 }
 
 impl Reify for OutputFragment {
     fn into_token_stream(self) -> MaybeStatic<TokenStream> {
-        match self.reify_str_value() {
+        match self.try_into_string() {
             Err(t) => MaybeStatic::dynamic(t),
-            Ok(lit) => MaybeStatic::statick(quote! { #lit.into() }),
+            Ok(lit) => MaybeStatic::statick({
+                let lit_str = LitStr::new(lit.as_ref(), Span::call_site());
+                quote! { #lit_str.into() }
+            }),
         }
     }
 }
@@ -134,15 +127,11 @@ pub fn fragment_coalesce(
     l: OutputFragment,
     r: OutputFragment,
 ) -> Result<OutputFragment, (OutputFragment, OutputFragment)> {
-    match (l.reify_str_value(), r.reify_str_value()) {
-        (Err(lt), Err(rt)) => Err((OutputFragment::Raw(lt), OutputFragment::Raw(rt))),
-        (Ok(lt), Err(rt)) => Err((OutputFragment::Str(lt), OutputFragment::Raw(rt))),
-        (Err(lt), Ok(rt)) => Err((OutputFragment::Raw(lt), OutputFragment::Str(rt))),
-        (Ok(lt), Ok(rt)) => {
+    match (l.as_str(), r.as_str()) {
+        (Some(lt), Some(rt)) => {
             // Two successive string literals can be combined into a single one
-            let combined = lt.value() + &rt.value();
-            let lit = LitStr::new(&combined, Span::call_site());
-            Ok(OutputFragment::Str(lit))
+            Ok(OutputFragment::Str(format!("{}{}", lt, rt)))
         }
+        _ => Err((l, r)),
     }
 }

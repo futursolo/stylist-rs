@@ -4,10 +4,10 @@ use super::{
 };
 use crate::spacing_iterator::SpacedIterator;
 use itertools::Itertools;
-use proc_macro2::{Span, TokenStream};
+use proc_macro2::TokenStream;
 use quote::quote;
 use std::iter::once;
-use syn::{parse::Error as ParseError, LitStr};
+use syn::parse::Error as ParseError;
 
 pub struct OutputAtRule {
     pub name: CssIdent,
@@ -35,10 +35,7 @@ impl Reify for OutputAtRule {
             .into_cow_vec_tokens(quote! {::stylist::ast::RuleContent})
             .into_value();
 
-        let at_name = OutputFragment::Str(LitStr::new(
-            &format!("@{} ", name.to_name_string()),
-            Span::call_site(),
-        ));
+        let at_name = OutputFragment::Str(format!("@{} ", name.to_output_string()));
         let (condition, static_condition) = once(at_name)
             .chain(prelude_parts)
             .map(|e| e.into_token_stream())

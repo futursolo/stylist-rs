@@ -4,8 +4,7 @@ use std::fmt::{Display, Formatter};
 use syn::{
     ext::IdentExt,
     parse::{Parse, ParseBuffer, Result as ParseResult},
-    spanned::Spanned,
-    token, Ident, LitStr,
+    token, Ident,
 };
 
 syn::custom_punctuation!(DoubleSub, --);
@@ -31,7 +30,7 @@ impl IdentPart {
 
 impl Display for CssIdent {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
-        let name = self.to_name_string();
+        let name = self.to_output_string();
         f.write_str(&name)
     }
 }
@@ -46,7 +45,7 @@ impl CssIdent {
         }
     }
 
-    pub fn to_name_string(&self) -> String {
+    pub fn to_output_string(&self) -> String {
         self.parts
             .iter()
             .map(|p| match p {
@@ -54,11 +53,6 @@ impl CssIdent {
                 IdentPart::Ident(t) => format!("{}", t.unraw()),
             })
             .collect()
-    }
-
-    pub fn to_lit_str(&self) -> LitStr {
-        let formatted = self.to_name_string();
-        LitStr::new(&formatted, self.span())
     }
 }
 

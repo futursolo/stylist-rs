@@ -30,8 +30,11 @@ impl Parse for CssBlockQualifier {
             let next_token = component_iter
                 .next()
                 .ok_or_else(|| input.error("ScopeQualifier: unexpected end of input"))??;
-            qualifier_errors.extend(next_token.validate_selector_token()?);
-            qualifiers.push(next_token);
+            let token_errors = next_token.validate_selector_token()?;
+            if token_errors.is_empty() {
+                qualifiers.push(next_token);
+            }
+            qualifier_errors.extend(token_errors);
         }
         Ok(Self {
             qualifiers,
