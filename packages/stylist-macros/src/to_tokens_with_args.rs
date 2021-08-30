@@ -152,7 +152,7 @@ impl ToTokensWithArgs for StringFragment {
 
                     let current_tokens = quote! {
                         ::stylist::ast::StringFragment {
-                            inner: #arg_tokens.to_string().into(),
+                            inner: { #arg_tokens }.to_string().into(),
                         },
                     };
 
