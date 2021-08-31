@@ -1,19 +1,23 @@
-//! Utility macros for writing (global) styles.
+//! Utility macros for writing styles.
 //!
 //! This module contains also runtime support for the macros and documents their usage. There are two
-//! syntaxes available: using [string interpolation] or [tokentree based].
+//! syntaxes available: [string literal] and [inline].
 //!
-//! # String Interpolation
+//! # String Literal
 //!
-//! This macro supports string interpolation on values of style attributes, selectors, `@supports` and `@media` rules.
+//! This introduces a syntax that is simliar to the [`format!`] macro from the standard library.
+//!
+//! The first argument of this syntax is a string literal followed by an argument list. This macro
+//! will replace `${arg}` with the argument in the argument list when creating the AST.
+//!
+//! This syntax supports interpolation on values of style attributes, selectors, `@supports` and `@media` rules.
 //!
 //! Interpolated strings are denoted with `${ident}` and any type that implements [`Display`] can be
 //! used as value. Only named argument are supported at this moment.
 //!
-//! If you do need to output a `${` sequence, you may use `$${` to escape to a `${`.
+//! If you do need to print a `${` sequence, you may use `$${` to escape to a `${`.
 //!
-//!
-//! ## Example
+//! ### Example
 //! ```css
 //! content: "$${}";
 //! ```
@@ -23,14 +27,11 @@
 //! content: "${}";
 //! ```
 //!
-//! ## Note: `$${` escape can only present where `${` is valid in the css stylesheet.
+//! ### Note:
 //!
-//! Stylist currently does not check or escape the content of interpolated strings. It is possible
-//! to pass invalid strings that would result in an invalid stylesheet. In debug mode, if feature `parser` is
-//! enabled, Stylist will attempt to parse the stylesheet again after interpolated strings are
-//! substituted with its actual value to check if the final stylesheet is invalid.
+//! `$${` escape can only present where `${` is valid in the css stylesheet.
 //!
-//! # Example
+//! ## Example
 //!
 //! ```
 //! use stylist::{Style, css};
@@ -70,22 +71,24 @@
 //! println!("{}", style.get_style_str());
 //! ```
 //!
-//! # Tokentree Style
+//! # Inline
 //!
-//! The other possibility is oriented around reusing the rust tokenizer where possible instead of passing
-//! a string literal to the macro. The hope is to have an improved programming experience by more precise
-//! error locations and diagnostics.
+//! You may also directly inline a stylesheet in the macro.
 //!
 //! Like in string interpolation syntax, interpolated values are allowed in most places through the `${expr}`
-//! syntax. In distinction, the braces contain a rust expression of any type implementing [`Display`] that
+//! syntax. In distinction, the braces contain a rust expression of any type implementing [`Display`]
 //! will be evaluated in the surrounding context.
 //!
-//! Due to the tokenizer there are some quirks with literals. For example `4em` would be tokenized as a
-//! floating point literal with a missing exponent and a suffix of `m`. To work around this issue, use
+//! Due to the tokenizer of the Rust complier, there are some quirks with literals. For example, `4em` would be
+//! tokenized as a floating point literal with a missing exponent and a suffix of `m`. To work around this issue, use
 //! string interpolation as in `${"4em"}`. Similarly, some color hash-tokens like `#44444e` as misinterpreted,
 //! use the same workaround here: `${"#44444e"}`.
 //!
-//! # Example
+//! ## Note
+//!
+//! This syntax provides more precise error locations and advanced diagnostics information.
+//!
+//! ## Example
 //!
 //! ```
 //! use stylist::{Style, css};
@@ -122,8 +125,15 @@
 //! println!("{}", style.get_style_str());
 //! ```
 //!
-//! [string interpolation]: #string-interpolation
-//! [tokentree based]: #tokentree-style
+//! ## Security Notice
+//!
+//! Stylist currently does not check or escape the content of interpolated strings. It is possible
+//! to pass invalid strings that would result in an invalid stylesheet. In debug mode, if feature `parser` is
+//! enabled, Stylist will attempt to parse the stylesheet again after interpolated strings are
+//! substituted with its actual value to check if the final stylesheet is invalid.
+//!
+//! [string literal]: #string-literal
+//! [inline]: #inline
 //! [`Display`]: std::fmt::Display
 
 /// A procedural macro that parses a string literal into a [`Style`].
