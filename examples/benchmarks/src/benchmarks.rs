@@ -100,7 +100,7 @@ pub fn bench_macro_complex() -> f64 {
                 }
             }
         "#,
-            i = (i / 1000).to_string()
+            i = i / 1000
         );
     }
 

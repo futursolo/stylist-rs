@@ -1,8 +1,8 @@
 //! This module implements a type abstractly tracking in what kind of expression context
 //! an item appears. This information is leverage to provide improved performance and
 //! static caching of parts of the generated output.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub enum AllowedUsage {
+#[derive(Clone, Debug, PartialEq)]
+enum AllowedUsage {
     // ```
     // let width = 500;
     // style! { width: ${width}; }
@@ -23,6 +23,7 @@ pub enum AllowedUsage {
     // Const,
 }
 
+#[derive(Debug, Clone)]
 pub struct ContextRecorder {
     usage: AllowedUsage,
 }
@@ -36,14 +37,16 @@ impl Default for ContextRecorder {
 }
 
 impl ContextRecorder {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     // Record the usage of a dynamic expression
     pub fn uses_dynamic_argument(&mut self) {
-        self.usage = self.usage.min(AllowedUsage::Dynamic)
+        self.usage = AllowedUsage::Dynamic;
     }
-    pub fn merge_with(&mut self, other: &ContextRecorder) {
-        self.usage = self.usage.min(other.usage)
-    }
-    pub fn usage(&self) -> AllowedUsage {
-        self.usage
+
+    pub fn is_static(&self) -> bool {
+        self.usage == AllowedUsage::Static
     }
 }

@@ -5,7 +5,7 @@ mod output;
 mod parse;
 
 use log::debug;
-use output::{AllowedUsage, Reify};
+use output::{ContextRecorder, Reify};
 use parse::CssRootNode;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -15,10 +15,13 @@ pub fn macro_fn(input: TokenStream) -> TokenStream {
         Ok(parsed) => parsed,
         Err(failed) => return failed.to_compile_error(),
     };
+
     debug!("Parsed as: {:?}", root);
 
-    let (quoted_sheet, allowed_usage) = root.into_output().into_context_aware_tokens().into_value();
-    if AllowedUsage::Static <= allowed_usage {
+    let mut ctx = ContextRecorder::new();
+    let quoted_sheet = root.into_output().into_token_stream(&mut ctx);
+
+    if ctx.is_static() {
         quote! { {
             use ::stylist::vendor::once_cell::sync::Lazy;
 

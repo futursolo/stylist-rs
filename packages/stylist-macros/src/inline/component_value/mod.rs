@@ -77,43 +77,44 @@ impl ComponentValue {
 }
 
 impl ComponentValue {
-    // clippy is of course right, it's just making the code less readable for negligable
-    // performance gains
-    #[allow(clippy::vec_init_then_push)]
     pub fn to_output_fragments(&self) -> Vec<OutputFragment> {
         match self {
             Self::Token(token) => {
                 vec![token.clone().into()]
             }
+
             Self::Expr(expr) => vec![expr.to_output_fragment()],
+
             Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
-                let mut output = vec![];
-                output.push('['.into());
+                // [ ... ]
+                let mut output = vec!['['.into()];
                 for c in contents {
                     output.extend(c.to_output_fragments());
                 }
                 output.push(']'.into());
                 output
             }
+
             Self::Block(SimpleBlock::Paren { contents, .. }) => {
-                let mut output = vec![];
-                output.push('('.into());
+                // ( ... )
+                let mut output = vec!['('.into()];
                 for c in contents {
                     output.extend(c.to_output_fragments());
                 }
                 output.push(')'.into());
                 output
             }
+
             Self::Function(FunctionToken { name, args, .. }) => {
-                let mut output = vec![];
-                output.push(name.clone().into());
-                output.push('('.into());
+                // name( ... )
+                let mut output = vec![name.clone().into(), '('.into()];
                 for c in args {
                     output.extend(c.to_output_fragments());
                 }
                 output.push(')'.into());
                 output
             }
+
             Self::Block(SimpleBlock::Braced { .. }) => {
                 // this kind of block is not supposed to appear in @-rule preludes, block qualifiers
                 // or attribute values and as such should not get emitted
@@ -129,20 +130,21 @@ impl ComponentValue {
             Self::Expr(_)
             | Self::Token(PreservedToken::Ident(_))
             | Self::Token(PreservedToken::Literal(_)) => vec![],
+
             Self::Function(FunctionToken { args, .. }) => args
                 .iter()
                 .flat_map(|a| a.validate_attribute_token())
                 .collect(),
+
             Self::Block(_) => {
                 let error = ParseError::new_spanned(
                     self,
-                    concat!(
-                        "expected a valid part of an attribute, got a block. ",
-                        "Did you mean to write `${..}` to interpolate an expression?"
-                    ),
+                    "expected a valid part of an attribute, got a block. \
+                    Did you mean to write `${..}` to interpolate an expression?",
                 );
                 vec![error]
             }
+
             Self::Token(PreservedToken::Punct(p)) => {
                 if !"-/%:,#".contains(p.as_char()) {
                     vec![ParseError::new_spanned(
@@ -160,6 +162,7 @@ impl ComponentValue {
     pub fn validate_selector_token(&self) -> ParseResult<Vec<ParseError>> {
         match self {
             Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => Ok(vec![]),
+
             Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
                 let mut collected = vec![];
                 for e in contents.iter().map(|e| e.validate_selector_token()) {
@@ -167,10 +170,12 @@ impl ComponentValue {
                 }
                 Ok(collected)
             }
+
             Self::Block(_) => Ok(vec![ParseError::new_spanned(
                 self,
                 "expected a valid part of a scope qualifier, not a block",
             )]),
+
             Self::Token(PreservedToken::Literal(l)) => {
                 let syn_lit = Lit::new(l.clone());
                 if !matches!(syn_lit, Lit::Str(_)) {
@@ -182,6 +187,7 @@ impl ComponentValue {
                     Ok(vec![])
                 }
             }
+
             Self::Token(PreservedToken::Punct(p)) => {
                 if p.as_char() == ';' {
                     Err(ParseError::new_spanned(
