@@ -27,14 +27,16 @@ impl Reify for OutputSelector {
 
 #[derive(Clone)]
 pub struct OutputQualifier {
-    pub selectors: Vec<OutputSelector>,
+    pub selector_list: Vec<OutputSelector>,
     pub errors: Vec<ParseError>,
 }
 
 impl Reify for OutputQualifier {
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         let Self {
-            selectors, errors, ..
+            selector_list: selectors,
+            errors,
+            ..
         } = self;
 
         let selectors = selectors.into_iter().into_cow_vec_tokens(ctx);

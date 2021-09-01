@@ -1,143 +1,132 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
-use proc_macro2::{Literal, TokenStream};
 use proc_macro_error::abort_call_site;
-use quote::quote;
 
 use stylist_core::ast::*;
 
-use super::argument::Argument;
-use super::fstring;
+use crate::output::{
+    OutputAtRule, OutputAttribute, OutputFragment, OutputQualifiedRule, OutputQualifier,
+    OutputRuleContent, OutputScopeContent, OutputSelector, OutputSheet,
+};
+
+use super::{argument::Argument, fstring};
 
 pub(crate) trait ToTokensWithArgs {
+    type Output;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream;
+    ) -> Self::Output;
 }
 
 impl ToTokensWithArgs for Selector {
+    type Output = OutputSelector;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream {
-        let mut fragment_tokens = TokenStream::new();
+    ) -> Self::Output {
+        let mut selectors = vec![];
 
         for frag in self.fragments.iter() {
-            fragment_tokens.extend(frag.to_tokens_with_args(args, args_used));
+            selectors.extend(frag.to_tokens_with_args(args, args_used));
         }
-
-        quote! {
-            ::stylist::ast::Selector{
-                fragments: vec![#fragment_tokens].into(),
-            }
-        }
+        OutputSelector { selectors }
     }
 }
 
 impl ToTokensWithArgs for StyleAttribute {
+    type Output = OutputAttribute;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream {
-        let key_s = Literal::string(&self.key);
+    ) -> Self::Output {
+        let key = OutputFragment::Str(self.key.as_ref().to_string());
 
-        let mut val_tokens = TokenStream::new();
+        let mut values = vec![];
 
         for i in self.value.iter() {
-            let current_tokens = i.to_tokens_with_args(args, args_used);
-
-            val_tokens.extend(current_tokens);
+            values.extend(i.to_tokens_with_args(args, args_used));
         }
-        quote! { ::stylist::ast::StyleAttribute{ key: #key_s.into(), value: vec![#val_tokens].into() } }
+
+        OutputAttribute {
+            key,
+            values,
+            errors: vec![],
+        }
     }
 }
 
 impl ToTokensWithArgs for Block {
+    type Output = OutputQualifiedRule;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream {
-        let mut selector_tokens = TokenStream::new();
+    ) -> Self::Output {
+        let mut selector_list = vec![];
 
         for i in self.condition.iter() {
-            let current_tokens = i.to_tokens_with_args(args, args_used);
-
-            selector_tokens.extend(quote! {#current_tokens ,});
+            selector_list.push(i.to_tokens_with_args(args, args_used));
         }
 
-        let mut style_attr_tokens = TokenStream::new();
+        let mut attributes = vec![];
 
         for i in self.style_attributes.iter() {
-            let current_tokens = i.to_tokens_with_args(args, args_used);
-
-            style_attr_tokens.extend(quote! {#current_tokens ,});
+            attributes.push(i.to_tokens_with_args(args, args_used));
         }
 
-        quote! {
-            ::stylist::ast::Block {
-                condition: vec![#selector_tokens].into(),
-                style_attributes: vec![#style_attr_tokens].into(),
-            }
+        OutputQualifiedRule {
+            qualifier: OutputQualifier {
+                selector_list,
+                errors: vec![],
+            },
+            attributes,
         }
     }
 }
 
 impl ToTokensWithArgs for RuleContent {
+    type Output = OutputRuleContent;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream {
+    ) -> Self::Output {
         match self {
             Self::Block(ref m) => {
-                let tokens = m.to_tokens_with_args(args, args_used);
-
-                quote! { ::stylist::ast::RuleContent::Block(#tokens) }
+                let block = m.to_tokens_with_args(args, args_used);
+                OutputRuleContent::Block(block)
             }
             Self::Rule(ref m) => {
-                let tokens = m.to_tokens_with_args(args, args_used);
-
-                quote! { ::stylist::ast::RuleContent::Rule(#tokens) }
+                let rule = m.to_tokens_with_args(args, args_used);
+                OutputRuleContent::AtRule(rule)
             }
-            Self::String(ref m) => {
-                let s = Literal::string(m);
-                quote! { ::stylist::ast::RuleContent::String(#s.into()) }
-            }
+            Self::String(ref m) => OutputRuleContent::String(m.as_ref().to_string()),
         }
     }
 }
 
 impl ToTokensWithArgs for StringFragment {
+    type Output = Vec<OutputFragment>;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream {
+    ) -> Self::Output {
         let fragments = match fstring::Parser::parse(&self.inner) {
             Ok(m) => m,
             Err(e) => abort_call_site!("{}", e),
         };
 
-        let mut tokens = TokenStream::new();
+        let mut fragments_out = vec![];
 
         for frag in fragments.iter() {
             match frag {
                 fstring::Fragment::Literal(ref m) => {
-                    let s = Literal::string(m);
-
-                    let current_tokens = quote! {
-                        ::stylist::ast::StringFragment {
-                            inner: #s.into(),
-                        },
-                    };
-
-                    tokens.extend(current_tokens);
+                    fragments_out.push(OutputFragment::Str(m.clone()));
                 }
 
                 fstring::Fragment::Interpolation(ref m) => {
@@ -146,111 +135,75 @@ impl ToTokensWithArgs for StringFragment {
                         None => abort_call_site!("missing argument: {}", self.inner),
                     };
 
-                    let arg_tokens = arg.tokens.clone();
-
                     args_used.insert(arg.name.clone());
-
-                    let current_tokens = quote! {
-                        ::stylist::ast::StringFragment {
-                            inner: (&{ #arg_tokens } as &dyn ::std::fmt::Display).to_string().into(),
-                        },
-                    };
-
-                    tokens.extend(current_tokens);
+                    fragments_out.push(arg.into());
                 }
             }
         }
 
-        tokens
+        fragments_out
     }
 }
 
 impl ToTokensWithArgs for Rule {
+    type Output = OutputAtRule;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream {
-        let mut cond_tokens = TokenStream::new();
+    ) -> Self::Output {
+        let mut prelude = vec![];
 
         for i in self.condition.iter() {
-            let current_tokens = i.to_tokens_with_args(args, args_used);
-
-            cond_tokens.extend(current_tokens);
+            prelude.extend(i.to_tokens_with_args(args, args_used));
         }
 
-        let mut content_tokens = TokenStream::new();
+        let mut contents = vec![];
 
         for i in self.content.iter() {
-            let current_tokens = i.to_tokens_with_args(args, args_used);
-
-            content_tokens.extend(quote! {#current_tokens ,});
+            contents.push(i.to_tokens_with_args(args, args_used));
         }
 
-        quote! {
-            ::stylist::ast::Rule {
-                condition: vec![#cond_tokens].into(),
-                content: vec![#content_tokens].into(),
-            }
+        OutputAtRule {
+            prelude,
+            contents,
+            errors: vec![],
         }
     }
 }
 
 impl ToTokensWithArgs for ScopeContent {
+    type Output = OutputScopeContent;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream {
+    ) -> Self::Output {
         match self {
             Self::Block(ref m) => {
-                let tokens = m.to_tokens_with_args(args, args_used);
-
-                quote! { ::stylist::ast::ScopeContent::Block(#tokens) }
+                let block = m.to_tokens_with_args(args, args_used);
+                OutputScopeContent::Block(block)
             }
             Self::Rule(ref m) => {
-                let tokens = m.to_tokens_with_args(args, args_used);
-
-                quote! { ::stylist::ast::ScopeContent::Rule(#tokens) }
+                let rule = m.to_tokens_with_args(args, args_used);
+                OutputScopeContent::AtRule(rule)
             }
         }
     }
 }
 
 impl ToTokensWithArgs for Sheet {
+    type Output = OutputSheet;
     fn to_tokens_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
-    ) -> TokenStream {
-        let mut scope_tokens = TokenStream::new();
+    ) -> Self::Output {
+        let mut contents = vec![];
 
         for i in self.iter() {
-            let current_scope_tokens = i.to_tokens_with_args(args, args_used);
-
-            scope_tokens.extend(quote! {#current_scope_tokens ,});
+            contents.push(i.to_tokens_with_args(args, args_used));
         }
-
-        if args.is_empty() {
-            quote! { {
-                use ::stylist::vendor::once_cell::sync::Lazy;
-                use ::stylist::ast::Sheet;
-                use ::std::vec;
-
-                static SHEET_REF: Lazy<Sheet> = Lazy::new(
-                    || Sheet::from(vec![#scope_tokens])
-                );
-
-
-                SHEET_REF.clone()
-            } }
-        } else {
-            quote! { {
-                use ::stylist::ast::Sheet;
-                use ::std::vec;
-
-                Sheet::from(vec![#scope_tokens])
-            } }
-        }
+        OutputSheet { contents }
     }
 }

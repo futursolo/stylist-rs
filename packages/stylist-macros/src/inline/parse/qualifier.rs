@@ -72,7 +72,7 @@ impl CssBlockQualifier {
         fn is_not_comma(q: &ComponentValue) -> bool {
             !matches!(q, ComponentValue::Token(PreservedToken::Punct(ref p)) if p.as_char() == ',')
         }
-        let selectors = self
+        let selector_list = self
             .qualifiers
             .into_iter()
             .peekable()
@@ -96,7 +96,7 @@ impl CssBlockQualifier {
             .collect();
 
         OutputQualifier {
-            selectors,
+            selector_list,
             errors: self.qualifier_errors,
         }
     }

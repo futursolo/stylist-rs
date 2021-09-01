@@ -79,12 +79,7 @@ fn test_sheet_interpolation() {
             .into(),
         }),
         ScopeContent::Rule(Rule {
-            condition: vec![
-                "@media ".into(),
-                "screen and ".into(),
-                "(max-width: 500px)".into(),
-            ]
-            .into(),
+            condition: vec!["@media screen and ".into(), "(max-width: 500px)".into()].into(),
             content: vec![RuleContent::Block(Block {
                 condition: vec![].into(),
                 style_attributes: vec![StyleAttribute {
@@ -96,7 +91,7 @@ fn test_sheet_interpolation() {
             .into(),
         }),
     ]);
-    assert_eq!(parsed, expected.into());
+    assert_eq!(parsed, expected);
 }
 
 #[test]
@@ -113,15 +108,15 @@ fn test_sheet_escaped() {
         condition: vec![
             vec![".nested".into()].into(),
             Selector {
-                fragments: vec!["\"".into(), "${".into(), "var_a}\"".into()].into(),
+                fragments: vec!["\"${var_a}\"".into()].into(),
             },
         ]
         .into(),
         style_attributes: vec![StyleAttribute {
             key: "content".into(),
-            value: vec!["\"".into(), "${".into(), "var_b}\"".into()].into(),
+            value: vec!["\"${var_b}\"".into()].into(),
         }]
         .into(),
     })]);
-    assert_eq!(parsed, expected.into());
+    assert_eq!(parsed, expected);
 }

@@ -1,5 +1,8 @@
 use super::{ContextRecorder, Reify};
-use crate::inline::{component_value::PreservedToken, css_ident::CssIdent};
+use crate::{
+    inline::{component_value::PreservedToken, css_ident::CssIdent},
+    literal::argument::Argument,
+};
 use proc_macro2::{Delimiter, Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{spanned::Spanned, Expr, ExprLit, Lit, LitStr};
@@ -58,6 +61,17 @@ impl<'a> From<&'a Expr> for OutputFragment {
         // quote spanned here so that errors related to calling #ident_write_expr show correctly
         Self::Raw(quote_spanned! {expr.span()=>
             (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
+        })
+    }
+}
+
+impl<'a> From<&'a Argument> for OutputFragment {
+    fn from(arg: &Argument) -> Self {
+        let arg_tokens = arg.tokens.clone();
+        OutputFragment::Raw(quote! {
+            ::stylist::ast::StringFragment {
+                inner: (&{ #arg_tokens } as &dyn ::std::fmt::Display).to_string().into(),
+            }
         })
     }
 }
