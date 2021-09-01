@@ -214,11 +214,11 @@ impl Component for Benchmarks {
                             <th>{self.parse_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Macro Simple (10,000,000 iterations): "}</th>
+                            <th>{"Macro (Literal) Simple (10,000,000 iterations): "}</th>
                             <th>{self.macro_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Macro Inline Simple (10,000,000 iterations): "}</th>
+                            <th>{"Macro (Inline) Simple (10,000,000 iterations): "}</th>
                             <th>{self.macro_inline_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
@@ -230,11 +230,11 @@ impl Component for Benchmarks {
                             <th>{self.parse_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Macro Complex (1,000,000 iterations): "}</th>
+                            <th>{"Macro (Literal) Complex (1,000,000 iterations): "}</th>
                             <th>{self.macro_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Macro Inline Complex (1,000,000 iterations): "}</th>
+                            <th>{"Macro (Inline) Complex (1,000,000 iterations): "}</th>
                             <th>{self.macro_inline_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
@@ -250,7 +250,7 @@ impl Component for Benchmarks {
                             <th>{self.cached_lookup_big_sheet.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Mounting (1,000 iterations): "}</th>
+                            <th>{"Mounting (20,000 iterations): "}</th>
                             <th>{self.mounting.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                     </tbody>

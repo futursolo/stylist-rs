@@ -232,15 +232,11 @@ pub fn bench_cached_lookup_big_sheet() -> f64 {
 }
 
 pub fn bench_mounting() -> f64 {
-    let snippet = "color:blue;";
     let mut sheets = Vec::new();
 
-    for i in 1..1001 {
+    for i in 0..20_000 {
         let sheet: Sheet = {
-            let mut s = String::new();
-            for _ in 0..i {
-                s.push_str(snippet);
-            }
+            let s = format!(r#"font-size: {}px;"#, i);
 
             s.parse().expect("Failed to parse stylesheet.")
         };
