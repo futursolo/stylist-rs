@@ -2,10 +2,10 @@ use super::{
     super::{
         component_value::{ComponentValue, ComponentValueStream},
         css_ident::CssIdent,
-        output::{OutputAtRule, OutputRuleContent},
     },
     normalize_hierarchy_impl, CssBlockQualifier, CssScope, OutputSheetContent,
 };
+use crate::output::{OutputAtRule, OutputRuleContent};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{

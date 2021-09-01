@@ -1,11 +1,10 @@
-mod component_value;
-mod css_ident;
+pub mod component_value;
+pub mod css_ident;
 
-mod output;
 mod parse;
 
+use crate::output::{ContextRecorder, Reify};
 use log::debug;
-use output::{ContextRecorder, Reify};
 use parse::CssRootNode;
 use proc_macro2::TokenStream;
 use quote::quote;

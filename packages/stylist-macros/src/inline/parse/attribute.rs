@@ -3,8 +3,8 @@ use super::super::{
         ComponentValue, ComponentValueStream, InterpolatedExpression, PreservedToken,
     },
     css_ident::CssIdent,
-    output::{OutputAttribute, OutputFragment},
 };
+use crate::output::{OutputAttribute, OutputFragment};
 use syn::{
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
     spanned::Spanned,

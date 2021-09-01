@@ -1,7 +1,7 @@
 use super::{
-    super::component_value::ComponentValue, fragment_coalesce, fragment_spacing, ContextRecorder,
-    IntoCowVecTokens, OutputFragment, Reify,
+    fragment_coalesce, fragment_spacing, ContextRecorder, IntoCowVecTokens, OutputFragment, Reify,
 };
+use crate::inline::component_value::ComponentValue;
 use crate::spacing_iterator::SpacedIterator;
 use itertools::Itertools;
 use proc_macro2::TokenStream;

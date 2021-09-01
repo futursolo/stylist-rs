@@ -1,4 +1,4 @@
-use super::output::{OutputAtRule, OutputAttribute, OutputQualifiedRule};
+use crate::output::{OutputAtRule, OutputAttribute, OutputQualifiedRule};
 use itertools::Itertools;
 use syn::parse::Error as ParseError;
 

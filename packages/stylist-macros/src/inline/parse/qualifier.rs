@@ -1,7 +1,5 @@
-use super::super::{
-    component_value::{ComponentValue, ComponentValueStream},
-    output::OutputQualifier,
-};
+use super::super::component_value::{ComponentValue, ComponentValueStream};
+use crate::output::OutputQualifier;
 
 use proc_macro2::TokenStream;
 use quote::ToTokens;

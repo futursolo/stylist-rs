@@ -1,7 +1,5 @@
-use super::{
-    super::{component_value::PreservedToken, css_ident::CssIdent},
-    ContextRecorder, Reify,
-};
+use super::{ContextRecorder, Reify};
+use crate::inline::{component_value::PreservedToken, css_ident::CssIdent};
 use proc_macro2::{Delimiter, Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{spanned::Spanned, Expr, ExprLit, Lit, LitStr};
