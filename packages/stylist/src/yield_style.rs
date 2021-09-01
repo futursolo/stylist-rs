@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use stylist_core::ResultDisplay;
+
 use crate::manager::StyleManager;
 use crate::{Result, Style, StyleSource};
 
@@ -75,7 +77,7 @@ pub trait YieldStyle {
     ///
     /// Panics if [`try_style`](YieldStyle::try_style) returns [`Err(Error)`](crate::Error).
     fn style(&self) -> Style {
-        self.try_style().expect("Failed to create style.")
+        self.try_style().expect_display("Failed to create style.")
     }
 
     /// Returns the class name of the generated style.
@@ -91,7 +93,8 @@ pub trait YieldStyle {
     ///
     /// Panics if [`try_style_class`](YieldStyle::try_style) returns [`Err(Error)`](crate::Error).
     fn style_class(&self) -> String {
-        self.try_style_class().expect("Failed to create style.")
+        self.try_style_class()
+            .expect_display("Failed to create style.")
     }
 
     /// The [`StyleManager`] to use.

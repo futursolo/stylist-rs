@@ -10,6 +10,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use once_cell::unsync::Lazy;
+use stylist_core::ResultDisplay;
 use web_sys::Node;
 
 use crate::registry::StyleRegistry;
@@ -184,7 +185,7 @@ impl From<&Self> for StyleManager {
 impl Default for StyleManager {
     fn default() -> Self {
         thread_local! {
-            static MGR: Lazy<StyleManager> = Lazy::new(|| StyleManager::builder().build().expect("Failed to create default manager."));
+            static MGR: Lazy<StyleManager> = Lazy::new(|| StyleManager::builder().build().expect_display("Failed to create default manager."));
         }
 
         MGR.with(|m| (*m).clone())

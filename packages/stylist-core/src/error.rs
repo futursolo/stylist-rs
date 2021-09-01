@@ -26,3 +26,26 @@ pub enum Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+pub trait ResultDisplay<T> {
+    /// Returns the contained Ok value, consuming the self value, panic when `Result` is `Err`.
+    fn unwrap_display(self) -> T;
+    /// Returns the contained Ok value, consuming the self value, panic with message when `Result` is `Err`.
+    fn expect_display(self, msg: &str) -> T;
+}
+
+impl<T> ResultDisplay<T> for Result<T> {
+    fn unwrap_display(self) -> T {
+        match self {
+            Ok(m) => m,
+            Err(e) => panic!("{}", e),
+        }
+    }
+
+    fn expect_display(self, msg: &str) -> T {
+        match self {
+            Ok(m) => m,
+            Err(e) => panic!("{}: {}", msg, e),
+        }
+    }
+}

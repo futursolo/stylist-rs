@@ -1,6 +1,7 @@
 use yew::prelude::*;
 
 use crate::{GlobalStyle, StyleSource};
+use stylist_core::ResultDisplay;
 
 /// The properties for [`Global`] Component, please see its documentation for usage.
 #[derive(Properties, Clone, Debug)]
@@ -97,6 +98,6 @@ impl Global {
         }
 
         self.global_style =
-            Some(GlobalStyle::new(self.props.css.clone()).expect("Failed to parse style."));
+            Some(GlobalStyle::new(self.props.css.clone()).expect_display("Failed to parse style."));
     }
 }

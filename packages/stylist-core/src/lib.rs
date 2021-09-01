@@ -7,7 +7,7 @@
 #![cfg_attr(any(releasing, not(debug_assertions)), deny(dead_code, unused_imports))]
 
 mod error;
-pub use error::{Error, Result};
+pub use error::{Error, Result, ResultDisplay};
 pub mod ast;
 
 #[cfg_attr(documenting, doc(cfg(feature = "parser")))]

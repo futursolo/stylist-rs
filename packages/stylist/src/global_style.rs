@@ -1,5 +1,8 @@
 use std::rc::Rc;
 
+#[cfg(all(debug_assertions, feature = "parser"))]
+use stylist_core::ResultDisplay;
+
 use crate::ast::ToStyleStr;
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
@@ -50,7 +53,7 @@ impl GlobalStyle {
         #[cfg(all(debug_assertions, feature = "parser"))]
         style_str
             .parse::<Sheet>()
-            .expect("debug: emitted style should parse");
+            .expect_display("debug: Stylist failed to parse the style with interpolated values");
 
         let new_style = Self {
             inner: StyleContent {
