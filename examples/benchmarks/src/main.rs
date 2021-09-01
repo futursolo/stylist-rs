@@ -250,7 +250,7 @@ impl Component for Benchmarks {
                             <th>{self.cached_lookup_big_sheet.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                         <tr>
-                            <th>{"Mounting (20,000 iterations): "}</th>
+                            <th>{"Mounting (2,000 iterations): "}</th>
                             <th>{self.mounting.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
                         </tr>
                     </tbody>

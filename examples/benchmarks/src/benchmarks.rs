@@ -234,7 +234,7 @@ pub fn bench_cached_lookup_big_sheet() -> f64 {
 pub fn bench_mounting() -> f64 {
     let mut sheets = Vec::new();
 
-    for i in 0..20_000 {
+    for i in 0..2_000 {
         let sheet: Sheet = {
             let s = format!(r#"font-size: {}px;"#, i);
 
