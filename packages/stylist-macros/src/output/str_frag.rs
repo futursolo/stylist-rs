@@ -4,7 +4,7 @@ use crate::{
     literal::argument::Argument,
 };
 use proc_macro2::{Delimiter, Span, TokenStream};
-use quote::{quote, quote_spanned};
+use quote::{quote, quote_spanned, ToTokens};
 use syn::{spanned::Spanned, Expr, ExprLit, Lit, LitStr};
 
 #[derive(Debug, Clone)]
@@ -58,25 +58,23 @@ impl<'a> From<&'a Expr> for OutputFragment {
             return Self::Str(litstr.value());
         }
 
-        // quote spanned here so that errors related to calling #ident_write_expr show correctly
-        Self::Raw(quote_spanned! {expr.span()=>
-            (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
-        })
+        Self::from_displayable_spanned(expr, expr)
     }
 }
 
 impl<'a> From<&'a Argument> for OutputFragment {
     fn from(arg: &Argument) -> Self {
-        let arg_tokens = arg.tokens.clone();
-        OutputFragment::Raw(quote! {
-            ::stylist::ast::StringFragment {
-                inner: (&{ #arg_tokens } as &dyn ::std::fmt::Display).to_string().into(),
-            }
-        })
+        Self::from_displayable_spanned(&arg.name_token, &arg.tokens)
     }
 }
 
 impl OutputFragment {
+    fn from_displayable_spanned(source: &impl Spanned, expr: impl ToTokens) -> Self {
+        OutputFragment::Raw(quote_spanned! {source.span()=>
+            (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
+        })
+    }
+
     fn str_for_delim(d: Delimiter, start: bool) -> &'static str {
         match (d, start) {
             (Delimiter::Brace, true) => "{",

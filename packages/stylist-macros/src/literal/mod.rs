@@ -13,7 +13,7 @@ mod fstring;
 mod to_tokens_with_args;
 
 use argument::Argument;
-use to_tokens_with_args::ToTokensWithArgs;
+use to_tokens_with_args::ToOutputWithArgs;
 
 use crate::output::{ContextRecorder, Reify};
 

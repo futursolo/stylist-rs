@@ -11,7 +11,7 @@ use crate::output::{
 
 use super::{argument::Argument, fstring};
 
-pub(crate) trait ToTokensWithArgs {
+pub(crate) trait ToOutputWithArgs {
     type Output;
     fn to_tokens_with_args(
         &self,
@@ -20,7 +20,7 @@ pub(crate) trait ToTokensWithArgs {
     ) -> Self::Output;
 }
 
-impl ToTokensWithArgs for Selector {
+impl ToOutputWithArgs for Selector {
     type Output = OutputSelector;
     fn to_tokens_with_args(
         &self,
@@ -36,7 +36,7 @@ impl ToTokensWithArgs for Selector {
     }
 }
 
-impl ToTokensWithArgs for StyleAttribute {
+impl ToOutputWithArgs for StyleAttribute {
     type Output = OutputAttribute;
     fn to_tokens_with_args(
         &self,
@@ -59,7 +59,7 @@ impl ToTokensWithArgs for StyleAttribute {
     }
 }
 
-impl ToTokensWithArgs for Block {
+impl ToOutputWithArgs for Block {
     type Output = OutputQualifiedRule;
     fn to_tokens_with_args(
         &self,
@@ -88,7 +88,7 @@ impl ToTokensWithArgs for Block {
     }
 }
 
-impl ToTokensWithArgs for RuleContent {
+impl ToOutputWithArgs for RuleContent {
     type Output = OutputRuleContent;
     fn to_tokens_with_args(
         &self,
@@ -109,7 +109,7 @@ impl ToTokensWithArgs for RuleContent {
     }
 }
 
-impl ToTokensWithArgs for StringFragment {
+impl ToOutputWithArgs for StringFragment {
     type Output = Vec<OutputFragment>;
     fn to_tokens_with_args(
         &self,
@@ -145,7 +145,7 @@ impl ToTokensWithArgs for StringFragment {
     }
 }
 
-impl ToTokensWithArgs for Rule {
+impl ToOutputWithArgs for Rule {
     type Output = OutputAtRule;
     fn to_tokens_with_args(
         &self,
@@ -172,7 +172,7 @@ impl ToTokensWithArgs for Rule {
     }
 }
 
-impl ToTokensWithArgs for ScopeContent {
+impl ToOutputWithArgs for ScopeContent {
     type Output = OutputScopeContent;
     fn to_tokens_with_args(
         &self,
@@ -192,7 +192,7 @@ impl ToTokensWithArgs for ScopeContent {
     }
 }
 
-impl ToTokensWithArgs for Sheet {
+impl ToOutputWithArgs for Sheet {
     type Output = OutputSheet;
     fn to_tokens_with_args(
         &self,
