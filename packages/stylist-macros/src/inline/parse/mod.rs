@@ -1,4 +1,4 @@
-use crate::output::{OutputAtRule, OutputAttribute, OutputQualifiedRule};
+use crate::output::{OutputAtRule, OutputAttribute, OutputFragment, OutputQualifiedRule};
 use itertools::Itertools;
 use syn::parse::Error as ParseError;
 
@@ -103,4 +103,18 @@ fn normalize_hierarchy_impl<'it>(
             }
             ScopeItem::Block(b) => b.fold_in_context(context.clone()),
         })
+}
+
+pub fn fragment_spacing(l: &OutputFragment, r: &OutputFragment) -> Option<OutputFragment> {
+    use super::component_value::PreservedToken::*;
+    use OutputFragment::*;
+    let needs_spacing = matches!(
+        (l, r),
+        (Delimiter(_, false), Token(Ident(_)))
+            | (
+                Token(Ident(_)) | Token(Literal(_)),
+                Token(Ident(_)) | Token(Literal(_))
+            )
+    );
+    needs_spacing.then(|| ' '.into())
 }

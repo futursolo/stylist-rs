@@ -1,10 +1,16 @@
-use super::super::{
-    component_value::{
-        ComponentValue, ComponentValueStream, InterpolatedExpression, PreservedToken,
+use super::{
+    super::{
+        component_value::{
+            ComponentValue, ComponentValueStream, InterpolatedExpression, PreservedToken,
+        },
+        css_ident::CssIdent,
     },
-    css_ident::CssIdent,
+    fragment_spacing,
 };
-use crate::output::{OutputAttribute, OutputFragment};
+use crate::{
+    output::{OutputAttribute, OutputFragment},
+    spacing_iterator::SpacedIterator,
+};
 use syn::{
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
     spanned::Spanned,
@@ -96,9 +102,16 @@ impl ComponentValue {
 
 impl CssAttribute {
     pub(super) fn into_output(self) -> OutputAttribute {
+        let values = self
+            .value
+            .values
+            .into_iter()
+            .flat_map(|p| p.to_output_fragments())
+            .spaced_with(fragment_spacing)
+            .collect();
         OutputAttribute {
             key: self.name.into_output(),
-            values: self.value.values,
+            values,
             errors: self.value.errors,
         }
     }

@@ -10,7 +10,7 @@ pub use rule::OutputAtRule;
 mod block;
 pub use block::OutputQualifiedRule;
 mod selector;
-pub use selector::OutputQualifier;
+pub use selector::{OutputQualifier, OutputSelector};
 mod scope_content;
 pub use scope_content::OutputScopeContent;
 mod rule_content;
@@ -18,7 +18,7 @@ pub use rule_content::OutputRuleContent;
 mod style_attr;
 pub use style_attr::OutputAttribute;
 mod str_frag;
-pub use str_frag::{fragment_coalesce, fragment_spacing, OutputFragment};
+pub use str_frag::{fragment_coalesce, OutputFragment};
 
 mod context_recorder;
 pub use context_recorder::ContextRecorder;
