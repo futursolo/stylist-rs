@@ -17,6 +17,8 @@ mod rule_content;
 pub use rule_content::OutputRuleContent;
 mod style_attr;
 pub use style_attr::OutputAttribute;
+mod cow_str;
+pub use cow_str::OutputCowString;
 mod str_frag;
 pub use str_frag::{fragment_coalesce, OutputFragment};
 

@@ -15,6 +15,7 @@ impl Reify for OutputRuleContent {
         match self {
             Self::AtRule(rule) => {
                 let block_tokens = rule.into_token_stream(ctx);
+                ctx.uses_static(); // Box::new
                 quote! { ::stylist::ast::RuleContent::Rule(::std::boxed::Box::new(#block_tokens)) }
             }
             Self::Block(block) => {
@@ -23,6 +24,7 @@ impl Reify for OutputRuleContent {
             }
             Self::String(ref s) => {
                 let s = Literal::string(s);
+                ctx.uses_static(); // str::into
                 quote! { ::stylist::ast::RuleContent::String(#s.into()) }
             }
             Self::Err(err) => err.into_token_stream(ctx),

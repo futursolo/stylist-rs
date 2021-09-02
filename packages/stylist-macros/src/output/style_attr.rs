@@ -1,11 +1,13 @@
-use super::{fragment_coalesce, ContextRecorder, IntoCowVecTokens, OutputFragment, Reify};
+use super::{
+    fragment_coalesce, ContextRecorder, IntoCowVecTokens, OutputCowString, OutputFragment, Reify,
+};
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::quote;
 use syn::parse::Error as ParseError;
 
 pub struct OutputAttribute {
-    pub key: OutputFragment,
+    pub key: OutputCowString,
     pub values: Vec<OutputFragment>,
     pub errors: Vec<ParseError>,
 }
@@ -23,7 +25,7 @@ impl Reify for OutputAttribute {
         let value_parts = values
             .into_iter()
             .coalesce(fragment_coalesce)
-            .into_cow_vec_tokens(ctx);
+            .into_cow_vec_tokens(quote! {::stylist::ast::StringFragment}, ctx);
         quote! {
             ::stylist::ast::StyleAttribute {
                 key: #key,

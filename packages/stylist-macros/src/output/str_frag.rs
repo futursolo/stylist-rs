@@ -1,18 +1,20 @@
-use super::{ContextRecorder, Reify};
+use super::{ContextRecorder, OutputCowString, Reify};
 use crate::{
     inline::{component_value::PreservedToken, css_ident::CssIdent},
     literal::argument::Argument,
 };
-use proc_macro2::{Delimiter, Span, TokenStream};
-use quote::{quote, quote_spanned, ToTokens};
-use syn::{spanned::Spanned, Expr, ExprLit, Lit, LitStr};
+use proc_macro2::{Delimiter, TokenStream};
+use quote::quote;
+use syn::{Expr, ExprLit, Lit};
 
 #[derive(Debug, Clone)]
 pub enum OutputFragment {
-    Raw(TokenStream),
+    Expr(Expr),
+    Arg(Argument),
     Token(PreservedToken),
-    Str(String),
     Delimiter(Delimiter, /*start:*/ bool),
+    Str(String),
+    Raw(TokenStream),
 }
 
 impl From<char> for OutputFragment {
@@ -30,12 +32,6 @@ impl From<char> for OutputFragment {
     }
 }
 
-impl From<TokenStream> for OutputFragment {
-    fn from(t: TokenStream) -> Self {
-        Self::Raw(t)
-    }
-}
-
 impl From<PreservedToken> for OutputFragment {
     fn from(t: PreservedToken) -> Self {
         Self::Token(t)
@@ -48,31 +44,40 @@ impl From<CssIdent> for OutputFragment {
     }
 }
 
-impl<'a> From<&'a Expr> for OutputFragment {
-    fn from(expr: &Expr) -> Self {
-        if let Expr::Lit(ExprLit {
-            lit: Lit::Str(ref litstr),
-            ..
-        }) = expr
-        {
-            return Self::Str(litstr.value());
-        }
-
-        Self::from_displayable_spanned(expr, expr)
+impl From<Expr> for OutputFragment {
+    fn from(expr: Expr) -> Self {
+        Self::Expr(expr)
     }
 }
 
-impl<'a> From<&'a Argument> for OutputFragment {
-    fn from(arg: &Argument) -> Self {
-        Self::from_displayable_spanned(&arg.name_token, &arg.tokens)
+impl From<Argument> for OutputFragment {
+    fn from(arg: Argument) -> Self {
+        Self::Arg(arg)
     }
 }
 
 impl OutputFragment {
-    fn from_displayable_spanned(source: impl Spanned, expr: impl ToTokens) -> Self {
-        OutputFragment::Raw(quote_spanned! {source.span()=>
-            (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
-        })
+    pub fn into_inner(self) -> OutputCowString {
+        match self {
+            Self::Token(t) => t.to_output_string().into(),
+            Self::Delimiter(kind, start) => Self::str_for_delim(kind, start).to_string().into(),
+            Self::Str(s) => s.into(),
+            Self::Arg(arg) => {
+                OutputCowString::from_displayable_spanned(&arg.name_token, &arg.tokens)
+            }
+            Self::Expr(ref expr) => {
+                if let Expr::Lit(ExprLit {
+                    lit: Lit::Str(ref litstr),
+                    ..
+                }) = expr
+                {
+                    litstr.value().into()
+                } else {
+                    OutputCowString::from_displayable_spanned(expr, expr)
+                }
+            }
+            Self::Raw(t) => OutputCowString::Raw(t),
+        }
     }
 
     fn str_for_delim(d: Delimiter, start: bool) -> &'static str {
@@ -86,30 +91,22 @@ impl OutputFragment {
             (Delimiter::None, _) => unreachable!("only actual delimiters allowed"),
         }
     }
-    /// Return the string literal that will be quoted, or a full tokenstream
-    fn try_into_string(self) -> Result<String, TokenStream> {
-        match self {
-            Self::Raw(t) => Err(t),
-            Self::Str(s) => Ok(s),
-            Self::Token(t) => Ok(t.to_output_string()),
-            Self::Delimiter(kind, start) => Ok(Self::str_for_delim(kind, start).into()),
-        }
-    }
+
     fn as_str(&self) -> Option<String> {
-        self.clone().try_into_string().ok()
+        if let OutputCowString::Str(s) = self.clone().into_inner() {
+            Some(s)
+        } else {
+            None
+        }
     }
 }
 
 impl Reify for OutputFragment {
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
-        match self.try_into_string() {
-            Err(t) => {
-                ctx.uses_dynamic_argument();
-                t
-            }
-            Ok(lit) => {
-                let lit_str = LitStr::new(lit.as_ref(), Span::call_site());
-                quote! { #lit_str.into() }
+        let inner = self.into_inner().into_token_stream(ctx);
+        quote! {
+            ::stylist::ast::StringFragment {
+                inner: #inner
             }
         }
     }

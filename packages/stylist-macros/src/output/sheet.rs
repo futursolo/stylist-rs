@@ -9,13 +9,14 @@ pub struct OutputSheet {
 impl Reify for OutputSheet {
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         let Self { contents } = self;
-        let contents = contents.into_cow_vec_tokens(ctx);
+        let contents = contents.into_cow_vec_tokens(quote! {::stylist::ast::ScopeContent}, ctx);
 
+        ctx.uses_static(); // Sheet::from
         let quoted_sheet = quote! {
             {
                 use ::std::convert::{From, Into};
                 use ::stylist::ast::Sheet;
-                <Sheet as From<Sheet>>::from(#contents)
+                Sheet::from(#contents)
             }
         };
 

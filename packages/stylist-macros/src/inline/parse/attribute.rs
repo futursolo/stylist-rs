@@ -8,7 +8,7 @@ use super::{
     fragment_spacing,
 };
 use crate::{
-    output::{OutputAttribute, OutputFragment},
+    output::{OutputAttribute, OutputCowString},
     spacing_iterator::SpacedIterator,
 };
 use syn::{
@@ -118,10 +118,11 @@ impl CssAttribute {
 }
 
 impl CssAttributeName {
-    fn into_output(self) -> OutputFragment {
+    fn into_output(self) -> OutputCowString {
         match self {
             Self::Identifier(name) => name.into(),
             Self::InjectedExpr(expr) => expr.to_output_fragment(),
         }
+        .into_inner()
     }
 }
