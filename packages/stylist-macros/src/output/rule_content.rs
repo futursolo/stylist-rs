@@ -1,5 +1,5 @@
 use super::{ContextRecorder, OutputAtRule, OutputQualifiedRule, Reify};
-use proc_macro2::{Literal, TokenStream};
+use proc_macro2::{Ident, Literal, Span, TokenStream};
 use quote::quote;
 use syn::Error as ParseError;
 
@@ -11,12 +11,33 @@ pub enum OutputRuleContent {
 }
 
 impl Reify for OutputRuleContent {
+    #[allow(unreachable_code)]
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         match self {
             Self::AtRule(rule) => {
-                let block_tokens = rule.into_token_stream(ctx);
-                ctx.uses_static(); // Box::new
-                quote! { ::stylist::ast::RuleContent::Rule(::std::boxed::Box::new(#block_tokens)) }
+                let mut inner = ContextRecorder::new();
+                let block_tokens = rule.into_token_stream(&mut inner);
+                ctx.uses_nested(&inner);
+
+                let bowed_block = if inner.is_const() {
+                    let const_ident = Ident::new("block", Span::mixed_site());
+                    quote! {
+                        ::stylist::vendor::Bow::Borrowed({
+                            const #const_ident: ::stylist::ast::Rule = #block_tokens;
+                            &#const_ident
+                        })
+                    }
+                } else {
+                    ctx.uses_static(); // Box::new
+                    quote! {
+                        ::stylist::vendor::Bow::Boxed(
+                            ::std::boxed::Box::new(#block_tokens)
+                        )
+                    }
+                };
+                quote! {
+                    ::stylist::ast::RuleContent::Rule(#bowed_block)
+                }
             }
             Self::Block(block) => {
                 let block_tokens = block.into_token_stream(ctx);
@@ -24,8 +45,11 @@ impl Reify for OutputRuleContent {
             }
             Self::String(ref s) => {
                 let s = Literal::string(s);
-                ctx.uses_static(); // str::into
-                quote! { ::stylist::ast::RuleContent::String(#s.into()) }
+                quote! {
+                    ::stylist::ast::RuleContent::String(
+                        ::std::borrow::Cow::<str>::Borrowed(#s)
+                    )
+                }
             }
             Self::Err(err) => err.into_token_stream(ctx),
         }
