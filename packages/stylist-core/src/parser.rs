@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt};
 
 use crate::{
     ast::{
@@ -20,6 +20,29 @@ use nom::{
 #[cfg(test)]
 use log::trace;
 
+/// Wrap a parser, tracing input and output.
+// if not cfg(test), this would trip up clippy.
+#[allow(clippy::let_and_return)]
+fn traced_context<I, O, F, P>(ctx: &'static str, mut p: P) -> impl FnMut(I) -> IResult<I, O, F>
+where
+    P: nom::Parser<I, O, F>,
+    I: fmt::Display + fmt::Debug + Clone,
+    O: fmt::Debug,
+    F: fmt::Debug + nom::error::ContextError<I>,
+{
+    move |i| {
+        #[cfg(test)]
+        trace!("> {}: {}", ctx, i);
+
+        let result = context(ctx, |i| p.parse(i))(i);
+
+        #[cfg(test)]
+        trace!("< {}: {:#?}", ctx, result);
+
+        result
+    }
+}
+
 /// A lightweight CSS Parser.
 #[derive(Debug)]
 pub(crate) struct Parser {}
@@ -40,18 +63,21 @@ impl Parser {
 
     /// Parse whitespace
     fn sp(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
-        Self::expect_non_empty(i)?;
+        traced_context("Whitespace", |i| {
+            Self::expect_non_empty(i)?;
 
-        let chars = " \t\r\n";
-        context("Whitespace", take_while(move |c| chars.contains(c)))(i)
+            let chars = " \t\r\n";
+            take_while(move |c| chars.contains(c))(i)
+        })(i)
     }
 
     /// Drop whitespaces
-    fn trimmed<'a, F, O>(f: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, VerboseError<&str>>
+    fn trimmed<'a, O, F>(f: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, VerboseError<&str>>
     where
         F: nom::Parser<&'a str, O, VerboseError<&'a str>>,
+        O: std::fmt::Debug,
     {
-        context(
+        traced_context(
             "Trimmed",
             delimited(
                 // Drop Preceeding whitespaces.
@@ -68,13 +94,8 @@ impl Parser {
     ///
     /// token('/*') + anything but '*' followed by '/' + token("*/")
     fn cmt(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Comment: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "Comment",
+        traced_context("Comment", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(delimited(
                 tag("/*"),
                 recognize(many0(alt((
@@ -82,21 +103,17 @@ impl Parser {
                     terminated(tag("*"), not(char('/'))),
                 )))),
                 tag("*/"),
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Comment: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Drop comments
     fn trim_cmt<'a, F, O>(f: F) -> impl FnMut(&'a str) -> IResult<&'a str, O, VerboseError<&str>>
     where
         F: nom::Parser<&'a str, O, VerboseError<&'a str>>,
+        O: fmt::Debug,
     {
-        context(
+        traced_context(
             "TrimmedComments",
             delimited(
                 // Drop Preceeding comments.
@@ -113,51 +130,35 @@ impl Parser {
     ///
     /// [\-_a-zA-Z(non-ascii)]{1}[\-_a-zA-Z0-9(non-ascii)]*
     fn ident(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Ident: {}", i);
-
-        let result = recognize(preceded(
-            alt((
-                tag("-"),
-                tag("_"),
-                alpha1,
-                take_while1(|m: char| !m.is_ascii()),
+        traced_context(
+            "Ident",
+            recognize(preceded(
+                alt((
+                    tag("-"),
+                    tag("_"),
+                    alpha1,
+                    take_while1(|m: char| !m.is_ascii()),
+                )),
+                many0(alt((
+                    tag("-"),
+                    tag("_"),
+                    alphanumeric1,
+                    take_while1(|m: char| !m.is_ascii()),
+                ))),
             )),
-            many0(alt((
-                tag("-"),
-                tag("_"),
-                alphanumeric1,
-                take_while1(|m: char| !m.is_ascii()),
-            ))),
-        ))(i);
-
-        #[cfg(test)]
-        trace!("Ident: {:#?}", result);
-
-        result
+        )(i)
     }
 
     fn style_attr_key(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Style Attribute Key: {}", i);
-
-        let result = context(
+        traced_context(
             "StyleAttrKey",
             Self::trimmed(Self::trim_cmt(Self::trimmed(Self::ident))),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Style Attribute Key: {:#?}", result);
-
-        result
+        )(i)
     }
 
     // TODO: Parse value properly.
     fn style_attr_value(i: &str) -> IResult<&str, StringFragment, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Style Attribute Value: {}", i);
-
-        let result = context(
+        traced_context(
             "StyleAttrValue",
             Self::trimmed(Self::trim_cmt(Self::trimmed(map(
                 recognize(many1(alt((
@@ -169,23 +170,13 @@ impl Parser {
                     inner: m.to_string().trim().to_string().into(),
                 },
             )))),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Style Attribute Value: {:#?}", result);
-
-        result
+        )(i)
     }
 
     /// Parse a style attribute such as "width: 10px;"
     fn dangling_attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Dangling Attribute: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleAttribute",
+        traced_context("StyleAttributeDangling", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(
                 separated_pair(
                     // Key
@@ -201,24 +192,14 @@ impl Parser {
                         value: vec![p.1].into(),
                     }
                 },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Dangling Attribute: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse a style attribute such as "width: 10px"
     fn attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Attribute: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleAttribute",
+        traced_context("StyleAttribute", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(
                 separated_pair(
                     // Key
@@ -231,88 +212,52 @@ impl Parser {
                     key: p.0.trim().to_string().into(),
                     value: vec![p.1].into(),
                 },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Attribute: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse attributes outside of a { ... }.
     fn dangling_attributes(i: &str) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Dangling Attributes: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleAttributes",
-            Self::trimmed(many1(Self::dangling_attribute)),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Dangling Attributes: {:#?}", result);
-
-        result
+        traced_context("StyleAttributesDangling", |i| {
+            Self::expect_non_empty(i)?;
+            Self::trimmed(many1(Self::dangling_attribute))(i)
+        })(i)
     }
 
     fn attributes(i: &str) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Attributes: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleAttributes",
+        traced_context("StyleAttributes", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(terminated(
                 separated_list0(tag(";"), Self::attribute),
                 preceded(opt(Self::sp), opt(tag(";"))),
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Attributes: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse a quoted string.
     ///
     // TODO: Parse ' quoted strings.
     fn string(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("String: {}", i);
+        traced_context("String", |i| {
+            Self::expect_non_empty(i)?;
 
-        Self::expect_non_empty(i)?;
+            let escaped_char = context("EscapedChar", recognize(preceded(tag("\\"), anychar)));
 
-        let escaped_char = context("EscapedChar", recognize(preceded(tag("\\"), anychar)));
+            let parse_str = recognize(preceded(
+                tag("\""),
+                terminated(many0(alt((is_not(r#"\""#), escaped_char))), tag("\"")),
+            ));
 
-        let parse_str = recognize(preceded(
-            tag("\""),
-            terminated(many0(alt((is_not(r#"\""#), escaped_char))), tag("\"")),
-        ));
-
-        let result = context("String", Self::trimmed(parse_str))(i);
-
-        #[cfg(test)]
-        trace!("String: {:#?}", result);
-
-        result
+            Self::trimmed(parse_str)(i)
+        })(i)
     }
 
     /// Parse a string interpolation.
     ///
     // TODO: Handle escaping.
     fn interpolation(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Interpolation: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "Interpolation",
+        traced_context("Interpolation", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(delimited(
                 tag("${"),
                 Self::trimmed(recognize(preceded(
@@ -320,26 +265,16 @@ impl Parser {
                     many0(alt((alphanumeric1, tag("_")))),
                 ))),
                 tag("}"),
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Interpolation: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse a selector.
     ///
     // TODO: Parse selector properly.
     fn selector(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Selector: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "Selector",
+        traced_context("Selector", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(
                 recognize(many1(alt((
                     recognize(preceded(none_of("$,}@{\""), opt(is_not("$,\"{")))),
@@ -347,42 +282,22 @@ impl Parser {
                     recognize(Self::interpolation),
                 )))),
                 |p: &str| vec![p.trim().to_owned().into()].into(),
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Selector: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse a selector or selector list.
     fn condition(i: &str) -> IResult<&str, Vec<Selector>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Condition: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "Condition",
-            Self::trimmed(many1(terminated(Self::selector, opt(tag(","))))),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Condition: {:#?}", result);
-
-        result
+        traced_context("Condition", |i| {
+            Self::expect_non_empty(i)?;
+            Self::trimmed(many1(terminated(Self::selector, opt(tag(",")))))(i)
+        })(i)
     }
 
     /// Parse a [`Block`].
     fn block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Block: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleBlock",
+        traced_context("Block", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(
                 separated_pair(
                     Self::condition,
@@ -395,44 +310,26 @@ impl Parser {
                         style_attributes: p.1.into(),
                     })
                 },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Block: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     fn rule_contents(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Rule contents: {}", i);
+        traced_context("RuleContents", |i| {
+            Self::expect_non_empty(i)?;
 
-        Self::expect_non_empty(i)?;
+            let string_as_contents = map(Parser::rule_string, |s| vec![s]);
+            let string_or_curlies = alt((Parser::rule_curly_braces, string_as_contents));
 
-        let string_as_contents = map(Parser::rule_string, |s| vec![s]);
-        let string_or_curlies = alt((Parser::rule_curly_braces, string_as_contents));
-        let result = context(
-            "RuleContents",
             map(many0(string_or_curlies), |p: Vec<Vec<RuleContent>>| {
                 p.into_iter().flatten().collect()
-            }),
-        )(i)?;
-
-        #[cfg(test)]
-        trace!("Rule contents: {:#?}", result);
-
-        Ok(result)
+            })(i)
+        })(i)
     }
 
     fn rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Rule: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "Rule",
+        traced_context("Rule", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map_res(
                 separated_pair(
                     recognize(preceded(tag("@"), is_not("{"))),
@@ -453,46 +350,26 @@ impl Parser {
                         content: p.1.into(),
                     }))
                 },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Rule: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse everything that is not curly braces
     fn rule_string(i: &str) -> IResult<&str, RuleContent, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Rule String: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleRuleString",
+        traced_context("StyleRuleString", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(is_not("{}"), |p: &str| {
                 RuleContent::String(p.trim().to_string().into())
-            })),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Rule String: {:#?}", result);
-
-        result
+            }))(i)
+        })(i)
     }
 
     /// Parse values within curly braces. This is basically just a helper for rules since
     /// they may contain braced content. This function is for parsing it all and not
     /// returning an incomplete rule at the first appearance of a closed curly brace
     fn rule_curly_braces(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Curly Braces: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleRuleCurlyBraces",
+        traced_context("StyleRuleCurlyBraces", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(
                 delimited(tag("{"), Self::rule_contents, tag("}")),
                 |mut m: Vec<RuleContent>| {
@@ -500,24 +377,14 @@ impl Parser {
                     m.push(RuleContent::String("}".to_string().into()));
                     m
                 },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Curly Braces: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse anything that is not in a { ... }
     fn dangling_block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Dangling Block: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleDanglingBlock",
+        traced_context("StyleDanglingBlock", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(
                 Self::dangling_attributes,
                 |attr: Vec<StyleAttribute>| {
@@ -526,37 +393,21 @@ impl Parser {
                         style_attributes: attr.into(),
                     })
                 },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Dangling Block: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse a CSS Scope
     fn scope(i: &str) -> IResult<&str, Vec<ScopeContent>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Scope: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context("StyleScope", Self::trimmed(Parser::scope_contents))(i);
-
-        #[cfg(test)]
-        trace!("Scope: {:#?}", result);
-        result
+        traced_context("StyleScope", |i| {
+            Self::expect_non_empty(i)?;
+            Self::trimmed(Parser::scope_contents)(i)
+        })(i)
     }
 
     fn at_rule_condition(i: &str) -> IResult<&str, Vec<StringFragment>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("At Rule: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "AtRule",
+        traced_context("AtRuleCondition", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(
                 pair(
                     alt((tag("@supports "), tag("@media "))),
@@ -575,24 +426,14 @@ impl Parser {
                         p.1,
                     ]
                 },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("At Rule: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse `@supports` and `@media`
     fn at_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("At Rule: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "AtRule",
+        traced_context("AtRule", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(map(
                 separated_pair(
                     // Collect at Rules.
@@ -608,24 +449,14 @@ impl Parser {
                         content: p.1.drain(..).map(|i| i.into()).collect(),
                     })
                 },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("At Rule: {:#?}", result);
-
-        result
+            ))(i)
+        })(i)
     }
 
     /// Parse the Content of a Scope
     fn scope_contents(i: &str) -> IResult<&str, Vec<ScopeContent>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Scope Contents: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "ScopeContents",
+        traced_context("ScopeContents", |i| {
+            Self::expect_non_empty(i)?;
             Self::trimmed(many0(alt((
                 // Either a dangling block
                 Parser::dangling_block,
@@ -635,33 +466,20 @@ impl Parser {
                 Parser::at_rule,
                 // Or a Rule
                 Parser::rule,
-            )))),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Scope Contents: {:#?}", result);
-
-        result
+            ))))(i)
+        })(i)
     }
 
     /// Parse sheet
     /// A Scope can be either an at rule or a css scope.
     fn sheet(i: &str) -> IResult<&str, Sheet, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Sheet: {}", i);
-
-        let result = context(
+        traced_context(
             "StyleSheet",
             // Drop trailing whitespaces.
             Self::trimmed(map(many0(Self::scope), |p: Vec<Vec<ScopeContent>>| {
                 Sheet::from(p.into_iter().flatten().collect::<Vec<ScopeContent>>())
             })),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Sheet: {:#?}", result);
-
-        result
+        )(i)
     }
 
     /// The parse the style and returns a `Result<Sheet>`.
