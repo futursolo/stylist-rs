@@ -13,7 +13,8 @@ use super::{argument::Argument, fstring};
 
 pub(crate) trait ToOutputWithArgs {
     type Output;
-    fn to_tokens_with_args(
+
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
@@ -22,15 +23,16 @@ pub(crate) trait ToOutputWithArgs {
 
 impl ToOutputWithArgs for Selector {
     type Output = OutputSelector;
-    fn to_tokens_with_args(
+
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
-        let mut selectors = vec![];
+        let mut selectors = Vec::new();
 
         for frag in self.fragments.iter() {
-            selectors.extend(frag.to_tokens_with_args(args, args_used));
+            selectors.extend(frag.to_output_with_args(args, args_used));
         }
         OutputSelector { selectors }
     }
@@ -38,50 +40,50 @@ impl ToOutputWithArgs for Selector {
 
 impl ToOutputWithArgs for StyleAttribute {
     type Output = OutputAttribute;
-    fn to_tokens_with_args(
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
         let key = OutputFragment::Str(self.key.as_ref().to_string());
 
-        let mut values = vec![];
+        let mut values = Vec::new();
 
         for i in self.value.iter() {
-            values.extend(i.to_tokens_with_args(args, args_used));
+            values.extend(i.to_output_with_args(args, args_used));
         }
 
         OutputAttribute {
             key,
             values,
-            errors: vec![],
+            errors: Vec::new(),
         }
     }
 }
 
 impl ToOutputWithArgs for Block {
     type Output = OutputQualifiedRule;
-    fn to_tokens_with_args(
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
-        let mut selector_list = vec![];
+        let mut selector_list = Vec::new();
 
         for i in self.condition.iter() {
-            selector_list.push(i.to_tokens_with_args(args, args_used));
+            selector_list.push(i.to_output_with_args(args, args_used));
         }
 
-        let mut attributes = vec![];
+        let mut attributes = Vec::new();
 
         for i in self.style_attributes.iter() {
-            attributes.push(i.to_tokens_with_args(args, args_used));
+            attributes.push(i.to_output_with_args(args, args_used));
         }
 
         OutputQualifiedRule {
             qualifier: OutputQualifier {
                 selector_list,
-                errors: vec![],
+                errors: Vec::new(),
             },
             attributes,
         }
@@ -90,18 +92,18 @@ impl ToOutputWithArgs for Block {
 
 impl ToOutputWithArgs for RuleContent {
     type Output = OutputRuleContent;
-    fn to_tokens_with_args(
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
         match self {
             Self::Block(ref m) => {
-                let block = m.to_tokens_with_args(args, args_used);
+                let block = m.to_output_with_args(args, args_used);
                 OutputRuleContent::Block(block)
             }
             Self::Rule(ref m) => {
-                let rule = m.to_tokens_with_args(args, args_used);
+                let rule = m.to_output_with_args(args, args_used);
                 OutputRuleContent::AtRule(rule)
             }
             Self::String(ref m) => OutputRuleContent::String(m.as_ref().to_string()),
@@ -111,7 +113,7 @@ impl ToOutputWithArgs for RuleContent {
 
 impl ToOutputWithArgs for StringFragment {
     type Output = Vec<OutputFragment>;
-    fn to_tokens_with_args(
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
@@ -121,7 +123,7 @@ impl ToOutputWithArgs for StringFragment {
             Err(e) => abort_call_site!("{}", e),
         };
 
-        let mut fragments_out = vec![];
+        let mut fragments_out = Vec::new();
 
         for frag in fragments.iter() {
             match frag {
@@ -147,45 +149,45 @@ impl ToOutputWithArgs for StringFragment {
 
 impl ToOutputWithArgs for Rule {
     type Output = OutputAtRule;
-    fn to_tokens_with_args(
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
-        let mut prelude = vec![];
+        let mut prelude = Vec::new();
 
         for i in self.condition.iter() {
-            prelude.extend(i.to_tokens_with_args(args, args_used));
+            prelude.extend(i.to_output_with_args(args, args_used));
         }
 
-        let mut contents = vec![];
+        let mut contents = Vec::new();
 
         for i in self.content.iter() {
-            contents.push(i.to_tokens_with_args(args, args_used));
+            contents.push(i.to_output_with_args(args, args_used));
         }
 
         OutputAtRule {
             prelude,
             contents,
-            errors: vec![],
+            errors: Vec::new(),
         }
     }
 }
 
 impl ToOutputWithArgs for ScopeContent {
     type Output = OutputScopeContent;
-    fn to_tokens_with_args(
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
         match self {
             Self::Block(ref m) => {
-                let block = m.to_tokens_with_args(args, args_used);
+                let block = m.to_output_with_args(args, args_used);
                 OutputScopeContent::Block(block)
             }
             Self::Rule(ref m) => {
-                let rule = m.to_tokens_with_args(args, args_used);
+                let rule = m.to_output_with_args(args, args_used);
                 OutputScopeContent::AtRule(rule)
             }
         }
@@ -194,15 +196,15 @@ impl ToOutputWithArgs for ScopeContent {
 
 impl ToOutputWithArgs for Sheet {
     type Output = OutputSheet;
-    fn to_tokens_with_args(
+    fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
-        let mut contents = vec![];
+        let mut contents = Vec::new();
 
         for i in self.iter() {
-            contents.push(i.to_tokens_with_args(args, args_used));
+            contents.push(i.to_output_with_args(args, args_used));
         }
         OutputSheet { contents }
     }

@@ -10,10 +10,10 @@ use stylist_core::ast::Sheet;
 
 pub mod argument;
 mod fstring;
-mod to_tokens_with_args;
+mod to_output_with_args;
 
 use argument::Argument;
-use to_tokens_with_args::ToOutputWithArgs;
+use to_output_with_args::ToOutputWithArgs;
 
 use crate::output::{ContextRecorder, Reify};
 
@@ -117,7 +117,7 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
 
     let mut args_used = HashSet::with_capacity(args.len());
 
-    let output = sheet.to_tokens_with_args(&args, &mut args_used);
+    let output = sheet.to_output_with_args(&args, &mut args_used);
 
     for (k, v) in args.iter() {
         if !args_used.contains(k) {

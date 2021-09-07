@@ -69,7 +69,7 @@ impl<'a> From<&'a Argument> for OutputFragment {
 }
 
 impl OutputFragment {
-    fn from_displayable_spanned(source: &impl Spanned, expr: impl ToTokens) -> Self {
+    fn from_displayable_spanned(source: impl Spanned, expr: impl ToTokens) -> Self {
         OutputFragment::Raw(quote_spanned! {source.span()=>
             (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
         })
