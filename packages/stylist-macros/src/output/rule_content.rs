@@ -11,13 +11,11 @@ pub enum OutputRuleContent {
 }
 
 impl Reify for OutputRuleContent {
-    #[allow(unreachable_code)]
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         match self {
             Self::AtRule(rule) => {
                 let mut inner = ContextRecorder::new();
                 let block_tokens = rule.into_token_stream(&mut inner);
-                ctx.uses_nested(&inner);
 
                 let bowed_block = if inner.is_const() {
                     let const_ident = Ident::new("block", Span::mixed_site());
@@ -29,6 +27,7 @@ impl Reify for OutputRuleContent {
                     }
                 } else {
                     ctx.uses_static(); // Box::new
+                    ctx.uses_nested(&inner); // #block_tokens
                     quote! {
                         ::stylist::vendor::Bow::Boxed(
                             ::std::boxed::Box::new(#block_tokens)

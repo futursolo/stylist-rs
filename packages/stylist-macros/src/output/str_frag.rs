@@ -5,7 +5,7 @@ use crate::{
 };
 use proc_macro2::{Delimiter, TokenStream};
 use quote::quote;
-use syn::{Expr, ExprLit, Lit};
+use syn::{spanned::Spanned, Expr, ExprLit, Lit};
 
 #[derive(Debug, Clone)]
 pub enum OutputFragment {
@@ -14,7 +14,6 @@ pub enum OutputFragment {
     Token(PreservedToken),
     Delimiter(Delimiter, /*start:*/ bool),
     Str(String),
-    Raw(TokenStream),
 }
 
 impl From<char> for OutputFragment {
@@ -62,10 +61,8 @@ impl OutputFragment {
             Self::Token(t) => t.to_output_string().into(),
             Self::Delimiter(kind, start) => Self::str_for_delim(kind, start).to_string().into(),
             Self::Str(s) => s.into(),
-            Self::Arg(arg) => {
-                OutputCowString::from_displayable_spanned(&arg.name_token, &arg.tokens)
-            }
-            Self::Expr(ref expr) => {
+            Self::Arg(arg) => OutputCowString::from_displayable_spanned(arg.name_token, arg.tokens),
+            Self::Expr(expr) => {
                 if let Expr::Lit(ExprLit {
                     lit: Lit::Str(ref litstr),
                     ..
@@ -73,10 +70,9 @@ impl OutputFragment {
                 {
                     litstr.value().into()
                 } else {
-                    OutputCowString::from_displayable_spanned(expr, expr)
+                    OutputCowString::from_displayable_spanned(expr.span(), expr)
                 }
             }
-            Self::Raw(t) => OutputCowString::Raw(t),
         }
     }
 
@@ -92,7 +88,7 @@ impl OutputFragment {
         }
     }
 
-    fn as_str(&self) -> Option<String> {
+    fn as_string(&self) -> Option<String> {
         if let OutputCowString::Str(s) = self.clone().into_inner() {
             Some(s)
         } else {
@@ -116,7 +112,7 @@ pub fn fragment_coalesce(
     l: OutputFragment,
     r: OutputFragment,
 ) -> Result<OutputFragment, (OutputFragment, OutputFragment)> {
-    match (l.as_str(), r.as_str()) {
+    match (l.as_string(), r.as_string()) {
         (Some(lt), Some(rt)) => {
             // Two successive string literals can be combined into a single one
             Ok(OutputFragment::Str(format!("{}{}", lt, rt)))

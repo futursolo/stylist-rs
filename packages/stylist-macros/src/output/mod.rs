@@ -2,6 +2,8 @@
 //! is responsible for transforming finished macro outputs into the TokenStream
 //! emitted by the different macros.
 use proc_macro2::TokenStream;
+use quote::ToTokens;
+use syn::Expr;
 
 mod sheet;
 pub use sheet::OutputSheet;
@@ -35,5 +37,21 @@ pub trait Reify {
 impl Reify for syn::Error {
     fn into_token_stream(self, _ctx: &mut ContextRecorder) -> TokenStream {
         self.into_compile_error()
+    }
+}
+
+impl Reify for TokenStream {
+    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+        // We are overly conservative here
+        ctx.uses_dynamic_argument();
+        self
+    }
+}
+
+impl Reify for Expr {
+    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+        // TODO: We are overly conservative here, could analyse the expression further
+        ctx.uses_dynamic_argument();
+        self.to_token_stream()
     }
 }

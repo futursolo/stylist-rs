@@ -1,12 +1,12 @@
 use super::{ContextRecorder, Reify};
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, quote_spanned, ToTokens};
+use quote::{quote, quote_spanned};
 use syn::{spanned::Spanned, LitStr};
 
 #[derive(Debug)]
 pub enum OutputCowString {
     Str(String),
-    Raw(TokenStream),
+    Raw(TokenStream, ContextRecorder),
 }
 
 impl From<String> for OutputCowString {
@@ -16,18 +16,24 @@ impl From<String> for OutputCowString {
 }
 
 impl OutputCowString {
-    pub fn from_displayable_spanned(source: impl Spanned, expr: impl ToTokens) -> Self {
-        Self::Raw(quote_spanned! {source.span()=>
-            (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
-        })
+    pub fn from_displayable_spanned(source: impl Spanned, expr: impl Reify) -> Self {
+        let mut inner_context = ContextRecorder::default();
+        let expr = expr.into_token_stream(&mut inner_context);
+        inner_context.uses_static(); // .to_string().into()
+        Self::Raw(
+            quote_spanned! {source.span()=>
+                (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
+            },
+            inner_context,
+        )
     }
 }
 
 impl Reify for OutputCowString {
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         match self {
-            Self::Raw(t) => {
-                ctx.uses_dynamic_argument();
+            Self::Raw(t, ref inner) => {
+                ctx.uses_nested(inner);
                 t
             }
             Self::Str(lit) => {

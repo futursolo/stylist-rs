@@ -24,22 +24,21 @@ where
             .into_iter()
             .map(|m| m.into_token_stream(&mut inner_ctx))
             .collect();
-        ctx.uses_nested(&inner_ctx);
 
         if inner_ctx.is_const() {
             let name = Ident::new("items", Span::mixed_site());
             let content_len = contents.len();
             quote! {
-                ::std::borrow::Cow::<[#typ]>::Borrowed (
-                    {
-                        const #name: [#typ; #content_len] = [
-                            #( #contents, )*
-                        ];
-                        &#name
-                    }
-                )
+                ::std::borrow::Cow::<[#typ]>::Borrowed ({
+                    const #name: [#typ; #content_len] = [
+                        #( #contents, )*
+                    ];
+                    &#name
+                })
             }
         } else {
+            ctx.uses_static(); // ::std::vec!
+            ctx.uses_nested(&inner_ctx); // #contents
             quote! {
                 ::std::borrow::Cow::<[#typ]>::Owned (
                     ::std::vec![
