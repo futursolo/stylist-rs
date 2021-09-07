@@ -1,11 +1,14 @@
-use super::super::{
-    component_value::{ComponentValue, ComponentValueStream},
-    output::OutputQualifier,
+use super::{
+    super::component_value::{ComponentValue, ComponentValueStream, PreservedToken},
+    fragment_spacing,
 };
-
+use crate::{
+    output::{OutputQualifier, OutputSelector},
+    spacing_iterator::SpacedIterator,
+};
+use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-
 use syn::{
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
     token,
@@ -66,8 +69,34 @@ impl CssBlockQualifier {
     }
 
     pub fn into_output(self) -> OutputQualifier {
+        fn is_not_comma(q: &ComponentValue) -> bool {
+            !matches!(q, ComponentValue::Token(PreservedToken::Punct(ref p)) if p.as_char() == ',')
+        }
+        let selector_list = self
+            .qualifiers
+            .into_iter()
+            .peekable()
+            .batching(|it| {
+                // Return if no items left
+                it.peek()?;
+                // Take until the next comma
+                let selector_parts = it
+                    .peeking_take_while(is_not_comma)
+                    // reify the individual parts
+                    .flat_map(|p| p.to_output_fragments())
+                    // space them correctly
+                    .spaced_with(fragment_spacing)
+                    .collect();
+                let selector = OutputSelector {
+                    selectors: selector_parts,
+                };
+                it.next(); // Consume the comma
+                Some(selector)
+            })
+            .collect();
+
         OutputQualifier {
-            selectors: self.qualifiers,
+            selector_list,
             errors: self.qualifier_errors,
         }
     }

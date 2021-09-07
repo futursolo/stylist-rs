@@ -1,9 +1,10 @@
-use super::{
-    super::{component_value::PreservedToken, css_ident::CssIdent},
-    ContextRecorder, Reify,
+use super::{ContextRecorder, Reify};
+use crate::{
+    inline::{component_value::PreservedToken, css_ident::CssIdent},
+    literal::argument::Argument,
 };
 use proc_macro2::{Delimiter, Span, TokenStream};
-use quote::{quote, quote_spanned};
+use quote::{quote, quote_spanned, ToTokens};
 use syn::{spanned::Spanned, Expr, ExprLit, Lit, LitStr};
 
 #[derive(Debug, Clone)]
@@ -57,14 +58,23 @@ impl<'a> From<&'a Expr> for OutputFragment {
             return Self::Str(litstr.value());
         }
 
-        // quote spanned here so that errors related to calling #ident_write_expr show correctly
-        Self::Raw(quote_spanned! {expr.span()=>
-            (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
-        })
+        Self::from_displayable_spanned(expr, expr)
+    }
+}
+
+impl<'a> From<&'a Argument> for OutputFragment {
+    fn from(arg: &Argument) -> Self {
+        Self::from_displayable_spanned(&arg.name_token, &arg.tokens)
     }
 }
 
 impl OutputFragment {
+    fn from_displayable_spanned(source: &impl Spanned, expr: impl ToTokens) -> Self {
+        OutputFragment::Raw(quote_spanned! {source.span()=>
+            (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
+        })
+    }
+
     fn str_for_delim(d: Delimiter, start: bool) -> &'static str {
         match (d, start) {
             (Delimiter::Brace, true) => "{",
@@ -103,20 +113,6 @@ impl Reify for OutputFragment {
             }
         }
     }
-}
-
-pub fn fragment_spacing(l: &OutputFragment, r: &OutputFragment) -> Option<OutputFragment> {
-    use OutputFragment::*;
-    use PreservedToken::*;
-    let needs_spacing = matches!(
-        (l, r),
-        (Delimiter(_, false), Token(Ident(_)))
-            | (
-                Token(Ident(_)) | Token(Literal(_)),
-                Token(Ident(_)) | Token(Literal(_))
-            )
-    );
-    needs_spacing.then(|| ' '.into())
 }
 
 pub fn fragment_coalesce(

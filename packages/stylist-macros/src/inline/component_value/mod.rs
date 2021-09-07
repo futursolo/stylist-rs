@@ -9,7 +9,8 @@
 //! In general, only a parse error in the first step should be fatal and panic immediately,
 //! while a parse error in the second step can recover and display a small precise error location
 //! to the user, then continue parsing the rest of the input.
-use super::{css_ident::CssIdent, output::OutputFragment};
+use super::css_ident::CssIdent;
+use crate::output::OutputFragment;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{

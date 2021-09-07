@@ -1,0 +1,5 @@
+error: argument unused is not used, arguments must be used
+ --> $DIR/unused_argument-fail.rs:4:9
+  |
+4 |     "#, unused = 1000, used = "black"
+  |         ^^^^^^

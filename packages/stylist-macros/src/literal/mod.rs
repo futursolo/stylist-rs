@@ -8,12 +8,14 @@ use std::convert::TryFrom;
 
 use stylist_core::ast::Sheet;
 
-mod argument;
+pub mod argument;
 mod fstring;
 mod to_tokens_with_args;
 
 use argument::Argument;
-use to_tokens_with_args::ToTokensWithArgs;
+use to_tokens_with_args::ToOutputWithArgs;
+
+use crate::output::{ContextRecorder, Reify};
 
 pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
@@ -115,7 +117,7 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
 
     let mut args_used = HashSet::with_capacity(args.len());
 
-    let stream = sheet.to_tokens_with_args(&args, &mut args_used);
+    let output = sheet.to_tokens_with_args(&args, &mut args_used);
 
     for (k, v) in args.iter() {
         if !args_used.contains(k) {
@@ -127,5 +129,6 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
         }
     }
 
-    stream
+    let mut ctx = ContextRecorder::new();
+    output.into_token_stream(&mut ctx)
 }

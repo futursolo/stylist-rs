@@ -1,4 +1,4 @@
-use super::super::output::OutputFragment;
+use crate::output::OutputFragment;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{

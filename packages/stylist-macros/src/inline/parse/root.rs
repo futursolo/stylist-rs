@@ -1,7 +1,5 @@
-use super::{
-    super::output::{OutputScopeContent, OutputSheet},
-    normalize_scope_hierarchy, CssScopeContent, OutputSheetContent,
-};
+use super::{normalize_scope_hierarchy, CssScopeContent, OutputSheetContent};
+use crate::output::{OutputScopeContent, OutputSheet};
 use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 
 #[derive(Debug)]

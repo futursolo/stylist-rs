@@ -2,9 +2,12 @@ use super::{
     super::{
         component_value::{ComponentValue, ComponentValueStream},
         css_ident::CssIdent,
-        output::{OutputAtRule, OutputRuleContent},
     },
-    normalize_hierarchy_impl, CssBlockQualifier, CssScope, OutputSheetContent,
+    fragment_spacing, normalize_hierarchy_impl, CssBlockQualifier, CssScope, OutputSheetContent,
+};
+use crate::{
+    output::{OutputAtRule, OutputFragment, OutputRuleContent},
+    spacing_iterator::SpacedIterator,
 };
 use proc_macro2::TokenStream;
 use quote::ToTokens;
@@ -90,9 +93,18 @@ impl CssAtRule {
                 })
                 .collect(),
         };
+        let mut prelude = vec![OutputFragment::Str(format!(
+            "@{} ",
+            self.name.to_output_string()
+        ))];
+        prelude.extend(
+            self.prelude
+                .into_iter()
+                .flat_map(|p| p.to_output_fragments())
+                .spaced_with(fragment_spacing),
+        );
         OutputSheetContent::AtRule(OutputAtRule {
-            name: self.name,
-            prelude: self.prelude,
+            prelude,
             contents,
             errors: self.errors,
         })
