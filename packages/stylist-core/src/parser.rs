@@ -935,6 +935,73 @@ mod tests {
     }
 
     #[test]
+    fn test_dense_style() {
+        init();
+        let test_str = r#"@media print{color:black;.nested{cursor:none;}}"#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![ScopeContent::Rule(Rule {
+            condition: vec!["@media ".into(), "print".into()].into(),
+            content: vec![
+                RuleContent::Block(Block {
+                    condition: vec![].into(),
+                    style_attributes: vec![StyleAttribute {
+                        key: "color".into(),
+                        value: vec!["black".into()].into(),
+                    }]
+                    .into(),
+                }),
+                RuleContent::Block(Block {
+                    condition: vec![vec![".nested".into()].into()].into(),
+                    style_attributes: vec![StyleAttribute {
+                        key: "cursor".into(),
+                        value: vec!["none".into()].into(),
+                    }]
+                    .into(),
+                }),
+            ]
+            .into(),
+        })]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_issue_36() {
+        init();
+        let test_str = r#"
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+        "#;
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![ScopeContent::Block(Block {
+            condition: vec![].into(),
+            style_attributes: vec![
+                StyleAttribute {
+                    key: "position".into(),
+                    value: vec!["fixed".into()].into(),
+                },
+                StyleAttribute {
+                    key: "z-index".into(),
+                    value: vec!["1".into()].into(),
+                },
+                StyleAttribute {
+                    key: "width".into(),
+                    value: vec!["100%".into()].into(),
+                },
+                StyleAttribute {
+                    key: "height".into(),
+                    value: vec!["100%".into()].into(),
+                },
+            ]
+            .into(),
+        })]);
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
     fn test_empty_media_rule() {
         init();
         let test_str = r#"@media screen and (max-width: 500px) {}"#;
@@ -1041,6 +1108,7 @@ mod tests {
                     /* a comment with * */
                     display: flex;
                 }
+                /* end comment */
             "#;
         let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
 
