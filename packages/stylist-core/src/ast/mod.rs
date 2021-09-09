@@ -66,10 +66,10 @@ width: 200px;
         assert_eq!(
             test_block.to_style_str(Some("test"))?,
             r#".test {
-width: 100vw;
+    width: 100vw;
 }
 .test .inner {
-background-color: red;
+    background-color: red;
 }
 @keyframes move {
 from {
@@ -126,20 +126,24 @@ width: 200px;
         assert_eq!(
             test_block.to_style_str(Some("test"))?,
             r#"@media only screen and (min-width: 1000px) {
-.test {
-width: 100vw;
+    .test {
+        width: 100vw;
+    }
 }
-.test .inner {
-background-color: red;
+@media only screen and (min-width: 1000px) {
+    .test .inner {
+        background-color: red;
+    }
 }
-@keyframes move {
+@media only screen and (min-width: 1000px) {
+    @keyframes move {
 from {
 width: 100px;
 }
 to {
 width: 200px;
 }
-}
+    }
 }
 "#
         );

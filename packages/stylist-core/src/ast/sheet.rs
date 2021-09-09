@@ -51,10 +51,9 @@ impl Default for Sheet {
 }
 
 impl ToStyleStr for Sheet {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
         for scope in self.0.iter() {
             scope.write_style(w, ctx)?;
-            writeln!(w)?;
         }
 
         Ok(())

@@ -27,11 +27,14 @@ impl From<ScopeContent> for RuleContent {
 }
 
 impl ToStyleStr for RuleContent {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
         match self {
             RuleContent::Block(ref b) => b.write_style(w, ctx)?,
             RuleContent::Rule(ref r) => r.write_style(w, ctx)?,
-            RuleContent::String(ref s) => write!(w, "{}", s)?,
+            RuleContent::String(ref s) => {
+                ctx.write_starting_clause(w)?;
+                writeln!(w, "{}", s)?;
+            }
         }
 
         Ok(())
@@ -78,22 +81,21 @@ pub struct Rule {
 }
 
 impl ToStyleStr for Rule {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+        ctx.write_finishing_clause(w)?;
+
         let mut cond = "".to_string();
         for frag in self.condition.iter() {
             frag.write_style(&mut cond, ctx)?;
         }
 
-        let rule_ctx = ctx.clone().with_condition(&cond);
-
-        writeln!(w, "{} {{", cond)?;
+        let mut rule_ctx = ctx.clone().with_condition(&cond);
 
         for i in self.content.iter() {
-            i.write_style(w, &rule_ctx)?;
-            writeln!(w)?;
+            i.write_style(w, &mut rule_ctx)?;
         }
 
-        write!(w, "}}")?;
+        rule_ctx.write_finishing_clause(w)?;
 
         Ok(())
     }

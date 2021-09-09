@@ -15,14 +15,18 @@ pub struct StyleAttribute {
 }
 
 impl ToStyleStr for StyleAttribute {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+        // Always write starting clause.
+        ctx.write_starting_clause(w)?;
+        ctx.write_padding(w)?;
+
         write!(w, "{}: ", self.key)?;
 
         for i in self.value.iter() {
             i.write_style(w, ctx)?;
         }
 
-        write!(w, ";")?;
+        writeln!(w, ";")?;
 
         Ok(())
     }

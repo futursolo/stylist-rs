@@ -357,23 +357,23 @@ mod tests {
             style.get_style_str(),
             format!(
                 r#".{style_name} {{
-background-color: black;
+    background-color: black;
 }}
 .{style_name} .with-class {{
-color: red;
+    color: red;
 }}
 @media screen and (max-width: 600px) {{
-.{style_name} {{
-color: yellow;
-}}
+    .{style_name} {{
+        color: yellow;
+    }}
 }}
 @supports (display: grid) {{
-.{style_name} {{
-display: grid;
-}}
+    .{style_name} {{
+        display: grid;
+    }}
 }}
 .{style_name} header, .{style_name} footer {{
-border: 1px solid black;
+    border: 1px solid black;
 }}
 "#,
                 style_name = style.get_class_name()

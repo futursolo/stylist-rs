@@ -11,7 +11,7 @@ pub struct StringFragment {
 }
 
 impl ToStyleStr for StringFragment {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, _ctx: &StyleContext<'_>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, _ctx: &mut StyleContext<'_>) -> Result<()> {
         write!(w, "{}", self.inner)?;
 
         Ok(())

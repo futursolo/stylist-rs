@@ -8,15 +8,13 @@ pub trait ToStyleStr {
     fn to_style_str(&self, class_name: Option<&str>) -> Result<String> {
         let mut s = String::new();
 
-        let ctx = StyleContext {
-            parent_conditions: class_name.map(|m| vec![m]).unwrap_or_else(Vec::new),
-        };
+        let mut ctx = StyleContext::new(class_name);
 
-        self.write_style(&mut s, &ctx)?;
+        self.write_style(&mut s, &mut ctx)?;
 
         Ok(s)
     }
 
     // If None is passed as class_name, it means to write a global style.
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()>;
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()>;
 }

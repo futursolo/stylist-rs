@@ -11,6 +11,17 @@ pub enum BlockContent {
     RuleBlock(RuleBlock),
 }
 
+impl ToStyleStr for BlockContent {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+        match self {
+            Self::StyleAttr(ref m) => m.write_style(w, ctx)?,
+            Self::RuleBlock(ref m) => m.write_style(w, ctx)?,
+        }
+
+        Ok(())
+    }
+}
+
 /// A block is a set of css properties that apply to elements that
 /// match the condition. The CSS standard calls these "Qualified rules".
 ///
@@ -31,7 +42,7 @@ pub struct Block {
 }
 
 impl Block {
-    fn cond_str(&self, ctx: &StyleContext<'_>) -> Result<Option<String>> {
+    fn cond_str(&self, ctx: &mut StyleContext<'_>) -> Result<Option<String>> {
         if self.condition.is_empty() {
             return Ok(None);
         }
@@ -47,41 +58,26 @@ impl Block {
 
         Ok(Some(cond))
     }
-
-    fn write_content<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
-        writeln!(w, "{{")?;
-
-        for attr in self.style_attributes.iter() {
-            attr.write_style(w, ctx)?;
-            writeln!(w)?;
-        }
-
-        write!(w, "}}")?;
-
-        Ok(())
-    }
 }
 
 impl ToStyleStr for Block {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
-        if let Some(m) = self.cond_str(ctx)? {
-            write!(w, "{} ", m)?;
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+        // Close last clause.
+        ctx.write_finishing_clause(w)?;
 
-            let block_ctx = ctx.clone().with_condition(&m);
+        // TODO: nested block, which is not supported at the moment.
+        let cond_s = self.cond_str(ctx)?;
 
-            return self.write_content(w, &block_ctx);
-            // TODO: nested block.
+        let mut final_ctx = cond_s
+            .as_ref()
+            .map(|m| ctx.with_condition(m))
+            .unwrap_or_else(|| ctx.to_block_context());
+
+        for attr in self.style_attributes.iter() {
+            attr.write_style(w, &mut final_ctx)?;
         }
 
-        // Dangling Block.
-        if let Some(m) = ctx.root_class_name() {
-            write!(w, ".{} ", m)?;
-        } else {
-            // Generates global style for dangling block.
-            write!(w, "html ")?;
-        }
-
-        self.write_content(w, ctx)?;
+        final_ctx.write_finishing_clause(w)?;
 
         Ok(())
     }

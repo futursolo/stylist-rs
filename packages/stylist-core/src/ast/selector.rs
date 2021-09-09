@@ -15,14 +15,14 @@ pub struct Selector {
 }
 
 impl ToStyleStr for Selector {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
         let mut joined_s = "".to_string();
 
         for frag in self.fragments.iter() {
             frag.write_style(&mut joined_s, ctx)?;
         }
 
-        if let Some(m) = ctx.root_class_name() {
+        if let Some(ref m) = ctx.class_name {
             // If contains current selector or root pseudo class, replace them with class name.
             if joined_s.contains('&') || joined_s.contains(":root") {
                 let scoped_class = format!(".{}", m);

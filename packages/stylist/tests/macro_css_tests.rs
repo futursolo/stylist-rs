@@ -28,18 +28,18 @@ fn test_sheet_interpolation() {
 
     let expected = format!(
         r#".{cls} {{
-color: red;
+    color: red;
 }}
 .{cls} span, .{cls} div.selected {{
-background-color: blue;
+    background-color: blue;
 }}
 :not(.{cls}.highlighted) {{
-background-color: black;
+    background-color: black;
 }}
 @media screen and (max-width: 500px) {{
-.{cls} {{
-display: flex;
-}}
+    .{cls} {{
+        display: flex;
+    }}
 }}
 "#,
         cls = "stylist-testtest"

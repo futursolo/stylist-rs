@@ -154,7 +154,7 @@ mod tests {
         assert_eq!(
             global_style.get_style_str(),
             r#"html {
-background-color: black;
+    background-color: black;
 }
 "#
         );
@@ -185,23 +185,23 @@ background-color: black;
         assert_eq!(
             global_style.get_style_str(),
             r#"html {
-background-color: black;
+    background-color: black;
 }
 .with-class {
-color: red;
+    color: red;
 }
 @media screen and (max-width: 600px) {
-html {
-color: yellow;
-}
+    html {
+        color: yellow;
+    }
 }
 @supports (display: grid) {
-html {
-display: grid;
-}
+    html {
+        display: grid;
+    }
 }
 header, footer {
-border: 1px solid black;
+    border: 1px solid black;
 }
 "#,
         )

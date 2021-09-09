@@ -14,13 +14,13 @@ fn main() {
     let expected_reusult = format!(
         r#"@media print {{
 .{cls} .outer {{
-background-color: grey;
+    background-color: grey;
 }}
 }}
 @supports (display:grid) {{
-.{cls} .outer {{
-margin: 2cm;
-}}
+    .{cls} .outer {{
+        margin: 2cm;
+    }}
 }}
 "#,
         cls = style.get_class_name()
