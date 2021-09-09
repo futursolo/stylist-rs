@@ -64,11 +64,11 @@ impl Default for CssBlockQualifier {
 }
 
 impl CssBlockQualifier {
-    pub fn is_empty(&self) -> bool {
-        self.qualifiers.is_empty()
-    }
+    pub fn into_output(self) -> Result<OutputQualifier, Vec<ParseError>> {
+        if !self.qualifier_errors.is_empty() {
+            return Err(self.qualifier_errors);
+        }
 
-    pub fn into_output(self) -> OutputQualifier {
         fn is_not_comma(q: &ComponentValue) -> bool {
             !matches!(q, ComponentValue::Token(PreservedToken::Punct(ref p)) if p.as_char() == ',')
         }
@@ -95,9 +95,9 @@ impl CssBlockQualifier {
             })
             .collect();
 
-        OutputQualifier {
+        Ok(OutputQualifier {
             selector_list,
-            errors: self.qualifier_errors,
-        }
+            // errors: self.qualifier_errors,
+        })
     }
 }

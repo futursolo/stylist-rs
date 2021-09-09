@@ -2,6 +2,7 @@ use super::{ContextRecorder, IntoCowVecTokens, OutputBlockContent, OutputQualifi
 use proc_macro2::TokenStream;
 use quote::quote;
 
+#[derive(Debug)]
 pub struct OutputQualifiedRule {
     pub qualifier: OutputQualifier,
     pub content: Vec<OutputBlockContent>,

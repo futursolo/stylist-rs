@@ -1,13 +1,13 @@
 use super::{ContextRecorder, OutputAtRule, OutputQualifiedRule, Reify};
 use proc_macro2::{Literal, TokenStream};
 use quote::quote;
-use syn::Error as ParseError;
 
+#[derive(Debug)]
 pub enum OutputRuleContent {
     AtRule(OutputAtRule),
     Block(OutputQualifiedRule),
     String(String),
-    Err(ParseError),
+    // Err(ParseError),
 }
 
 impl Reify for OutputRuleContent {
@@ -24,8 +24,7 @@ impl Reify for OutputRuleContent {
             Self::String(ref s) => {
                 let s = Literal::string(s);
                 quote! { ::stylist::ast::RuleContent::String(#s.into()) }
-            }
-            Self::Err(err) => err.into_token_stream(ctx),
+            } // Self::Err(err) => err.into_token_stream(ctx),
         }
     }
 }

@@ -1,12 +1,13 @@
 use super::{ContextRecorder, OutputAtRule, OutputQualifiedRule, Reify};
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::Error as ParseError;
+// use syn::Error as ParseError;
 
+#[derive(Debug)]
 pub enum OutputScopeContent {
     AtRule(OutputAtRule),
     Block(OutputQualifiedRule),
-    Err(ParseError),
+    // Err(ParseError),
 }
 
 impl Reify for OutputScopeContent {
@@ -19,8 +20,7 @@ impl Reify for OutputScopeContent {
             Self::Block(block) => {
                 let block_tokens = block.into_token_stream(ctx);
                 quote! { ::stylist::ast::ScopeContent::Block(#block_tokens) }
-            }
-            Self::Err(err) => err.into_token_stream(ctx),
+            } // Self::Err(err) => err.into_token_stream(ctx),
         }
     }
 }

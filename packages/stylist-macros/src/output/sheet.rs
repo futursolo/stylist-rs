@@ -2,6 +2,7 @@ use super::{ContextRecorder, IntoCowVecTokens, OutputScopeContent, Reify};
 use proc_macro2::TokenStream;
 use quote::quote;
 
+#[derive(Debug)]
 pub struct OutputSheet {
     pub contents: Vec<OutputScopeContent>,
 }

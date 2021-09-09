@@ -13,9 +13,9 @@ fn main() {
     .unwrap();
     let expected_reusult = format!(
         r#"@media print {{
-.{cls} .outer {{
-    background-color: grey;
-}}
+    .{cls} .outer {{
+        background-color: grey;
+    }}
 }}
 @supports (display:grid) {{
     .{cls} .outer {{

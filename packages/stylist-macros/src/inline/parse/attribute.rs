@@ -101,7 +101,10 @@ impl ComponentValue {
 }
 
 impl CssAttribute {
-    pub(super) fn into_output(self) -> OutputAttribute {
+    pub(super) fn into_output(self) -> Result<OutputAttribute, Vec<ParseError>> {
+        if !self.value.errors.is_empty() {
+            return Err(self.value.errors);
+        }
         let values = self
             .value
             .values
@@ -109,11 +112,11 @@ impl CssAttribute {
             .flat_map(|p| p.to_output_fragments())
             .spaced_with(fragment_spacing)
             .collect();
-        OutputAttribute {
+        Ok(OutputAttribute {
             key: self.name.into_output(),
             values,
-            errors: self.value.errors,
-        }
+            // errors: self.value.errors,
+        })
     }
 }
 

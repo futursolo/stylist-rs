@@ -1,9 +1,10 @@
-use super::{normalize_hierarchy_impl, CssBlockQualifier, CssScope, OutputSheetContent};
+use super::{CssAttribute, CssBlockQualifier, CssScope};
+use crate::output::{OutputBlockContent, OutputQualifiedRule, OutputQualifier};
 use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
 
 #[derive(Debug)]
 pub struct CssQualifiedRule {
-    qualifier: CssBlockQualifier,
+    pub qualifier: CssBlockQualifier,
     scope: CssScope,
 }
 
@@ -16,27 +17,46 @@ impl Parse for CssQualifiedRule {
 }
 
 impl CssQualifiedRule {
-    pub(super) fn fold_in_context(
-        self,
-        ctx: CssBlockQualifier,
-    ) -> Box<dyn Iterator<Item = OutputSheetContent>> {
-        let own_ctx = self.qualifier;
-        if !own_ctx.is_empty() && !ctx.is_empty() {
-            // TODO: figure out how to combine contexts
-            // !Warning!: simply duplicating the containing blocks will (if no special care is taken)
-            // also duplicate injected expressions, which will evaluate them multiple times, which can be
-            // unexpected and confusing to the user.
-            // !Warning!: when the qualifiers contain several selectors each, this can lead to an explosion
-            // of emitted blocks. Consider
-            // .one, .two, .three { .inner-one, .inner-two, .inner-three { background: ${injected_expr} } }
-            // Following emotion, this would expand to 9 blocks and evaluate `injected_expr` 9 times.
-            // A possibility would be collecting appearing expressions once up front and putting replacements
-            // into the blocks.
-            return Box::new(std::iter::once(OutputSheetContent::Error(
-                ParseError::new_spanned(own_ctx, "Can not nest qualified blocks (yet)"),
-            )));
+    pub fn into_output(self) -> Result<OutputQualifiedRule, Vec<ParseError>> {
+        let qualifier_result = self.qualifier.into_output();
+        let scope_result = self.scope.into_block_output();
+
+        let (qualifier, content) = match (qualifier_result, scope_result) {
+            (Ok(m), Ok(n)) => (m, n),
+            (Err(mut e1), Err(e2)) => {
+                e1.extend(e2);
+                return Err(e1);
+            }
+            (Err(e), _) => return Err(e),
+            (_, Err(e)) => return Err(e),
+        };
+
+        Ok(OutputQualifiedRule { qualifier, content })
+    }
+
+    // Into Output for a dangling block
+    pub fn into_dangling_output(
+        attrs: &mut Vec<CssAttribute>,
+    ) -> Result<OutputQualifiedRule, Vec<ParseError>> {
+        let mut errors = Vec::new();
+        let mut output_attrs = Vec::new();
+
+        for attr in attrs.drain(0..) {
+            match attr.into_output() {
+                Ok(m) => output_attrs.push(OutputBlockContent::StyleAttr(m)),
+                Err(e) => errors.extend(e),
+            }
         }
-        let relevant_ctx = if !own_ctx.is_empty() { own_ctx } else { ctx };
-        Box::new(normalize_hierarchy_impl(relevant_ctx, self.scope.contents))
+
+        if !errors.is_empty() {
+            Err(errors)
+        } else {
+            Ok(OutputQualifiedRule {
+                qualifier: OutputQualifier {
+                    selector_list: Vec::new(),
+                },
+                content: output_attrs,
+            })
+        }
     }
 }

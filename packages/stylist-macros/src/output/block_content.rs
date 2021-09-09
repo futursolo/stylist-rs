@@ -3,6 +3,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 // use syn::Error as ParseError;
 
+#[derive(Debug)]
 pub enum OutputBlockContent {
     RuleBlock(OutputRuleBlock),
     StyleAttr(OutputAttribute),

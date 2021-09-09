@@ -3,6 +3,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 // use syn::Error as ParseError;
 
+#[derive(Debug)]
 pub enum OutputRuleBlockContent {
     RuleBlock(Box<OutputRuleBlock>),
     StyleAttr(OutputAttribute),
@@ -15,17 +16,18 @@ impl Reify for OutputRuleBlockContent {
             Self::RuleBlock(m) => {
                 let tokens = m.into_token_stream(ctx);
 
-                quote! { ::stylist::ast::BlockContent::RuleBlock(::std::boxed::Box::new(#tokens)) }
+                quote! { ::stylist::ast::RuleBlockContent::RuleBlock(::std::boxed::Box::new(#tokens)) }
             }
             Self::StyleAttr(m) => {
                 let tokens = m.into_token_stream(ctx);
 
-                quote! { ::stylist::ast::BlockContent::StyleAttr(#tokens) }
+                quote! { ::stylist::ast::RuleBlockContent::StyleAttr(#tokens) }
             } // Self::Err(err) => err.into_token_stream(ctx),
         }
     }
 }
 
+#[derive(Debug)]
 pub struct OutputRuleBlock {
     pub condition: Vec<OutputFragment>,
     pub content: Vec<OutputRuleBlockContent>,

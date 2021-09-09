@@ -21,7 +21,7 @@ use syn::{
 mod preserved_token;
 pub use preserved_token::PreservedToken;
 mod simple_block;
-pub use simple_block::SimpleBlock;
+pub use simple_block::{BlockKind, SimpleBlock};
 mod function_token;
 pub use function_token::FunctionToken;
 mod stream;
@@ -86,23 +86,18 @@ impl ComponentValue {
 
             Self::Expr(expr) => vec![expr.to_output_fragment()],
 
-            Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
-                // [ ... ]
-                let mut output = vec!['['.into()];
-                for c in contents {
+            Self::Block(ref m) => {
+                if let BlockKind::Braced(_) = m.kind {
+                    // this kind of block is not supposed to appear in @-rule preludes, block qualifiers
+                    // or attribute values and as such should not get emitted
+                    unreachable!("braced blocks should not get reified");
+                }
+                let (start, end) = m.kind.surround_tokens();
+                let mut output = vec![start.into()];
+                for c in m.contents.iter() {
                     output.extend(c.to_output_fragments());
                 }
-                output.push(']'.into());
-                output
-            }
-
-            Self::Block(SimpleBlock::Paren { contents, .. }) => {
-                // ( ... )
-                let mut output = vec!['('.into()];
-                for c in contents {
-                    output.extend(c.to_output_fragments());
-                }
-                output.push(')'.into());
+                output.push(end.into());
                 output
             }
 
@@ -114,12 +109,6 @@ impl ComponentValue {
                 }
                 output.push(')'.into());
                 output
-            }
-
-            Self::Block(SimpleBlock::Braced { .. }) => {
-                // this kind of block is not supposed to appear in @-rule preludes, block qualifiers
-                // or attribute values and as such should not get emitted
-                unreachable!("braced blocks should not get reified");
             }
         }
     }
@@ -164,18 +153,20 @@ impl ComponentValue {
         match self {
             Self::Expr(_) | Self::Function(_) | Self::Token(PreservedToken::Ident(_)) => Ok(vec![]),
 
-            Self::Block(SimpleBlock::Bracketed { contents, .. }) => {
-                let mut collected = vec![];
-                for e in contents.iter().map(|e| e.validate_selector_token()) {
-                    collected.extend(e?);
+            Self::Block(ref m) => {
+                if let BlockKind::Bracketed(_) = m.kind {
+                    let mut collected = vec![];
+                    for e in m.contents.iter().map(|e| e.validate_selector_token()) {
+                        collected.extend(e?);
+                    }
+                    Ok(collected)
+                } else {
+                    Ok(vec![ParseError::new_spanned(
+                        self,
+                        "expected a valid part of a scope qualifier, not a block",
+                    )])
                 }
-                Ok(collected)
             }
-
-            Self::Block(_) => Ok(vec![ParseError::new_spanned(
-                self,
-                "expected a valid part of a scope qualifier, not a block",
-            )]),
 
             Self::Token(PreservedToken::Literal(l)) => {
                 let syn_lit = Lit::new(l.clone());

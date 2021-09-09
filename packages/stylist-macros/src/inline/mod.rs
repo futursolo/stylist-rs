@@ -7,6 +7,20 @@ use crate::output::{ContextRecorder, Reify};
 use log::debug;
 use parse::CssRootNode;
 use proc_macro2::TokenStream;
+use quote::quote;
+use syn::parse::Error as ParseError;
+
+fn error_to_token_stream(errors: Vec<ParseError>) -> TokenStream {
+    let tokens: Vec<TokenStream> = errors.into_iter().map(|m| m.into_compile_error()).collect();
+
+    quote! {
+        {
+            { #( #tokens )* }
+
+            ::stylist::ast::Sheet::from(Vec::new())
+        }
+    }
+}
 
 pub fn macro_fn(input: TokenStream) -> TokenStream {
     let root = match syn::parse2::<CssRootNode>(input) {
@@ -17,5 +31,8 @@ pub fn macro_fn(input: TokenStream) -> TokenStream {
     debug!("Parsed as: {:?}", root);
 
     let mut ctx = ContextRecorder::new();
-    root.into_output().into_token_stream(&mut ctx)
+    match root.into_output() {
+        Ok(m) => m.into_token_stream(&mut ctx),
+        Err(e) => error_to_token_stream(e),
+    }
 }

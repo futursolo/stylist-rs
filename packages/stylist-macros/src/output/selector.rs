@@ -2,9 +2,9 @@ use super::{fragment_coalesce, ContextRecorder, IntoCowVecTokens, OutputFragment
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse::Error as ParseError;
+// use syn::parse::Error as ParseError;
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct OutputSelector {
     pub selectors: Vec<OutputFragment>,
 }
@@ -25,20 +25,20 @@ impl Reify for OutputSelector {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct OutputQualifier {
     pub selector_list: Vec<OutputSelector>,
-    pub errors: Vec<ParseError>,
+    // pub errors: Vec<ParseError>,
 }
 
 impl Reify for OutputQualifier {
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
         let selectors = self.selector_list.into_iter().into_cow_vec_tokens(ctx);
-        let errors = self.errors.into_iter().map(|e| e.into_compile_error());
+        // let errors = self.errors.into_iter().map(|e| e.into_compile_error());
 
         quote! {
             {
-                #( #errors )*
+                // #( #errors )*
                 #selectors
             }
         }

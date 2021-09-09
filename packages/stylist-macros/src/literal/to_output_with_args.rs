@@ -128,7 +128,7 @@ impl ToOutputWithArgs for StyleAttribute {
         OutputAttribute {
             key,
             values,
-            errors: Vec::new(),
+            // errors: Vec::new(),
         }
     }
 }
@@ -156,7 +156,7 @@ impl ToOutputWithArgs for Block {
         OutputQualifiedRule {
             qualifier: OutputQualifier {
                 selector_list,
-                errors: Vec::new(),
+                // errors: Vec::new(),
             },
             content,
         }
@@ -245,7 +245,7 @@ impl ToOutputWithArgs for Rule {
         OutputAtRule {
             prelude,
             contents,
-            errors: Vec::new(),
+            // errors: Vec::new(),
         }
     }
 }
