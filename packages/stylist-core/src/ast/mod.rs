@@ -1,7 +1,9 @@
 // this module is documented at stylist::ast
 
 mod block;
+mod context;
 mod rule;
+mod rule_block;
 mod rule_content;
 mod scope_content;
 mod selector;
@@ -10,8 +12,11 @@ mod str_frag;
 mod style_attr;
 mod to_style_str;
 
-pub use block::Block;
+pub use context::StyleContext;
+
+pub use block::{Block, BlockContent};
 pub use rule::Rule;
+pub use rule_block::{RuleBlock, RuleBlockContent};
 pub use rule_content::RuleContent;
 pub use scope_content::ScopeContent;
 pub use selector::Selector;

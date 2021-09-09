@@ -1,8 +1,14 @@
 use std::borrow::Cow;
 use std::fmt;
 
-use super::{Selector, StyleAttribute, ToStyleStr};
+use super::{RuleBlock, Selector, StyleAttribute, ToStyleStr};
 use crate::Result;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum BlockContent {
+    StyleAttr(StyleAttribute),
+    RuleBlock(RuleBlock),
+}
 
 /// A block is a set of css properties that apply to elements that
 /// match the condition. The CSS standard calls these "Qualified rules".
