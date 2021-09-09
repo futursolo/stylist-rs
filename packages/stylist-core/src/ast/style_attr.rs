@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::fmt;
 
-use super::{StringFragment, ToStyleStr};
+use super::{StringFragment, StyleContext, ToStyleStr};
 use crate::Result;
 
 /// A simple CSS property in the form of a key value pair. Mirrors what would
@@ -15,11 +15,11 @@ pub struct StyleAttribute {
 }
 
 impl ToStyleStr for StyleAttribute {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
         write!(w, "{}: ", self.key)?;
 
         for i in self.value.iter() {
-            i.write_style(w, class_name)?;
+            i.write_style(w, ctx)?;
         }
 
         write!(w, ";")?;

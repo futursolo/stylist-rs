@@ -1,8 +1,60 @@
 use std::borrow::Cow;
 use std::fmt;
 
-use super::{RuleContent, StringFragment, ToStyleStr};
+use super::{Block, ScopeContent, StringFragment, StyleContext, ToStyleStr};
 use crate::Result;
+
+/// Everything that can be inside a rule.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum RuleContent {
+    /// A block
+    Block(Block),
+    /// A nested rule
+    Rule(Box<Rule>),
+    /// A raw string literal, i.e. something that wasn't parsed.
+    /// This is an escape-hatch and may get removed in the future
+    /// for a more meaningful alternative
+    String(Cow<'static, str>),
+}
+
+impl From<ScopeContent> for RuleContent {
+    fn from(scope: ScopeContent) -> Self {
+        match scope {
+            ScopeContent::Block(b) => RuleContent::Block(b),
+            ScopeContent::Rule(r) => RuleContent::Rule(r.into()),
+        }
+    }
+}
+
+impl ToStyleStr for RuleContent {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+        match self {
+            RuleContent::Block(ref b) => b.write_style(w, ctx)?,
+            RuleContent::Rule(ref r) => r.write_style(w, ctx)?,
+            RuleContent::String(ref s) => write!(w, "{}", s)?,
+        }
+
+        Ok(())
+    }
+}
+
+impl From<String> for RuleContent {
+    fn from(s: String) -> Self {
+        Self::String(s.into())
+    }
+}
+
+impl From<&'static str> for RuleContent {
+    fn from(s: &'static str) -> Self {
+        Self::String(s.into())
+    }
+}
+
+impl From<Cow<'static, str>> for RuleContent {
+    fn from(s: Cow<'static, str>) -> Self {
+        Self::String(s)
+    }
+}
 
 /// An At-Rule can contain both other blocks and in some cases more At-Rules.
 ///
@@ -26,15 +78,18 @@ pub struct Rule {
 }
 
 impl ToStyleStr for Rule {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+        let mut cond = "".to_string();
         for frag in self.condition.iter() {
-            frag.write_style(w, class_name)?;
+            frag.write_style(&mut cond, ctx)?;
         }
 
-        writeln!(w, " {{")?;
+        let rule_ctx = ctx.clone().with_condition(&cond);
+
+        writeln!(w, "{} {{", cond)?;
 
         for i in self.content.iter() {
-            i.write_style(w, class_name)?;
+            i.write_style(w, &rule_ctx)?;
             writeln!(w)?;
         }
 

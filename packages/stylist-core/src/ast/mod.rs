@@ -4,7 +4,6 @@ mod block;
 mod context;
 mod rule;
 mod rule_block;
-mod rule_content;
 mod scope_content;
 mod selector;
 mod sheet;
@@ -15,9 +14,8 @@ mod to_style_str;
 pub use context::StyleContext;
 
 pub use block::{Block, BlockContent};
-pub use rule::Rule;
+pub use rule::{Rule, RuleContent};
 pub use rule_block::{RuleBlock, RuleBlockContent};
-pub use rule_content::RuleContent;
 pub use scope_content::ScopeContent;
 pub use selector::Selector;
 pub use sheet::Sheet;

@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 use std::fmt;
+use std::fmt::Write;
 
-use super::{RuleBlock, Selector, StyleAttribute, ToStyleStr};
+use super::{RuleBlock, Selector, StyleAttribute, StyleContext, ToStyleStr};
 use crate::Result;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -29,31 +30,58 @@ pub struct Block {
     pub style_attributes: Cow<'static, [StyleAttribute]>,
 }
 
-impl ToStyleStr for Block {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
-        if !self.condition.is_empty() {
-            for (index, sel) in self.condition.iter().enumerate() {
-                sel.write_style(w, class_name)?;
-                if index < self.condition.len() - 1 {
-                    write!(w, ",")?;
-                }
-                write!(w, " ")?;
+impl Block {
+    fn cond_str(&self, ctx: &StyleContext<'_>) -> Result<Option<String>> {
+        if self.condition.is_empty() {
+            return Ok(None);
+        }
+
+        let mut cond = "".to_string();
+
+        for (index, sel) in self.condition.iter().enumerate() {
+            sel.write_style(&mut cond, ctx)?;
+            if index < self.condition.len() - 1 {
+                write!(&mut cond, ", ")?;
             }
-        } else if let Some(m) = class_name {
+        }
+
+        Ok(Some(cond))
+    }
+
+    fn write_content<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+        writeln!(w, "{{")?;
+
+        for attr in self.style_attributes.iter() {
+            attr.write_style(w, ctx)?;
+            writeln!(w)?;
+        }
+
+        write!(w, "}}")?;
+
+        Ok(())
+    }
+}
+
+impl ToStyleStr for Block {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
+        if let Some(m) = self.cond_str(ctx)? {
+            write!(w, "{} ", m)?;
+
+            let block_ctx = ctx.clone().with_condition(&m);
+
+            return self.write_content(w, &block_ctx);
+            // TODO: nested block.
+        }
+
+        // Dangling Block.
+        if let Some(m) = ctx.root_class_name() {
             write!(w, ".{} ", m)?;
         } else {
             // Generates global style for dangling block.
             write!(w, "html ")?;
         }
 
-        writeln!(w, "{{")?;
-
-        for attr in self.style_attributes.iter() {
-            attr.write_style(w, class_name)?;
-            writeln!(w)?;
-        }
-
-        write!(w, "}}")?;
+        self.write_content(w, ctx)?;
 
         Ok(())
     }

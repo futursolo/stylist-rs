@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::fmt;
 
-use super::ToStyleStr;
+use super::{StyleContext, ToStyleStr};
 use crate::Result;
 
 /// A String Fragment
@@ -11,7 +11,7 @@ pub struct StringFragment {
 }
 
 impl ToStyleStr for StringFragment {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, _class_name: Option<&str>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, _ctx: &StyleContext<'_>) -> Result<()> {
         write!(w, "{}", self.inner)?;
 
         Ok(())

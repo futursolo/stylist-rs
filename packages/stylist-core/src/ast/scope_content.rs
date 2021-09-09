@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{Block, Rule, ToStyleStr};
+use super::{Block, Rule, StyleContext, ToStyleStr};
 use crate::Result;
 
 /// A scope represents a media query or all content not in a media query.
@@ -32,10 +32,10 @@ pub enum ScopeContent {
 }
 
 impl ToStyleStr for ScopeContent {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
+    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &StyleContext<'_>) -> Result<()> {
         match self {
-            ScopeContent::Block(ref b) => b.write_style(w, class_name)?,
-            ScopeContent::Rule(ref r) => r.write_style(w, class_name)?,
+            ScopeContent::Block(ref b) => b.write_style(w, ctx)?,
+            ScopeContent::Rule(ref r) => r.write_style(w, ctx)?,
         }
 
         Ok(())
