@@ -20,7 +20,7 @@ use syn::{
 #[derive(Debug)]
 pub enum CssAttributeName {
     Identifier(CssIdent),
-    InjectedExpr(InterpolatedExpression),
+    Expr(InterpolatedExpression),
 }
 
 #[derive(Debug)]
@@ -94,7 +94,7 @@ impl ComponentValue {
             ComponentValue::Token(PreservedToken::Ident(i)) => {
                 Some(CssAttributeName::Identifier(i))
             }
-            ComponentValue::Expr(expr) => Some(CssAttributeName::InjectedExpr(expr)),
+            ComponentValue::Expr(expr) => Some(CssAttributeName::Expr(expr)),
             _ => None,
         }
     }
@@ -124,7 +124,7 @@ impl CssAttributeName {
     fn into_output(self) -> OutputFragment {
         match self {
             Self::Identifier(name) => name.into(),
-            Self::InjectedExpr(expr) => expr.to_output_fragment(),
+            Self::Expr(expr) => expr.to_output_fragment(),
         }
     }
 }

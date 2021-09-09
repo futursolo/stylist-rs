@@ -6,8 +6,7 @@ use syn::{
 };
 
 use crate::output::{
-    OutputAttribute, OutputBlockContent, OutputQualifiedRule, OutputQualifier,
-    OutputRuleBlockContent, OutputRuleContent,
+    OutputAttribute, OutputBlock, OutputBlockContent, OutputRuleBlockContent, OutputRuleContent,
 };
 
 #[derive(Debug)]
@@ -38,10 +37,8 @@ impl CssScope {
                     return;
                 }
 
-                contents.push(OutputRuleContent::Block(OutputQualifiedRule {
-                    qualifier: OutputQualifier {
-                        selector_list: Vec::new(),
-                    },
+                contents.push(OutputRuleContent::Block(OutputBlock {
+                    condition: Vec::new(),
                     content: attrs
                         .drain(0..)
                         .map(OutputBlockContent::StyleAttr)
@@ -59,7 +56,7 @@ impl CssScope {
                     collect_attrs_into_contents(&mut attrs, &mut contents);
 
                     match m.into_rule_output() {
-                        Ok(m) => contents.push(OutputRuleContent::AtRule(m)),
+                        Ok(m) => contents.push(OutputRuleContent::Rule(m)),
                         Err(e) => errors.extend(e),
                     }
                 }

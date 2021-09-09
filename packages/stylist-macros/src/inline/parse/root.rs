@@ -45,7 +45,7 @@ impl CssRootNode {
 
                     match m.into_rule_output() {
                         Ok(m) => {
-                            contents.push(OutputScopeContent::AtRule(m));
+                            contents.push(OutputScopeContent::Rule(m));
                         }
                         Err(e) => errors.extend(e),
                     };

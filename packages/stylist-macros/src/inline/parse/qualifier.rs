@@ -2,10 +2,7 @@ use super::{
     super::component_value::{ComponentValue, ComponentValueStream, PreservedToken},
     fragment_spacing,
 };
-use crate::{
-    output::{OutputQualifier, OutputSelector},
-    spacing_iterator::SpacedIterator,
-};
+use crate::{output::OutputSelector, spacing_iterator::SpacedIterator};
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
@@ -64,7 +61,7 @@ impl Default for CssBlockQualifier {
 }
 
 impl CssBlockQualifier {
-    pub fn into_output(self) -> Result<OutputQualifier, Vec<ParseError>> {
+    pub fn into_output(self) -> Result<Vec<OutputSelector>, Vec<ParseError>> {
         if !self.qualifier_errors.is_empty() {
             return Err(self.qualifier_errors);
         }
@@ -95,9 +92,6 @@ impl CssBlockQualifier {
             })
             .collect();
 
-        Ok(OutputQualifier {
-            selector_list,
-            // errors: self.qualifier_errors,
-        })
+        Ok(selector_list)
     }
 }

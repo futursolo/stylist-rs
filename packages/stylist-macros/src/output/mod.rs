@@ -17,13 +17,13 @@ mod style_attr;
 mod context_recorder;
 mod maybe_static;
 
-pub use block::OutputQualifiedRule;
+pub use block::OutputBlock;
 pub use block_content::OutputBlockContent;
-pub use rule::OutputAtRule;
+pub use rule::OutputRule;
 pub use rule_block::{OutputRuleBlock, OutputRuleBlockContent};
 pub use rule_content::OutputRuleContent;
 pub use scope_content::OutputScopeContent;
-pub use selector::{OutputQualifier, OutputSelector};
+pub use selector::OutputSelector;
 pub use sheet::OutputSheet;
 pub use str_frag::{fragment_coalesce, OutputFragment};
 pub use style_attr::OutputAttribute;

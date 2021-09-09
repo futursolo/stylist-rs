@@ -1,13 +1,11 @@
 use super::{ContextRecorder, IntoCowVecTokens, OutputAttribute, OutputFragment, Reify};
 use proc_macro2::TokenStream;
 use quote::quote;
-// use syn::Error as ParseError;
 
 #[derive(Debug)]
 pub enum OutputRuleBlockContent {
     RuleBlock(Box<OutputRuleBlock>),
     StyleAttr(OutputAttribute),
-    // Err(ParseError),
 }
 
 impl Reify for OutputRuleBlockContent {
@@ -22,7 +20,7 @@ impl Reify for OutputRuleBlockContent {
                 let tokens = m.into_token_stream(ctx);
 
                 quote! { ::stylist::ast::RuleBlockContent::StyleAttr(#tokens) }
-            } // Self::Err(err) => err.into_token_stream(ctx),
+            }
         }
     }
 }

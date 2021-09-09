@@ -11,7 +11,7 @@ use super::{
     fragment_spacing, CssScope,
 };
 use crate::{
-    output::{OutputAtRule, OutputFragment, OutputRuleBlock},
+    output::{OutputFragment, OutputRule, OutputRuleBlock},
     spacing_iterator::SpacedIterator,
 };
 
@@ -91,16 +91,14 @@ impl CssAtRule {
         prelude
     }
 
-    pub fn into_rule_output(self) -> Result<OutputAtRule, Vec<ParseError>> {
+    pub fn into_rule_output(self) -> Result<OutputRule, Vec<ParseError>> {
         if !self.errors.is_empty() {
             return Err(self.errors);
         }
 
-        let prelude = self.condition_output();
-
-        Ok(OutputAtRule {
-            prelude,
-            contents: match self.contents {
+        Ok(OutputRule {
+            condition: self.condition_output(),
+            content: match self.contents {
                 CssAtRuleContent::Scope(m) => m.into_rule_output()?,
                 CssAtRuleContent::Empty(_) => Vec::new(),
             },

@@ -29,14 +29,14 @@ stylist-macros = { path = "../stylist-macros", version = "0.9.0", optional = tru
 
 once_cell = "1.8.0"
 rand = { version = "0.8.4", features = ["small_rng"], optional = true }
-wasm-bindgen = "0.2.76"
+wasm-bindgen = "0.2.77"
 yew = { version = "0.18.0", optional = true, default-features = false, features = ["web_sys"] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2.3", features = ["js"], optional = true }
 
 [dependencies.web-sys]
-version = "0.3.53"
+version = "0.3.54"
 features = [
     "Window",
     "Document",
@@ -49,7 +49,7 @@ features = [
 [dev-dependencies]
 log = "0.4.14"
 env_logger = "0.9.0"
-trybuild = "1.0"
+trybuild = "1.0.45"
 
 [features]
 random = ["rand", "getrandom"]
