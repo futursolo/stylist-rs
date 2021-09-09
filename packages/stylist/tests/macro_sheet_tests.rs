@@ -40,10 +40,11 @@ fn test_sheet_interpolation() {
     let expected = Sheet::from(vec![
         ScopeContent::Block(Block {
             condition: Cow::Borrowed(&[]),
-            style_attributes: vec![StyleAttribute {
+            content: vec![StyleAttribute {
                 key: "background-color".into(),
                 value: vec!["red".into()].into(),
-            }]
+            }
+            .into()]
             .into(),
         }),
         ScopeContent::Block(Block {
@@ -52,15 +53,17 @@ fn test_sheet_interpolation() {
                 vec![".some-selector".into()].into(),
             ]
             .into(),
-            style_attributes: vec![
+            content: vec![
                 StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["blue".into()].into(),
-                },
+                }
+                .into(),
                 StyleAttribute {
                     key: "width".into(),
                     value: vec!["100".into(), "px".into()].into(),
-                },
+                }
+                .into(),
             ]
             .into(),
         }),
@@ -82,10 +85,11 @@ fn test_sheet_interpolation() {
             condition: vec!["@media screen and ".into(), "(max-width: 500px)".into()].into(),
             content: vec![RuleContent::Block(Block {
                 condition: vec![].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["brown".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             })]
             .into(),
@@ -112,10 +116,11 @@ fn test_sheet_escaped() {
             },
         ]
         .into(),
-        style_attributes: vec![StyleAttribute {
+        content: vec![StyleAttribute {
             key: "content".into(),
             value: vec!["\"${var_b}\"".into()].into(),
-        }]
+        }
+        .into()]
         .into(),
     })]);
     assert_eq!(parsed, expected);

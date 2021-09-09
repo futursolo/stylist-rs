@@ -22,6 +22,12 @@ impl ToStyleStr for BlockContent {
     }
 }
 
+impl From<StyleAttribute> for BlockContent {
+    fn from(s: StyleAttribute) -> Self {
+        BlockContent::StyleAttr(s)
+    }
+}
+
 /// A block is a set of css properties that apply to elements that
 /// match the condition. The CSS standard calls these "Qualified rules".
 ///
@@ -38,7 +44,7 @@ pub struct Block {
     /// If the value is set as [`&[]`], it signals to substitute with the classname generated for the
     /// [`Sheet`](super::Sheet) in which this is contained.
     pub condition: Cow<'static, [Selector]>,
-    pub style_attributes: Cow<'static, [StyleAttribute]>,
+    pub content: Cow<'static, [BlockContent]>,
 }
 
 impl Block {
@@ -73,7 +79,7 @@ impl ToStyleStr for Block {
             .map(|m| ctx.with_condition(m))
             .unwrap_or_else(|| ctx.to_block_context());
 
-        for attr in self.style_attributes.iter() {
+        for attr in self.content.iter() {
             attr.write_style(w, &mut final_ctx)?;
         }
 

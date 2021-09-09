@@ -1,21 +1,25 @@
-use crate::output::{OutputAtRule, OutputAttribute, OutputFragment, OutputQualifiedRule};
 use itertools::Itertools;
 use syn::parse::Error as ParseError;
 
-mod root;
-pub use root::CssRootNode;
-mod scope;
-pub use scope::CssScope;
-mod scope_content;
-pub use scope_content::CssScopeContent;
-mod block;
-pub use block::CssQualifiedRule;
-mod qualifier;
-pub use qualifier::CssBlockQualifier;
-mod rule;
-pub use rule::CssAtRule;
+use crate::output::{
+    OutputAtRule, OutputAttribute, OutputBlockContent, OutputFragment, OutputQualifiedRule,
+};
+
 mod attribute;
+mod block;
+mod qualifier;
+mod root;
+mod rule;
+mod scope;
+mod scope_content;
+
 pub use attribute::{CssAttribute, CssAttributeName, CssAttributeValue};
+pub use block::CssQualifiedRule;
+pub use qualifier::CssBlockQualifier;
+pub use root::CssRootNode;
+pub use rule::CssAtRule;
+pub use scope::CssScope;
+pub use scope_content::CssScopeContent;
 
 /// We want to normalize the input a bit. For that, we want to pretend that e.g.
 /// the sample input
@@ -93,7 +97,10 @@ fn normalize_hierarchy_impl<'it>(
             ScopeItem::Attributes(attributes) => {
                 let result = OutputSheetContent::QualifiedRule(OutputQualifiedRule {
                     qualifier: qualifier.clone(),
-                    attributes,
+                    content: attributes
+                        .into_iter()
+                        .map(|m| OutputBlockContent::StyleAttr(m))
+                        .collect(),
                 });
                 Box::new(std::iter::once(result))
             }

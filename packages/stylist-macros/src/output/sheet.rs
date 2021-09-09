@@ -8,8 +8,7 @@ pub struct OutputSheet {
 
 impl Reify for OutputSheet {
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
-        let Self { contents } = self;
-        let contents = contents.into_cow_vec_tokens(ctx);
+        let contents = self.contents.into_cow_vec_tokens(ctx);
 
         let quoted_sheet = quote! {
             {

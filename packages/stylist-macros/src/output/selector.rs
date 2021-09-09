@@ -33,14 +33,8 @@ pub struct OutputQualifier {
 
 impl Reify for OutputQualifier {
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
-        let Self {
-            selector_list: selectors,
-            errors,
-            ..
-        } = self;
-
-        let selectors = selectors.into_iter().into_cow_vec_tokens(ctx);
-        let errors = errors.into_iter().map(|e| e.into_compile_error());
+        let selectors = self.selector_list.into_iter().into_cow_vec_tokens(ctx);
+        let errors = self.errors.into_iter().map(|e| e.into_compile_error());
 
         quote! {
             {

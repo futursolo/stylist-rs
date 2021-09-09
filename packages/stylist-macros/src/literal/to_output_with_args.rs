@@ -5,8 +5,9 @@ use proc_macro_error::abort_call_site;
 use stylist_core::ast::*;
 
 use crate::output::{
-    OutputAtRule, OutputAttribute, OutputFragment, OutputQualifiedRule, OutputQualifier,
-    OutputRuleContent, OutputScopeContent, OutputSelector, OutputSheet,
+    OutputAtRule, OutputAttribute, OutputBlockContent, OutputFragment, OutputQualifiedRule,
+    OutputQualifier, OutputRuleBlock, OutputRuleBlockContent, OutputRuleContent,
+    OutputScopeContent, OutputSelector, OutputSheet,
 };
 
 use super::{argument::Argument, fstring};
@@ -38,8 +39,79 @@ impl ToOutputWithArgs for Selector {
     }
 }
 
+impl ToOutputWithArgs for RuleBlock {
+    type Output = OutputRuleBlock;
+
+    fn to_output_with_args(
+        &self,
+        args: &HashMap<String, Argument>,
+        args_used: &mut HashSet<String>,
+    ) -> Self::Output {
+        let mut condition = Vec::new();
+
+        for i in self.condition.iter() {
+            condition.extend(i.to_output_with_args(args, args_used));
+        }
+
+        let mut contents = Vec::new();
+
+        for i in self.content.iter() {
+            contents.push(i.to_output_with_args(args, args_used));
+        }
+
+        OutputRuleBlock {
+            condition,
+            content: contents,
+            // errors: Vec::new(),
+        }
+    }
+}
+
+impl ToOutputWithArgs for RuleBlockContent {
+    type Output = OutputRuleBlockContent;
+
+    fn to_output_with_args(
+        &self,
+        args: &HashMap<String, Argument>,
+        args_used: &mut HashSet<String>,
+    ) -> Self::Output {
+        match self {
+            Self::RuleBlock(ref m) => {
+                let block = m.to_output_with_args(args, args_used);
+                OutputRuleBlockContent::RuleBlock(Box::new(block))
+            }
+            Self::StyleAttr(ref m) => {
+                let rule = m.to_output_with_args(args, args_used);
+                OutputRuleBlockContent::StyleAttr(rule)
+            }
+        }
+    }
+}
+
+impl ToOutputWithArgs for BlockContent {
+    type Output = OutputBlockContent;
+
+    fn to_output_with_args(
+        &self,
+        args: &HashMap<String, Argument>,
+        args_used: &mut HashSet<String>,
+    ) -> Self::Output {
+        match self {
+            Self::RuleBlock(ref m) => {
+                let block = m.to_output_with_args(args, args_used);
+                OutputBlockContent::RuleBlock(block)
+            }
+            Self::StyleAttr(ref m) => {
+                let rule = m.to_output_with_args(args, args_used);
+                OutputBlockContent::StyleAttr(rule)
+            }
+        }
+    }
+}
+
 impl ToOutputWithArgs for StyleAttribute {
     type Output = OutputAttribute;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -63,6 +135,7 @@ impl ToOutputWithArgs for StyleAttribute {
 
 impl ToOutputWithArgs for Block {
     type Output = OutputQualifiedRule;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -74,10 +147,10 @@ impl ToOutputWithArgs for Block {
             selector_list.push(i.to_output_with_args(args, args_used));
         }
 
-        let mut attributes = Vec::new();
+        let mut content = Vec::new();
 
-        for i in self.style_attributes.iter() {
-            attributes.push(i.to_output_with_args(args, args_used));
+        for i in self.content.iter() {
+            content.push(i.to_output_with_args(args, args_used));
         }
 
         OutputQualifiedRule {
@@ -85,13 +158,14 @@ impl ToOutputWithArgs for Block {
                 selector_list,
                 errors: Vec::new(),
             },
-            attributes,
+            content,
         }
     }
 }
 
 impl ToOutputWithArgs for RuleContent {
     type Output = OutputRuleContent;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -113,6 +187,7 @@ impl ToOutputWithArgs for RuleContent {
 
 impl ToOutputWithArgs for StringFragment {
     type Output = Vec<OutputFragment>;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -149,6 +224,7 @@ impl ToOutputWithArgs for StringFragment {
 
 impl ToOutputWithArgs for Rule {
     type Output = OutputAtRule;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -176,6 +252,7 @@ impl ToOutputWithArgs for Rule {
 
 impl ToOutputWithArgs for ScopeContent {
     type Output = OutputScopeContent;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -196,6 +273,7 @@ impl ToOutputWithArgs for ScopeContent {
 
 impl ToOutputWithArgs for Sheet {
     type Output = OutputSheet;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,

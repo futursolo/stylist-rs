@@ -1,11 +1,5 @@
 use std::borrow::Cow;
 
-use crate::{
-    ast::{
-        Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StyleAttribute,
-    },
-    Error, Result,
-};
 use nom::{
     branch::alt,
     bytes::complete::{is_not, tag, take_while, take_while1},
@@ -16,6 +10,12 @@ use nom::{
     sequence::{delimited, pair, preceded, separated_pair, terminated},
     IResult,
 };
+
+use crate::ast::{
+    Block, BlockContent, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment,
+    StyleAttribute,
+};
+use crate::{Error, Result};
 
 #[cfg(test)]
 use log::trace;
@@ -374,6 +374,15 @@ impl Parser {
         result
     }
 
+    fn block_content(i: &str) -> IResult<&str, Vec<BlockContent>, VerboseError<&str>> {
+        context(
+            "BlockContent",
+            map(Self::attributes, |m: Vec<StyleAttribute>| {
+                m.into_iter().map(|m| m.into()).collect()
+            }),
+        )(i)
+    }
+
     /// Parse a [`Block`].
     fn block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
@@ -387,12 +396,12 @@ impl Parser {
                 separated_pair(
                     Self::condition,
                     tag("{"),
-                    terminated(Self::trim_cmt(Self::attributes), tag("}")),
+                    terminated(Self::trim_cmt(Self::block_content), tag("}")),
                 ),
-                |p: (Vec<Selector>, Vec<StyleAttribute>)| {
+                |p: (Vec<Selector>, Vec<BlockContent>)| {
                     ScopeContent::Block(Block {
                         condition: p.0.into(),
-                        style_attributes: p.1.into(),
+                        content: p.1.into(),
                     })
                 },
             )),
@@ -523,7 +532,11 @@ impl Parser {
                 |attr: Vec<StyleAttribute>| {
                     ScopeContent::Block(Block {
                         condition: Cow::Borrowed(&[]),
-                        style_attributes: attr.into(),
+                        content: attr
+                            .into_iter()
+                            .map(|m| m.into())
+                            .collect::<Vec<BlockContent>>()
+                            .into(),
                     })
                 },
             )),
@@ -720,23 +733,26 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["red".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec![".nested".into()].into()].into(),
-                style_attributes: vec![
+                content: vec![
                     StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["blue".into()].into(),
-                    },
+                    }
+                    .into(),
                     StyleAttribute {
                         key: "width".into(),
                         value: vec!["100px".into()].into(),
-                    },
+                    }
+                    .into(),
                 ]
                 .into(),
             }),
@@ -761,30 +777,34 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![
+                content: vec![
                     StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["red".into()].into(),
-                    },
+                    }
+                    .into(),
                     StyleAttribute {
                         key: "content".into(),
                         value: vec![r#"";""#.into()].into(),
-                    },
+                    }
+                    .into(),
                 ]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec![r#"[placeholder="someone@example.com"]"#.into()].into()]
                     .into(),
-                style_attributes: vec![
+                content: vec![
                     StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["blue".into()].into(),
-                    },
+                    }
+                    .into(),
                     StyleAttribute {
                         key: "width".into(),
                         value: vec!["100px".into()].into(),
-                    },
+                    }
+                    .into(),
                 ]
                 .into(),
             }),
@@ -805,15 +825,17 @@ mod tests {
 
         let expected = Sheet::from(vec![ScopeContent::Block(Block {
             condition: vec![vec![r#"[placeholder="\" {}"]"#.into()].into()].into(),
-            style_attributes: vec![
+            content: vec![
                 StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["blue".into()].into(),
-                },
+                }
+                .into(),
                 StyleAttribute {
                     key: "width".into(),
                     value: vec!["100px".into()].into(),
-                },
+                }
+                .into(),
             ]
             .into(),
         })]);
@@ -831,10 +853,11 @@ mod tests {
 
         let expected = Sheet::from(vec![ScopeContent::Block(Block {
             condition: vec![vec!["&:hover".into()].into()].into(),
-            style_attributes: vec![StyleAttribute {
+            content: vec![StyleAttribute {
                 key: "background-color".into(),
                 value: vec!["#d0d0d9".into()].into(),
-            }]
+            }
+            .into()]
             .into(),
         })]);
         assert_eq!(parsed, expected);
@@ -861,10 +884,11 @@ mod tests {
                 condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["red".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 })]
                 .into(),
@@ -873,10 +897,11 @@ mod tests {
                 condition: vec!["@media ".into(), "screen and (max-width: 200px)".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "color".into(),
                         value: vec!["yellow".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 })]
                 .into(),
@@ -909,20 +934,22 @@ mod tests {
                 condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["red".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 })]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec![".some-class2".into()].into()].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "color".into(),
                     value: vec!["yellow".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
         ]);
@@ -951,18 +978,20 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: vec![vec!["div".into()].into(), vec!["span".into()].into()].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "color".into(),
                     value: vec!["yellow".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec!["&".into()].into(), vec!["& input".into()].into()].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "color".into(),
                     value: vec!["pink".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
         ]);
@@ -999,19 +1028,22 @@ mod tests {
                 .into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![
+                    content: vec![
                         StyleAttribute {
                             key: "backdrop-filter".into(),
                             value: vec!["blur(2px)".into()].into(),
-                        },
+                        }
+                        .into(),
                         StyleAttribute {
                             key: "-webkit-backdrop-filter".into(),
                             value: vec!["blur(2px)".into()].into(),
-                        },
+                        }
+                        .into(),
                         StyleAttribute {
                             key: "background-color".into(),
                             value: vec!["rgb(0, 0, 0, 0.7)".into()].into(),
-                        },
+                        }
+                        .into(),
                     ]
                     .into(),
                 })]
@@ -1026,10 +1058,11 @@ mod tests {
                 .into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["rgb(25, 25, 25)".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 })]
                 .into(),
@@ -1069,10 +1102,11 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["red".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
@@ -1081,15 +1115,17 @@ mod tests {
                     vec!["${var_a}".into()].into(),
                 ]
                 .into(),
-                style_attributes: vec![
+                content: vec![
                     StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["blue".into()].into(),
-                    },
+                    }
+                    .into(),
                     StyleAttribute {
                         key: "width".into(),
                         value: vec!["100px".into()].into(),
-                    },
+                    }
+                    .into(),
                 ]
                 .into(),
             }),
@@ -1105,7 +1141,7 @@ mod tests {
 
         let expected = Sheet::from(vec![ScopeContent::Block(Block {
             condition: vec![vec![".nested".into()].into()].into(),
-            style_attributes: vec![].into(),
+            content: vec![].into(),
         })]);
         assert_eq!(parsed, expected);
     }
@@ -1156,37 +1192,41 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "color".into(),
                     value: vec!["${color}".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec!["span".into()].into(), vec!["${sel_div}".into()].into()]
                     .into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["blue".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec![":not(${sel_root})".into()].into()].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["black".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "display".into(),
                         value: vec!["flex".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 })]
                 .into(),
@@ -1223,37 +1263,41 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "color".into(),
                     value: vec!["${color}".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec!["span".into()].into(), vec!["${sel_div}".into()].into()]
                     .into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["blue".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec![":not(${sel_root})".into()].into()].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["black".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "display".into(),
                         value: vec!["flex".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 })]
                 .into(),
@@ -1286,37 +1330,41 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "color".into(),
                     value: vec!["\"$${color}\"".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec!["span".into()].into(), vec!["${sel_div}".into()].into()]
                     .into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["blue".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec![":not(${sel_root})".into()].into()].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["black".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
                 content: vec![RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "display".into(),
                         value: vec!["flex".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 })]
                 .into(),

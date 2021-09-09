@@ -35,18 +35,20 @@ mod tests {
         let test_block = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "width".into(),
                     value: vec!["100vw".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec![".inner".into()].into()].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["red".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Rule(Rule {
@@ -92,18 +94,20 @@ width: 200px;
             content: vec![
                 RuleContent::Block(Block {
                     condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "width".into(),
                         value: vec!["100vw".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 }),
                 RuleContent::Block(Block {
                     condition: vec![vec![".inner".into()].into()].into(),
-                    style_attributes: vec![StyleAttribute {
+                    content: vec![StyleAttribute {
                         key: "background-color".into(),
                         value: vec!["red".into()].into(),
-                    }]
+                    }
+                    .into()]
                     .into(),
                 }),
                 RuleContent::Rule(

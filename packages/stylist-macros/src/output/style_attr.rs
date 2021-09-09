@@ -12,18 +12,15 @@ pub struct OutputAttribute {
 
 impl Reify for OutputAttribute {
     fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
-        let Self {
-            key,
-            values,
-            errors,
-        } = self;
-        let errors = errors.into_iter().map(|e| e.into_compile_error());
+        let errors = self.errors.into_iter().map(|e| e.into_compile_error());
 
-        let key = key.into_token_stream(ctx);
-        let value_parts = values
+        let key = self.key.into_token_stream(ctx);
+        let value_parts = self
+            .values
             .into_iter()
             .coalesce(fragment_coalesce)
             .into_cow_vec_tokens(ctx);
+
         quote! {
             ::stylist::ast::StyleAttribute {
                 key: #key,

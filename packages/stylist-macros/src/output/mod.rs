@@ -3,26 +3,32 @@
 //! emitted by the different macros.
 use proc_macro2::TokenStream;
 
-mod sheet;
-pub use sheet::OutputSheet;
-mod rule;
-pub use rule::OutputAtRule;
 mod block;
-pub use block::OutputQualifiedRule;
-mod selector;
-pub use selector::{OutputQualifier, OutputSelector};
-mod scope_content;
-pub use scope_content::OutputScopeContent;
+mod block_content;
+mod rule;
+mod rule_block;
 mod rule_content;
-pub use rule_content::OutputRuleContent;
-mod style_attr;
-pub use style_attr::OutputAttribute;
+mod scope_content;
+mod selector;
+mod sheet;
 mod str_frag;
-pub use str_frag::{fragment_coalesce, OutputFragment};
+mod style_attr;
 
 mod context_recorder;
-pub use context_recorder::ContextRecorder;
 mod maybe_static;
+
+pub use block::OutputQualifiedRule;
+pub use block_content::OutputBlockContent;
+pub use rule::OutputAtRule;
+pub use rule_block::{OutputRuleBlock, OutputRuleBlockContent};
+pub use rule_content::OutputRuleContent;
+pub use scope_content::OutputScopeContent;
+pub use selector::{OutputQualifier, OutputSelector};
+pub use sheet::OutputSheet;
+pub use str_frag::{fragment_coalesce, OutputFragment};
+pub use style_attr::OutputAttribute;
+
+pub use context_recorder::ContextRecorder;
 pub use maybe_static::IntoCowVecTokens;
 
 /// Reify a structure into an expression of a specific type.
