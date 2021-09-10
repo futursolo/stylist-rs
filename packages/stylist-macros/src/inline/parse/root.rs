@@ -1,6 +1,6 @@
-use super::{CssAttribute, CssQualifiedRule, CssScopeContent};
+use super::{CssAttribute, CssQualifiedRule, CssScopeContent, IntoOutputContext};
 use crate::output::{OutputScopeContent, OutputSheet};
-use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
+use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 
 #[derive(Debug)]
 pub struct CssRootNode {
@@ -15,24 +15,20 @@ impl Parse for CssRootNode {
 }
 
 impl CssRootNode {
-    pub fn into_output(self) -> Result<OutputSheet, Vec<ParseError>> {
-        let mut errors = Vec::new();
+    pub fn into_output(self, ctx: &mut IntoOutputContext) -> OutputSheet {
         let mut contents = Vec::new();
 
         let mut attrs: Vec<CssAttribute> = Vec::new();
 
         let push_attrs_into_contents =
-            |attrs: &mut Vec<CssAttribute>,
-             contents: &mut Vec<OutputScopeContent>,
-             errors: &mut Vec<ParseError>| {
+            |attrs: &mut Vec<CssAttribute>, contents: &mut Vec<OutputScopeContent>| {
                 if attrs.is_empty() {
                     return;
                 }
 
-                match CssQualifiedRule::into_dangling_output(attrs) {
-                    Ok(m) => contents.push(OutputScopeContent::Block(m)),
-                    Err(e) => errors.extend(e),
-                }
+                contents.push(OutputScopeContent::Block(
+                    CssQualifiedRule::into_dangling_output(attrs, ctx),
+                ));
             };
 
         for scope in self.contents {
@@ -41,35 +37,21 @@ impl CssRootNode {
                     attrs.push(m);
                 }
                 CssScopeContent::AtRule(m) => {
-                    push_attrs_into_contents(&mut attrs, &mut contents, &mut errors);
+                    push_attrs_into_contents(&mut attrs, &mut contents);
 
-                    match m.into_rule_output() {
-                        Ok(m) => {
-                            contents.push(OutputScopeContent::Rule(m));
-                        }
-                        Err(e) => errors.extend(e),
-                    };
+                    contents.push(OutputScopeContent::Rule(m.into_rule_output(ctx)));
                 }
 
                 CssScopeContent::Nested(m) => {
-                    push_attrs_into_contents(&mut attrs, &mut contents, &mut errors);
+                    push_attrs_into_contents(&mut attrs, &mut contents);
 
-                    match m.into_output() {
-                        Ok(m) => {
-                            contents.push(OutputScopeContent::Block(m));
-                        }
-                        Err(e) => errors.extend(e),
-                    };
+                    contents.push(OutputScopeContent::Block(m.into_output(ctx)));
                 }
             }
         }
 
-        push_attrs_into_contents(&mut attrs, &mut contents, &mut errors);
+        push_attrs_into_contents(&mut attrs, &mut contents);
 
-        if !errors.is_empty() {
-            Err(errors)
-        } else {
-            Ok(OutputSheet { contents })
-        }
+        OutputSheet { contents }
     }
 }

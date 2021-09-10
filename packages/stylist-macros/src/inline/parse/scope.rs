@@ -1,10 +1,10 @@
-use super::CssScopeContent;
 use syn::{
     braced,
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
     token,
 };
 
+use super::{CssScopeContent, IntoOutputContext};
 use crate::output::{
     OutputAttribute, OutputBlock, OutputBlockContent, OutputRuleBlockContent, OutputRuleContent,
 };
@@ -25,9 +25,8 @@ impl Parse for CssScope {
 }
 
 impl CssScope {
-    pub fn into_rule_output(self) -> Result<Vec<OutputRuleContent>, Vec<ParseError>> {
+    pub fn into_rule_output(self, ctx: &mut IntoOutputContext) -> Vec<OutputRuleContent> {
         let mut attrs = Vec::new();
-        let mut errors = Vec::new();
 
         let mut contents = Vec::new();
 
@@ -48,54 +47,43 @@ impl CssScope {
 
         for scope in self.contents {
             match scope {
-                CssScopeContent::Attribute(m) => match m.into_output() {
-                    Ok(m) => attrs.push(m),
-                    Err(e) => errors.extend(e),
-                },
+                CssScopeContent::Attribute(m) => attrs.push(m.into_output(&mut ctx)),
                 CssScopeContent::AtRule(m) => {
                     collect_attrs_into_contents(&mut attrs, &mut contents);
-
-                    match m.into_rule_output() {
-                        Ok(m) => contents.push(OutputRuleContent::Rule(m)),
-                        Err(e) => errors.extend(e),
-                    }
+                    contents.push(OutputRuleContent::Rule(m.into_rule_output(&mut ctx)));
                 }
                 CssScopeContent::Nested(m) => {
                     collect_attrs_into_contents(&mut attrs, &mut contents);
-
-                    match m.into_output() {
-                        Ok(m) => contents.push(OutputRuleContent::Block(m)),
-                        Err(e) => errors.extend(e),
-                    }
+                    contents.push(OutputRuleContent::Block(m.into_output(&mut ctx)));
                 }
             }
         }
 
         collect_attrs_into_contents(&mut attrs, &mut contents);
 
-        if !errors.is_empty() {
-            Err(errors)
-        } else {
-            Ok(contents)
-        }
+        contents
     }
 
-    pub fn into_rule_block_output(self) -> Result<Vec<OutputRuleBlockContent>, Vec<ParseError>> {
-        let mut errors = Vec::new();
+    pub fn into_rule_block_output(
+        self,
+        ctx: &mut IntoOutputContext,
+    ) -> Vec<OutputRuleBlockContent> {
         let mut contents = Vec::new();
 
         for scope in self.contents {
             match scope {
-                CssScopeContent::Attribute(m) => match m.into_output() {
-                    Ok(m) => contents.push(OutputRuleBlockContent::StyleAttr(m)),
-                    Err(e) => errors.extend(e),
-                },
-                CssScopeContent::AtRule(m) => match m.into_rule_block_output() {
-                    Ok(m) => contents.push(OutputRuleBlockContent::RuleBlock(Box::new(m))),
-                    Err(e) => errors.extend(e),
-                },
+                CssScopeContent::Attribute(m) => {
+                    contents.push(OutputRuleBlockContent::StyleAttr(m.into_output(&mut ctx)))
+                }
+
+                CssScopeContent::AtRule(m) => {
+                    contents.push(OutputRuleBlockContent::RuleBlock(Box::new(
+                        m.into_rule_block_output(&mut ctx),
+                    )));
+                }
+
                 CssScopeContent::Nested(m) => {
-                    errors.push(ParseError::new_spanned(
+                    ctx.push_error(ParseError::new_spanned(
                         m.qualifier,
                         "Can not nest qualified blocks (yet)",
                     ));
@@ -103,29 +91,22 @@ impl CssScope {
             }
         }
 
-        if !errors.is_empty() {
-            Err(errors)
-        } else {
-            Ok(contents)
-        }
+        contents
     }
 
-    pub fn into_block_output(self) -> Result<Vec<OutputBlockContent>, Vec<ParseError>> {
-        let mut errors = Vec::new();
+    pub fn into_block_output(self, ctx: &mut IntoOutputContext) -> Vec<OutputBlockContent> {
         let mut contents = Vec::new();
 
         for scope in self.contents {
             match scope {
-                CssScopeContent::Attribute(m) => match m.into_output() {
-                    Ok(m) => contents.push(OutputBlockContent::StyleAttr(m)),
-                    Err(e) => errors.extend(e),
-                },
-                CssScopeContent::AtRule(m) => match m.into_rule_block_output() {
-                    Ok(m) => contents.push(OutputBlockContent::RuleBlock(m)),
-                    Err(e) => errors.extend(e),
-                },
+                CssScopeContent::Attribute(m) => {
+                    contents.push(OutputBlockContent::StyleAttr(m.into_output(&mut ctx)))
+                }
+                CssScopeContent::AtRule(m) => contents.push(OutputBlockContent::RuleBlock(
+                    m.into_rule_block_output(&mut ctx),
+                )),
                 CssScopeContent::Nested(m) => {
-                    errors.push(ParseError::new_spanned(
+                    ctx.push_error(ParseError::new_spanned(
                         m.qualifier,
                         "Can not nest qualified blocks (yet)",
                     ));
@@ -133,10 +114,6 @@ impl CssScope {
             }
         }
 
-        if !errors.is_empty() {
-            Err(errors)
-        } else {
-            Ok(contents)
-        }
+        contents
     }
 }

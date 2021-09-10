@@ -1,6 +1,6 @@
 use super::{
     super::component_value::{ComponentValue, ComponentValueStream, PreservedToken},
-    fragment_spacing,
+    fragment_spacing, IntoOutputContext,
 };
 use crate::{output::OutputSelector, spacing_iterator::SpacedIterator};
 use itertools::Itertools;
@@ -61,10 +61,8 @@ impl Default for CssBlockQualifier {
 }
 
 impl CssBlockQualifier {
-    pub fn into_output(self) -> Result<Vec<OutputSelector>, Vec<ParseError>> {
-        if !self.qualifier_errors.is_empty() {
-            return Err(self.qualifier_errors);
-        }
+    pub fn into_output(self, ctx: &mut IntoOutputContext) -> Vec<OutputSelector> {
+        ctx.extend_errors(self.qualifier_errors);
 
         fn is_not_comma(q: &ComponentValue) -> bool {
             !matches!(q, ComponentValue::Token(PreservedToken::Punct(ref p)) if p.as_char() == ',')
@@ -92,6 +90,6 @@ impl CssBlockQualifier {
             })
             .collect();
 
-        Ok(selector_list)
+        selector_list
     }
 }

@@ -8,7 +8,7 @@ use super::{
         component_value::{ComponentValue, ComponentValueStream},
         css_ident::CssIdent,
     },
-    fragment_spacing, CssScope,
+    fragment_spacing, CssScope, IntoOutputContext,
 };
 use crate::{
     output::{OutputFragment, OutputRule, OutputRuleBlock},
@@ -91,27 +91,27 @@ impl CssAtRule {
         prelude
     }
 
-    pub fn into_rule_output(self) -> Result<OutputRule, Vec<ParseError>> {
-        if !self.errors.is_empty() {
-            return Err(self.errors);
-        }
+    pub fn into_rule_output(self, ctx: &mut IntoOutputContext) -> OutputRule {
+        ctx.extend_errors(self.errors);
 
-        Ok(OutputRule {
+        OutputRule {
             condition: self.condition_output(),
             content: match self.contents {
-                CssAtRuleContent::Scope(m) => m.into_rule_output()?,
+                CssAtRuleContent::Scope(m) => m.into_rule_output(&mut ctx),
                 CssAtRuleContent::Empty(_) => Vec::new(),
             },
-        })
+        }
     }
 
-    pub fn into_rule_block_output(self) -> Result<OutputRuleBlock, Vec<ParseError>> {
-        Ok(OutputRuleBlock {
+    pub fn into_rule_block_output(self, ctx: &mut IntoOutputContext) -> OutputRuleBlock {
+        ctx.extend_errors(self.errors);
+
+        OutputRuleBlock {
             condition: self.condition_output(),
             content: match self.contents {
-                CssAtRuleContent::Scope(m) => m.into_rule_block_output()?,
+                CssAtRuleContent::Scope(m) => m.into_rule_block_output(&mut ctx),
                 CssAtRuleContent::Empty(_) => Vec::new(),
             },
-        })
+        }
     }
 }
