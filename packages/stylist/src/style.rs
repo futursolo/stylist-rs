@@ -176,7 +176,7 @@ impl Style {
 
         let id = StyleId(format!("{}-{}", key.prefix, get_entropy()));
 
-        let style_str = key.ast.to_style_str(Some(&id))?;
+        let style_str = key.ast.to_style_str(Some(&id));
 
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.

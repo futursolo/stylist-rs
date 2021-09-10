@@ -1,7 +1,4 @@
 use std::borrow::Cow;
-use std::fmt;
-
-use crate::Result;
 
 // #[derive(Debug)]
 // pub enum StyleKind {
@@ -26,6 +23,8 @@ pub struct StyleContext<'a> {
     state: ContextState,
 }
 
+static IDENT: &str = "    ";
+
 impl<'a> StyleContext<'a> {
     pub fn new(class_name: Option<&'a str>) -> Self {
         Self {
@@ -43,7 +42,7 @@ impl<'a> StyleContext<'a> {
         self_
     }
 
-    pub fn to_block_context(&'a self) -> Self {
+    pub fn to_block_context(&self) -> Self {
         // No selectors
         if self
             .parent_conditions()
@@ -62,61 +61,53 @@ impl<'a> StyleContext<'a> {
     }
 
     pub fn parent_conditions(&self) -> Vec<Cow<'a, str>> {
+        let (mut rules, mut selectors) = (Vec::new(), Vec::new());
+
         // @ rules first, then selectors.
         // Equivalent to the following line, but would result in a smaller bundle
         // sorted_parents.sort_by_cached_key(|m| !m.starts_with('@'));
-        let (mut rules, mut selectors) = self.parent_conditions.clone().into_iter().fold(
-            (Vec::new(), Vec::new()),
-            |(mut rules, mut selectors), item| {
-                if item.starts_with('@') {
-                    rules.push(item);
-                } else {
-                    selectors.push(item);
-                }
-
-                (rules, selectors)
-            },
-        );
+        for item in self.parent_conditions.clone() {
+            if item.starts_with('@') {
+                rules.push(item);
+            } else {
+                selectors.push(item);
+            }
+        }
 
         rules.append(&mut selectors);
         rules
     }
 
-    pub fn write_starting_clause<W: fmt::Write>(&mut self, w: &mut W) -> Result<()> {
+    pub fn write_starting_clause(&mut self, w: &mut String) {
         if self.state == ContextState::Closed {
             for (index, cond) in self.parent_conditions().iter().enumerate() {
                 for _i in 0..index {
-                    write!(w, "    ")?;
+                    w.push_str(IDENT);
                 }
-                writeln!(w, "{} {{", cond)?;
+                w.push_str(cond);
+                w.push_str(" {\n");
             }
 
             self.state = ContextState::Open;
         }
-
-        Ok(())
     }
 
-    pub fn write_finishing_clause<W: fmt::Write>(&mut self, w: &mut W) -> Result<()> {
+    pub fn write_finishing_clause(&mut self, w: &mut String) {
         if self.state == ContextState::Open {
             for i in (0..self.parent_conditions.len()).rev() {
                 for _i in 0..i {
-                    write!(w, "    ")?;
+                    w.push_str(IDENT);
                 }
-                writeln!(w, "}}")?;
+                w.push_str("}\n");
             }
 
             self.state = ContextState::Closed;
         }
-
-        Ok(())
     }
 
-    pub fn write_padding<W: fmt::Write>(&self, w: &mut W) -> Result<()> {
+    pub fn write_padding(&self, w: &mut String) {
         for _ in 0..self.parent_conditions.len() {
-            write!(w, "    ")?;
+            w.push_str(IDENT);
         }
-
-        Ok(())
     }
 }

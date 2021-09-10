@@ -1,9 +1,6 @@
 use std::borrow::Cow;
-use std::fmt;
-use std::fmt::Write;
 
 use super::{RuleBlock, Selector, StyleAttribute, StyleContext, ToStyleStr};
-use crate::Result;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum BlockContent {
@@ -12,13 +9,11 @@ pub enum BlockContent {
 }
 
 impl ToStyleStr for BlockContent {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         match self {
-            Self::StyleAttr(ref m) => m.write_style(w, ctx)?,
-            Self::RuleBlock(ref m) => m.write_style(w, ctx)?,
+            Self::StyleAttr(ref m) => m.write_style(w, ctx),
+            Self::RuleBlock(ref m) => m.write_style(w, ctx),
         }
-
-        Ok(())
     }
 }
 
@@ -48,31 +43,31 @@ pub struct Block {
 }
 
 impl Block {
-    fn cond_str(&self, ctx: &mut StyleContext<'_>) -> Result<Option<String>> {
+    fn cond_str(&self, ctx: &mut StyleContext<'_>) -> Option<String> {
         if self.condition.is_empty() {
-            return Ok(None);
+            return None;
         }
 
         let mut cond = "".to_string();
 
         for (index, sel) in self.condition.iter().enumerate() {
-            sel.write_style(&mut cond, ctx)?;
+            sel.write_style(&mut cond, ctx);
             if index < self.condition.len() - 1 {
-                write!(&mut cond, ", ")?;
+                cond.push_str(", ");
             }
         }
 
-        Ok(Some(cond))
+        Some(cond)
     }
 }
 
 impl ToStyleStr for Block {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         // Close last clause.
-        ctx.write_finishing_clause(w)?;
+        ctx.write_finishing_clause(w);
 
         // TODO: nested block, which is not supported at the moment.
-        let cond_s = self.cond_str(ctx)?;
+        let cond_s = self.cond_str(ctx);
 
         let mut final_ctx = cond_s
             .as_ref()
@@ -80,11 +75,9 @@ impl ToStyleStr for Block {
             .unwrap_or_else(|| ctx.to_block_context());
 
         for attr in self.content.iter() {
-            attr.write_style(w, &mut final_ctx)?;
+            attr.write_style(w, &mut final_ctx);
         }
 
-        final_ctx.write_finishing_clause(w)?;
-
-        Ok(())
+        final_ctx.write_finishing_clause(w);
     }
 }

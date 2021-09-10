@@ -1,11 +1,8 @@
 use std::borrow::Cow;
-use std::fmt;
 use std::ops::Deref;
 use std::sync::Arc;
 
 use super::{ScopeContent, StyleContext, ToStyleStr};
-
-use crate::Result;
 
 /// The top node of a style string.
 // Once a sheet is constructed, it becomes immutable.
@@ -51,12 +48,10 @@ impl Default for Sheet {
 }
 
 impl ToStyleStr for Sheet {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         for scope in self.0.iter() {
-            scope.write_style(w, ctx)?;
+            scope.write_style(w, ctx);
         }
-
-        Ok(())
     }
 }
 

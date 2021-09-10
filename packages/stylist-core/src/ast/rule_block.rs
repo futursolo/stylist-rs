@@ -1,8 +1,6 @@
 use std::borrow::Cow;
-use std::fmt;
 
 use super::{StringFragment, StyleAttribute, StyleContext, ToStyleStr};
-use crate::Result;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RuleBlockContent {
@@ -11,13 +9,11 @@ pub enum RuleBlockContent {
 }
 
 impl ToStyleStr for RuleBlockContent {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         match self {
-            Self::StyleAttr(ref b) => b.write_style(w, ctx)?,
-            Self::RuleBlock(ref r) => r.write_style(w, ctx)?,
+            Self::StyleAttr(ref b) => b.write_style(w, ctx),
+            Self::RuleBlock(ref r) => r.write_style(w, ctx),
         }
-
-        Ok(())
     }
 }
 
@@ -42,22 +38,20 @@ pub struct RuleBlock {
 }
 
 impl ToStyleStr for RuleBlock {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         // Finish any previous blocks
-        ctx.write_finishing_clause(w)?;
+        ctx.write_finishing_clause(w);
 
         let mut cond = "".to_string();
         for frag in self.condition.iter() {
-            frag.write_style(&mut cond, ctx)?;
+            frag.write_style(&mut cond, ctx);
         }
 
         let mut rule_ctx = ctx.with_condition(&cond);
         for i in self.content.iter() {
-            i.write_style(w, &mut rule_ctx)?;
+            i.write_style(w, &mut rule_ctx);
         }
 
-        rule_ctx.write_finishing_clause(w)?;
-
-        Ok(())
+        rule_ctx.write_finishing_clause(w);
     }
 }

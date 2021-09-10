@@ -44,5 +44,5 @@ fn test_sheet_interpolation() {
 "#,
         cls = "stylist-testtest"
     );
-    assert_eq!(sheet.to_style_str(Some("stylist-testtest")), Ok(expected));
+    assert_eq!(sheet.to_style_str(Some("stylist-testtest")), expected);
 }

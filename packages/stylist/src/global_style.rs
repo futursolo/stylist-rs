@@ -46,7 +46,7 @@ impl GlobalStyle {
             return Ok(Self { inner: m });
         }
 
-        let style_str = key.ast.to_style_str(None)?;
+        let style_str = key.ast.to_style_str(None);
 
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.

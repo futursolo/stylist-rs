@@ -1,7 +1,4 @@
-use std::fmt;
-
 use super::{Block, Rule, StyleContext, ToStyleStr};
-use crate::Result;
 
 /// A scope represents a media query or all content not in a media query.
 /// The CSS-Syntax-Level-3 standard calls all of these rules, which is used
@@ -32,12 +29,10 @@ pub enum ScopeContent {
 }
 
 impl ToStyleStr for ScopeContent {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, ctx: &mut StyleContext<'_>) -> Result<()> {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         match self {
-            ScopeContent::Block(ref b) => b.write_style(w, ctx)?,
-            ScopeContent::Rule(ref r) => r.write_style(w, ctx)?,
+            ScopeContent::Block(ref b) => b.write_style(w, ctx),
+            ScopeContent::Rule(ref r) => r.write_style(w, ctx),
         }
-
-        Ok(())
     }
 }
