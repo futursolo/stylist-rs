@@ -12,3 +12,6 @@ ignore = [
   "examples/yew-theme-agent/target/",
   "examples/yew-theme-yewdux/target/",
 ]
+
+[tools]
+wasm_bindgen = "0.2.77"

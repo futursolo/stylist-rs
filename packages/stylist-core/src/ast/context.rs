@@ -10,7 +10,7 @@ use crate::Result;
 // }
 //
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 enum ContextState {
     // Either a finishing clause has been printed, or the starting block is not printed.
     Closed,
@@ -62,44 +62,52 @@ impl<'a> StyleContext<'a> {
     }
 
     pub fn parent_conditions(&self) -> Vec<Cow<'a, str>> {
-        let mut sorted_parents = self.parent_conditions.clone();
-
         // @ rules first, then selectors.
-        sorted_parents.sort_by_cached_key(|m| !m.starts_with('@'));
+        // Equivalent to the following line, but would result in a smaller bundle
+        // sorted_parents.sort_by_cached_key(|m| !m.starts_with('@'));
+        let (mut rules, mut selectors) = self.parent_conditions.clone().into_iter().fold(
+            (Vec::new(), Vec::new()),
+            |(mut rules, mut selectors), item| {
+                if item.starts_with('@') {
+                    rules.push(item);
+                } else {
+                    selectors.push(item);
+                }
 
-        sorted_parents
+                (rules, selectors)
+            },
+        );
+
+        rules.append(&mut selectors);
+        rules
     }
 
     pub fn write_starting_clause<W: fmt::Write>(&mut self, w: &mut W) -> Result<()> {
-        if self.state == ContextState::Open {
-            return Ok(());
-        }
-
-        for (index, cond) in self.parent_conditions().iter().enumerate() {
-            for _i in 0..index {
-                write!(w, "    ")?;
+        if self.state == ContextState::Closed {
+            for (index, cond) in self.parent_conditions().iter().enumerate() {
+                for _i in 0..index {
+                    write!(w, "    ")?;
+                }
+                writeln!(w, "{} {{", cond)?;
             }
-            writeln!(w, "{} {{", cond)?;
-        }
 
-        self.state = ContextState::Open;
+            self.state = ContextState::Open;
+        }
 
         Ok(())
     }
 
     pub fn write_finishing_clause<W: fmt::Write>(&mut self, w: &mut W) -> Result<()> {
-        if self.state == ContextState::Closed {
-            return Ok(());
-        }
-
-        for i in (0..self.parent_conditions.len()).rev() {
-            for _i in 0..i {
-                write!(w, "    ")?;
+        if self.state == ContextState::Open {
+            for i in (0..self.parent_conditions.len()).rev() {
+                for _i in 0..i {
+                    write!(w, "    ")?;
+                }
+                writeln!(w, "}}")?;
             }
-            writeln!(w, "}}")?;
-        }
 
-        self.state = ContextState::Closed;
+            self.state = ContextState::Closed;
+        }
 
         Ok(())
     }
