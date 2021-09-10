@@ -27,7 +27,6 @@ impl Parse for CssScope {
 impl CssScope {
     pub fn into_rule_output(self, ctx: &mut IntoOutputContext) -> Vec<OutputRuleContent> {
         let mut attrs = Vec::new();
-
         let mut contents = Vec::new();
 
         let collect_attrs = |attrs: &mut Vec<OutputAttribute>,
