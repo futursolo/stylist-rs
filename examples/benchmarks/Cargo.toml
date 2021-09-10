@@ -5,12 +5,22 @@ authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2018"
 
 [dependencies]
+stylist = { path = "../../packages/stylist" }
+
 log = "0.4.14"
 console_log = { version = "0.2.0", features = ["color"] }
-yew = { git = "https://github.com/yewstack/yew" }
-stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
 web-sys = { version = "0.3.54", features = [
     "Window",
     "Performance",
 ] }
-gloo = "0.3.0"
+
+yew = { git = "https://github.com/yewstack/yew", optional = true }
+gloo = { version = "0.3.0", optional = true }
+
+[features]
+default = ["with_interface"]
+with_interface = ["stylist/yew_integration", "yew", "gloo"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.26"
+wasm-bindgen = "0.2"

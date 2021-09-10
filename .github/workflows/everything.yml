@@ -72,6 +72,9 @@ jobs:
       - name: Run Browser Tests
         run: wasm-pack test --headless --chrome --firefox examples/yew-integration
 
+      - name: Run Browser Benchmarks
+        run: wasm-pack test --headless --chrome --firefox examples/benchmarks --release --no-default-features
+
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
