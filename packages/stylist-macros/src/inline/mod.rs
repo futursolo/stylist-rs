@@ -16,7 +16,7 @@ pub fn macro_fn(input: TokenStream) -> TokenStream {
 
     debug!("Parsed as: {:?}", root);
 
-    let into_output_ctx = IntoOutputContext::new();
+    let mut into_output_ctx = IntoOutputContext::new();
     let output_root = root.into_output(&mut into_output_ctx);
 
     if let Some(m) = into_output_ctx.into_compile_errors() {

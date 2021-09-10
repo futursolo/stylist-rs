@@ -30,12 +30,9 @@ impl CssScope {
 
         let mut contents = Vec::new();
 
-        let collect_attrs_into_contents =
-            |attrs: &mut Vec<OutputAttribute>, contents: &mut Vec<OutputRuleContent>| {
-                if attrs.is_empty() {
-                    return;
-                }
-
+        let collect_attrs = |attrs: &mut Vec<OutputAttribute>,
+                             contents: &mut Vec<OutputRuleContent>| {
+            if !attrs.is_empty() {
                 contents.push(OutputRuleContent::Block(OutputBlock {
                     condition: Vec::new(),
                     content: attrs
@@ -43,23 +40,24 @@ impl CssScope {
                         .map(OutputBlockContent::StyleAttr)
                         .collect(),
                 }));
-            };
+            }
+        };
 
         for scope in self.contents {
             match scope {
-                CssScopeContent::Attribute(m) => attrs.push(m.into_output(&mut ctx)),
+                CssScopeContent::Attribute(m) => attrs.push(m.into_output(ctx)),
                 CssScopeContent::AtRule(m) => {
-                    collect_attrs_into_contents(&mut attrs, &mut contents);
-                    contents.push(OutputRuleContent::Rule(m.into_rule_output(&mut ctx)));
+                    collect_attrs(&mut attrs, &mut contents);
+                    contents.push(OutputRuleContent::Rule(m.into_rule_output(ctx)));
                 }
                 CssScopeContent::Nested(m) => {
-                    collect_attrs_into_contents(&mut attrs, &mut contents);
-                    contents.push(OutputRuleContent::Block(m.into_output(&mut ctx)));
+                    collect_attrs(&mut attrs, &mut contents);
+                    contents.push(OutputRuleContent::Block(m.into_output(ctx)));
                 }
             }
         }
 
-        collect_attrs_into_contents(&mut attrs, &mut contents);
+        collect_attrs(&mut attrs, &mut contents);
 
         contents
     }
@@ -73,12 +71,12 @@ impl CssScope {
         for scope in self.contents {
             match scope {
                 CssScopeContent::Attribute(m) => {
-                    contents.push(OutputRuleBlockContent::StyleAttr(m.into_output(&mut ctx)))
+                    contents.push(OutputRuleBlockContent::StyleAttr(m.into_output(ctx)))
                 }
 
                 CssScopeContent::AtRule(m) => {
                     contents.push(OutputRuleBlockContent::RuleBlock(Box::new(
-                        m.into_rule_block_output(&mut ctx),
+                        m.into_rule_block_output(ctx),
                     )));
                 }
 
@@ -100,11 +98,11 @@ impl CssScope {
         for scope in self.contents {
             match scope {
                 CssScopeContent::Attribute(m) => {
-                    contents.push(OutputBlockContent::StyleAttr(m.into_output(&mut ctx)))
+                    contents.push(OutputBlockContent::StyleAttr(m.into_output(ctx)))
                 }
-                CssScopeContent::AtRule(m) => contents.push(OutputBlockContent::RuleBlock(
-                    m.into_rule_block_output(&mut ctx),
-                )),
+                CssScopeContent::AtRule(m) => {
+                    contents.push(OutputBlockContent::RuleBlock(m.into_rule_block_output(ctx)))
+                }
                 CssScopeContent::Nested(m) => {
                     ctx.push_error(ParseError::new_spanned(
                         m.qualifier,

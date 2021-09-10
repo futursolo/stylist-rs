@@ -1,5 +1,5 @@
 use crate::output::{OutputBlock, OutputBlockContent};
-use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
+use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 
 use super::{CssAttribute, CssBlockQualifier, CssScope, IntoOutputContext};
 
@@ -19,21 +19,21 @@ impl Parse for CssQualifiedRule {
 
 impl CssQualifiedRule {
     pub fn into_output(self, ctx: &mut IntoOutputContext) -> OutputBlock {
-        let condition = self.qualifier.into_output(&mut ctx);
-        let content = self.scope.into_block_output(&mut ctx);
+        let condition = self.qualifier.into_output(ctx);
+        let content = self.scope.into_block_output(ctx);
 
-        Ok(OutputBlock { condition, content })
+        OutputBlock { condition, content }
     }
 
     // Into Output for a dangling block
     pub fn into_dangling_output(
-        attrs: &mut Vec<CssAttribute>,
+        attrs: Vec<CssAttribute>,
         ctx: &mut IntoOutputContext,
     ) -> OutputBlock {
         let mut output_attrs = Vec::new();
 
-        for attr in attrs.drain(0..) {
-            output_attrs.push(attr.into_output(&mut ctx))
+        for attr in attrs {
+            output_attrs.push(OutputBlockContent::StyleAttr(attr.into_output(ctx)))
         }
 
         OutputBlock {

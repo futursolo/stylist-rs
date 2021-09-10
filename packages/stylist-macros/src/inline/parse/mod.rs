@@ -28,7 +28,10 @@ impl IntoOutputContext {
         Self::default()
     }
 
-    pub fn extend_errors(&mut self, errors: Vec<syn::parse::Error>) {
+    pub fn extend_errors<I>(&mut self, errors: I)
+    where
+        I: IntoIterator<Item = syn::parse::Error>,
+    {
         self.errors.extend(errors);
     }
 
@@ -36,7 +39,7 @@ impl IntoOutputContext {
         self.errors.push(error);
     }
 
-    pub fn into_compile_errors(&mut self) -> Option<TokenStream> {
+    pub fn into_compile_errors(self) -> Option<TokenStream> {
         use quote::quote;
 
         if self.errors.is_empty() {

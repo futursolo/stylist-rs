@@ -91,25 +91,25 @@ impl CssAtRule {
         prelude
     }
 
-    pub fn into_rule_output(self, ctx: &mut IntoOutputContext) -> OutputRule {
-        ctx.extend_errors(self.errors);
+    pub fn into_rule_output(mut self, ctx: &mut IntoOutputContext) -> OutputRule {
+        ctx.extend_errors(self.errors.drain(0..));
 
         OutputRule {
             condition: self.condition_output(),
             content: match self.contents {
-                CssAtRuleContent::Scope(m) => m.into_rule_output(&mut ctx),
+                CssAtRuleContent::Scope(m) => m.into_rule_output(ctx),
                 CssAtRuleContent::Empty(_) => Vec::new(),
             },
         }
     }
 
-    pub fn into_rule_block_output(self, ctx: &mut IntoOutputContext) -> OutputRuleBlock {
-        ctx.extend_errors(self.errors);
+    pub fn into_rule_block_output(mut self, ctx: &mut IntoOutputContext) -> OutputRuleBlock {
+        ctx.extend_errors(self.errors.drain(0..));
 
         OutputRuleBlock {
             condition: self.condition_output(),
             content: match self.contents {
-                CssAtRuleContent::Scope(m) => m.into_rule_block_output(&mut ctx),
+                CssAtRuleContent::Scope(m) => m.into_rule_block_output(ctx),
                 CssAtRuleContent::Empty(_) => Vec::new(),
             },
         }

@@ -20,38 +20,32 @@ impl CssRootNode {
 
         let mut attrs: Vec<CssAttribute> = Vec::new();
 
-        let push_attrs_into_contents =
-            |attrs: &mut Vec<CssAttribute>, contents: &mut Vec<OutputScopeContent>| {
-                if attrs.is_empty() {
-                    return;
-                }
-
+        let collect_attrs = |attrs: &mut Vec<CssAttribute>,
+                             contents: &mut Vec<OutputScopeContent>,
+                             ctx: &mut IntoOutputContext| {
+            if !attrs.is_empty() {
                 contents.push(OutputScopeContent::Block(
-                    CssQualifiedRule::into_dangling_output(attrs, ctx),
+                    CssQualifiedRule::into_dangling_output(attrs.drain(0..).collect(), ctx),
                 ));
-            };
+            }
+        };
 
         for scope in self.contents {
             match scope {
-                CssScopeContent::Attribute(m) => {
-                    attrs.push(m);
-                }
+                CssScopeContent::Attribute(m) => attrs.push(m),
                 CssScopeContent::AtRule(m) => {
-                    push_attrs_into_contents(&mut attrs, &mut contents);
-
+                    collect_attrs(&mut attrs, &mut contents, ctx);
                     contents.push(OutputScopeContent::Rule(m.into_rule_output(ctx)));
                 }
 
                 CssScopeContent::Nested(m) => {
-                    push_attrs_into_contents(&mut attrs, &mut contents);
-
+                    collect_attrs(&mut attrs, &mut contents, ctx);
                     contents.push(OutputScopeContent::Block(m.into_output(ctx)));
                 }
             }
         }
 
-        push_attrs_into_contents(&mut attrs, &mut contents);
-
+        collect_attrs(&mut attrs, &mut contents, ctx);
         OutputSheet { contents }
     }
 }
