@@ -1,11 +1,5 @@
 use std::borrow::Cow;
-
-// #[derive(Debug)]
-// pub enum StyleKind {
-//     Style,
-//     Keyframes,
-// }
-//
+use std::sync::Mutex;
 
 #[derive(Debug, Clone, PartialEq)]
 enum ContextState {
@@ -15,99 +9,187 @@ enum ContextState {
     Open,
 }
 
-#[derive(Debug, Clone)]
-pub struct StyleContext<'a> {
-    // pub kind: StyleKind,
+#[derive(Debug)]
+pub struct StyleContext<'a, 'b> {
     pub class_name: Option<&'a str>,
-    pub parent_conditions: Vec<Cow<'a, str>>,
-    state: ContextState,
+    parent_ctx: Option<&'b StyleContext<'a, 'b>>,
+
+    rules: Vec<Cow<'a, str>>,
+    selectors: Vec<Cow<'a, str>>,
+
+    state: Mutex<ContextState>,
 }
 
-static IDENT: &str = "    ";
+static INDENT: &str = "    ";
 
-impl<'a> StyleContext<'a> {
+impl<'a, 'b> StyleContext<'a, 'b> {
     pub fn new(class_name: Option<&'a str>) -> Self {
         Self {
+            parent_ctx: None,
             class_name,
-            parent_conditions: Vec::new(),
-            state: ContextState::Closed,
+            rules: Vec::new(),
+            selectors: Vec::new(),
+
+            state: Mutex::new(ContextState::Closed),
         }
     }
 
-    pub fn with_condition<S: Into<Cow<'a, str>>>(&self, condition: S) -> Self {
-        let mut self_ = self.clone();
-
-        self_.parent_conditions.push(condition.into());
-
-        self_
+    pub fn is_open(&self) -> bool {
+        let state = self.state.try_lock().unwrap();
+        *state == ContextState::Open
     }
 
-    pub fn to_block_context(&self) -> Self {
-        // No selectors
-        if self
-            .parent_conditions()
-            .last()
-            .map(|m| m.starts_with('@'))
-            .unwrap_or(true)
-        {
-            self.with_condition(
-                self.class_name
-                    .map(|m| Cow::from(format!(".{}", m)))
-                    .unwrap_or_else(|| "html".into()),
-            )
-        } else {
-            self.clone()
-        }
-    }
-
-    pub fn parent_conditions(&self) -> Vec<Cow<'a, str>> {
-        let (mut rules, mut selectors) = (Vec::new(), Vec::new());
-
-        // @ rules first, then selectors.
-        // Equivalent to the following line, but would result in a smaller bundle
-        // sorted_parents.sort_by_cached_key(|m| !m.starts_with('@'));
-        for item in self.parent_conditions.clone() {
-            if item.starts_with('@') {
-                rules.push(item);
-            } else {
-                selectors.push(item);
+    // We close until we can find a parent that has nothing differs from current path.
+    pub fn close_until_common_parent(&self, w: &mut String) {
+        while let Some(m) = self.open_parent() {
+            if self.differ_conditions().is_empty() {
+                break;
             }
+            m.finish(w);
         }
-
-        rules.append(&mut selectors);
-        rules
     }
 
-    pub fn write_starting_clause(&mut self, w: &mut String) {
-        if self.state == ContextState::Closed {
-            for (index, cond) in self.parent_conditions().iter().enumerate() {
-                for _i in 0..index {
-                    w.push_str(IDENT);
+    pub fn open_parent(&self) -> Option<&'b StyleContext<'a, 'b>> {
+        match self.parent_ctx {
+            Some(m) => {
+                if m.is_open() {
+                    Some(m)
+                } else {
+                    m.open_parent()
                 }
-                w.push_str(cond);
-                w.push_str(" {\n");
             }
-
-            self.state = ContextState::Open;
+            None => None,
         }
     }
 
-    pub fn write_finishing_clause(&mut self, w: &mut String) {
-        if self.state == ContextState::Open {
-            for i in (0..self.parent_conditions.len()).rev() {
-                for _i in 0..i {
-                    w.push_str(IDENT);
-                }
-                w.push_str("}\n");
-            }
+    fn conditions(&self) -> Vec<&str> {
+        self.rules
+            .iter()
+            .chain(self.selectors.iter())
+            .map(|m| m.as_ref())
+            .collect()
+    }
 
-            self.state = ContextState::Closed;
+    fn common_conditions(&self) -> Vec<&str> {
+        match self.open_parent() {
+            Some(m) => self
+                .conditions()
+                .into_iter()
+                .zip(m.conditions())
+                .filter_map(|(m1, m2)| if m1 == m2 { Some(m1) } else { None })
+                .collect(),
+            None => Vec::new(),
         }
+    }
+
+    /// Calculate the layers that current context differs from the parent context
+    fn unique_conditions(&self) -> Vec<&str> {
+        self.conditions()
+            .into_iter()
+            .skip(self.common_conditions().len())
+            .collect()
+    }
+
+    /// Calculate the layers that parent context differs from current context
+    fn differ_conditions(&self) -> Vec<&str> {
+        match self.open_parent() {
+            Some(m) => m
+                .conditions()
+                .into_iter()
+                .skip(self.common_conditions().len())
+                .collect(),
+            None => Vec::new(),
+        }
+    }
+
+    fn write_padding_impl(&self, w: &mut String, no: usize) {
+        for _ in 0..no {
+            w.push_str(INDENT);
+        }
+    }
+
+    fn write_min_padding(&self, w: &mut String) {
+        self.write_padding_impl(w, self.common_conditions().len())
+    }
+
+    fn write_finish_impl(&self, w: &mut String, no: usize) {
+        for i in (0..no).rev() {
+            self.write_min_padding(w);
+            self.write_padding_impl(w, i);
+            w.push_str("}\n");
+        }
+    }
+
+    fn write_start_impl(&self, w: &mut String, conds: Vec<&str>) {
+        for (index, cond) in conds.iter().enumerate() {
+            self.write_min_padding(w);
+            self.write_padding_impl(w, index);
+            w.push_str(cond);
+            w.push_str(" {\n");
+        }
+    }
+
+    pub fn finish(&self, w: &mut String) {
+        let mut state = self.state.try_lock().unwrap();
+
+        if *state == ContextState::Open {
+            self.write_finish_impl(w, self.unique_conditions().len());
+        }
+
+        *state = ContextState::Closed;
+    }
+
+    pub fn start(&self, w: &mut String) {
+        let mut state = self.state.try_lock().unwrap();
+
+        if *state == ContextState::Closed {
+            self.close_until_common_parent(w);
+            self.write_start_impl(w, self.unique_conditions());
+        }
+        *state = ContextState::Open;
     }
 
     pub fn write_padding(&self, w: &mut String) {
-        for _ in 0..self.parent_conditions.len() {
-            w.push_str(IDENT);
+        self.write_padding_impl(w, self.conditions().len());
+    }
+
+    pub fn with_block_condition<S>(&'b self, cond: Option<S>) -> Self
+    where
+        S: Into<Cow<'a, str>>,
+    {
+        let mut selectors = self.selectors.clone();
+
+        if let Some(m) = cond {
+            selectors.push(m.into());
+        } else if self.selectors.is_empty() {
+            selectors.push(
+                self.class_name
+                    .map(|m| format!(".{}", m).into())
+                    .unwrap_or_else(|| "html".into()),
+            )
+        }
+
+        Self {
+            parent_ctx: Some(self),
+            class_name: self.class_name,
+            rules: self.rules.clone(),
+            selectors,
+
+            state: Mutex::new(ContextState::Closed),
+        }
+    }
+
+    pub fn with_rule_condition<S: Into<Cow<'a, str>>>(&'b self, cond: S) -> Self {
+        let mut rules = self.rules.clone();
+        rules.push(cond.into());
+
+        Self {
+            parent_ctx: Some(self),
+            class_name: self.class_name,
+            rules,
+            selectors: self.selectors.clone(),
+
+            state: Mutex::new(ContextState::Closed),
         }
     }
 }

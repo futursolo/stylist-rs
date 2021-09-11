@@ -13,9 +13,9 @@ pub struct StyleAttribute {
 }
 
 impl ToStyleStr for StyleAttribute {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
-        // Always write starting clause.
-        ctx.write_starting_clause(w);
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+        // Always try to print block
+        ctx.start(w);
         ctx.write_padding(w);
 
         w.push_str(&self.key);

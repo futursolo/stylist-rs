@@ -9,7 +9,7 @@ pub enum RuleBlockContent {
 }
 
 impl ToStyleStr for RuleBlockContent {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
         match self {
             Self::StyleAttr(ref b) => b.write_style(w, ctx),
             Self::RuleBlock(ref r) => r.write_style(w, ctx),
@@ -38,20 +38,18 @@ pub struct RuleBlock {
 }
 
 impl ToStyleStr for RuleBlock {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
-        // Finish any previous blocks
-        ctx.write_finishing_clause(w);
-
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
         let mut cond = "".to_string();
         for frag in self.condition.iter() {
             frag.write_style(&mut cond, ctx);
         }
 
-        let mut rule_ctx = ctx.with_condition(&cond);
+        let mut rule_ctx = ctx.with_rule_condition(cond);
+        // rule_ctx.start(w);
         for i in self.content.iter() {
             i.write_style(w, &mut rule_ctx);
         }
 
-        rule_ctx.write_finishing_clause(w);
+        rule_ctx.finish(w);
     }
 }

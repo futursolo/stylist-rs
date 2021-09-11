@@ -70,14 +70,22 @@ fn test_sheet_interpolation() {
         ScopeContent::Rule(Rule {
             condition: vec!["@keyframes myframe".into()].into(),
             content: vec![
-                "from".into(),
-                "{".into(),
-                "width: 100px;".into(),
-                "}".into(),
-                "to".into(),
-                "{".into(),
-                "width: 200px;".into(),
-                "}".into(),
+                RuleContent::RuleBlock(RuleBlock {
+                    condition: vec!["from".into()].into(),
+                    content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                        key: "width".into(),
+                        value: vec!["100px".into()].into(),
+                    })]
+                    .into(),
+                }),
+                RuleContent::RuleBlock(RuleBlock {
+                    condition: vec!["to".into()].into(),
+                    content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                        key: "width".into(),
+                        value: vec!["200px".into()].into(),
+                    })]
+                    .into(),
+                }),
             ]
             .into(),
         }),

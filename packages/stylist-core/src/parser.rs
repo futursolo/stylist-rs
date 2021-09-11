@@ -1,10 +1,10 @@
 use std::borrow::Cow;
 
 use nom::{
-    branch::alt,
+    branch::{alt, Alt},
     bytes::complete::{is_not, tag, take_while, take_while1},
     character::complete::{alpha1, alphanumeric1, anychar, char, none_of},
-    combinator::{map, map_res, not, opt, recognize},
+    combinator::{fail, map, not, opt, recognize}, // , map_res
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
     multi::{many0, many1, separated_list1},
     sequence::{delimited, pair, preceded, separated_pair, terminated},
@@ -19,6 +19,12 @@ use crate::{Error, Result};
 
 #[cfg(test)]
 use log::trace;
+
+#[derive(Debug, PartialEq)]
+enum RuleBlockKind {
+    Keyframes,
+    Other,
+}
 
 /// A lightweight CSS Parser.
 #[derive(Debug)]
@@ -350,7 +356,10 @@ impl Parser {
                         |m| m.into_iter().map(BlockContent::StyleAttr).collect(),
                     ),
                     // Or an at rule
-                    map(Parser::rule_block, |m| vec![BlockContent::RuleBlock(m)]),
+                    map(
+                        |i| Parser::rule_block(i, RuleBlockKind::Other),
+                        |m| vec![BlockContent::RuleBlock(m)],
+                    ),
                 ))),
                 |m: Vec<Vec<BlockContent>>| m.into_iter().flatten().collect(),
             )),
@@ -410,9 +419,10 @@ impl Parser {
                         },
                     ),
                     // Or an at rule
-                    map(Parser::rule_block, |m: RuleBlock| {
-                        vec![RuleBlockContent::RuleBlock(Box::new(m))]
-                    }),
+                    map(
+                        |i| Parser::rule_block(i, RuleBlockKind::Other),
+                        |m: RuleBlock| vec![RuleBlockContent::RuleBlock(Box::new(m))],
+                    ),
                 ))),
             ),
             |m: Vec<Vec<RuleBlockContent>>| m.into_iter().flatten().collect(),
@@ -425,18 +435,25 @@ impl Parser {
     }
 
     /// Parses a Rule Block
-    fn rule_block(i: &str) -> IResult<&str, RuleBlock, VerboseError<&str>> {
+    fn rule_block(i: &str, kind: RuleBlockKind) -> IResult<&str, RuleBlock, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Rule Block: {}", i);
 
         Self::expect_non_empty(i)?;
+
+        let cond = |i| match kind {
+            RuleBlockKind::Other => Self::at_rule_condition(i, (tag("@media"), tag("@supports"))),
+            RuleBlockKind::Keyframes => map(recognize(Self::condition), |m| {
+                vec![m.trim().to_string().into()]
+            })(i),
+        };
 
         let result = context(
             "RuleBlock",
             Self::trimmed(map(
                 separated_pair(
                     // Collect at Rules.
-                    Self::at_rule_condition,
+                    cond,
                     tag("{"),
                     // Collect contents with-in rules.
                     terminated(Self::rule_block_contents, tag("}")),
@@ -455,110 +472,110 @@ impl Parser {
         result
     }
 
-    fn rule_contents(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Rule contents: {}", i);
+    // fn rule_contents(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
+    //     #[cfg(test)]
+    //     trace!("Rule contents: {}", i);
 
-        Self::expect_non_empty(i)?;
+    //     Self::expect_non_empty(i)?;
 
-        let string_as_contents = map(Parser::rule_string, |s| vec![s]);
-        let string_or_curlies = alt((Parser::rule_curly_braces, string_as_contents));
-        let result = context(
-            "RuleContents",
-            map(many0(string_or_curlies), |p: Vec<Vec<RuleContent>>| {
-                p.into_iter().flatten().collect()
-            }),
-        )(i)?;
+    //     let string_as_contents = map(Parser::rule_string, |s| vec![s]);
+    //     let string_or_curlies = alt((Parser::rule_curly_braces, string_as_contents));
+    //     let result = context(
+    //         "RuleContents",
+    //         map(many0(string_or_curlies), |p: Vec<Vec<RuleContent>>| {
+    //             p.into_iter().flatten().collect()
+    //         }),
+    //     )(i)?;
 
-        #[cfg(test)]
-        trace!("Rule contents: {:#?}", result);
+    //     #[cfg(test)]
+    //     trace!("Rule contents: {:#?}", result);
 
-        Ok(result)
-    }
+    //     Ok(result)
+    // }
 
-    fn rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Rule: {}", i);
+    // fn rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
+    //     #[cfg(test)]
+    //     trace!("Rule: {}", i);
 
-        Self::expect_non_empty(i)?;
+    //     Self::expect_non_empty(i)?;
 
-        let result = context(
-            "Rule",
-            Self::trimmed(map_res(
-                separated_pair(
-                    recognize(preceded(tag("@"), is_not("{"))),
-                    tag("{"),
-                    terminated(terminated(Self::rule_contents, opt(Parser::sp)), tag("}")),
-                ),
-                |p: (&str, Vec<RuleContent>)| {
-                    if p.0.starts_with("@media") {
-                        return Err(String::from("Not a media query"));
-                    }
+    //     let result = context(
+    //         "Rule",
+    //         Self::trimmed(map_res(
+    //             separated_pair(
+    //                 recognize(preceded(tag("@"), is_not("{"))),
+    //                 tag("{"),
+    //                 terminated(terminated(Self::rule_contents, opt(Parser::sp)), tag("}")),
+    //             ),
+    //             |p: (&str, Vec<RuleContent>)| {
+    //                 if p.0.starts_with("@media") {
+    //                     return Err(String::from("Not a media query"));
+    //                 }
 
-                    if p.0.starts_with("@supports") {
-                        return Err(String::from("Not a support at rule"));
-                    }
+    //                 if p.0.starts_with("@supports") {
+    //                     return Err(String::from("Not a support at rule"));
+    //                 }
 
-                    Ok(ScopeContent::Rule(Rule {
-                        condition: vec![p.0.trim().to_string().into()].into(),
-                        content: p.1.into(),
-                    }))
-                },
-            )),
-        )(i);
+    //                 Ok(ScopeContent::Rule(Rule {
+    //                     condition: vec![p.0.trim().to_string().into()].into(),
+    //                     content: p.1.into(),
+    //                 }))
+    //             },
+    //         )),
+    //     )(i);
 
-        #[cfg(test)]
-        trace!("Rule: {:#?}", result);
+    //     #[cfg(test)]
+    //     trace!("Rule: {:#?}", result);
 
-        result
-    }
+    //     result
+    // }
 
-    /// Parse everything that is not curly braces
-    fn rule_string(i: &str) -> IResult<&str, RuleContent, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Rule String: {}", i);
+    // /// Parse everything that is not curly braces
+    // fn rule_string(i: &str) -> IResult<&str, RuleContent, VerboseError<&str>> {
+    //     #[cfg(test)]
+    //     trace!("Rule String: {}", i);
 
-        Self::expect_non_empty(i)?;
+    //     Self::expect_non_empty(i)?;
 
-        let result = context(
-            "StyleRuleString",
-            Self::trimmed(map(is_not("{}"), |p: &str| {
-                RuleContent::String(p.trim().to_string().into())
-            })),
-        )(i);
+    //     let result = context(
+    //         "StyleRuleString",
+    //         Self::trimmed(map(is_not("{}"), |p: &str| {
+    //             RuleContent::String(p.trim().to_string().into())
+    //         })),
+    //     )(i);
 
-        #[cfg(test)]
-        trace!("Rule String: {:#?}", result);
+    //     #[cfg(test)]
+    //     trace!("Rule String: {:#?}", result);
 
-        result
-    }
+    //     result
+    // }
 
-    /// Parse values within curly braces. This is basically just a helper for rules since
-    /// they may contain braced content. This function is for parsing it all and not
-    /// returning an incomplete rule at the first appearance of a closed curly brace
-    fn rule_curly_braces(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Curly Braces: {}", i);
+    // /// Parse values within curly braces. This is basically just a helper for rules since
+    // /// they may contain braced content. This function is for parsing it all and not
+    // /// returning an incomplete rule at the first appearance of a closed curly brace
+    // fn rule_curly_braces(i: &str) -> IResult<&str, Vec<RuleContent>, VerboseError<&str>> {
+    //     #[cfg(test)]
+    //     trace!("Curly Braces: {}", i);
 
-        Self::expect_non_empty(i)?;
+    //     Self::expect_non_empty(i)?;
 
-        let result = context(
-            "StyleRuleCurlyBraces",
-            Self::trimmed(map(
-                delimited(tag("{"), Self::rule_contents, tag("}")),
-                |mut m: Vec<RuleContent>| {
-                    m.insert(0, RuleContent::String("{".to_string().into()));
-                    m.push(RuleContent::String("}".to_string().into()));
-                    m
-                },
-            )),
-        )(i);
+    //     let result = context(
+    //         "StyleRuleCurlyBraces",
+    //         Self::trimmed(map(
+    //             delimited(tag("{"), Self::rule_contents, tag("}")),
+    //             |mut m: Vec<RuleContent>| {
+    //                 m.insert(0, RuleContent::String("{".to_string().into()));
+    //                 m.push(RuleContent::String("}".to_string().into()));
+    //                 m
+    //             },
+    //         )),
+    //     )(i);
 
-        #[cfg(test)]
-        trace!("Curly Braces: {:#?}", result);
+    //     #[cfg(test)]
+    //     trace!("Curly Braces: {:#?}", result);
 
-        result
-    }
+    //     result
+    // }
 
     /// Parse anything that is not in a { ... }
     fn dangling_block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
@@ -604,17 +621,25 @@ impl Parser {
         result
     }
 
-    fn at_rule_condition(i: &str) -> IResult<&str, Vec<StringFragment>, VerboseError<&str>> {
+    fn at_rule_condition<'a, T>(
+        i: &'a str,
+        tags: T,
+    ) -> IResult<&'a str, Vec<StringFragment>, VerboseError<&'a str>>
+    where
+        T: Alt<&'a str, &'a str, VerboseError<&'a str>>,
+    {
         #[cfg(test)]
         trace!("At Rule: {}", i);
 
         Self::expect_non_empty(i)?;
 
+        let tags = recognize(terminated(alt(tags), tag(" ")));
+
         let result = context(
             "AtRule",
             Self::trimmed(map(
                 pair(
-                    alt((tag("@supports "), tag("@media "))),
+                    tags,
                     map(
                         recognize(many1(alt((is_not("${"), recognize(Self::interpolation))))),
                         |m: &str| StringFragment {
@@ -639,6 +664,37 @@ impl Parser {
         result
     }
 
+    fn keyframes(i: &str) -> IResult<&str, Rule, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Keyframes: {}", i);
+
+        let result = context(
+            "AtRule",
+            Self::trimmed(map(
+                separated_pair(
+                    // Collect at Rules.
+                    |i| Self::at_rule_condition(i, (tag("@keyframes"), fail)),
+                    tag("{"),
+                    // Collect contents with-in rules.
+                    terminated(
+                        many0(|i| Parser::rule_block(i, RuleBlockKind::Keyframes)),
+                        tag("}"),
+                    ),
+                ),
+                // Map Results into a scope
+                |mut p: (Vec<StringFragment>, Vec<RuleBlock>)| Rule {
+                    condition: p.0.into(),
+                    content: p.1.drain(..).map(|m| RuleContent::RuleBlock(m)).collect(),
+                },
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Keyframes: {:#?}", result);
+
+        result
+    }
+
     /// Parse `@supports` and `@media`
     fn at_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         #[cfg(test)]
@@ -651,7 +707,7 @@ impl Parser {
             Self::trimmed(map(
                 separated_pair(
                     // Collect at Rules.
-                    Self::at_rule_condition,
+                    |i| Self::at_rule_condition(i, (tag("@supports"), tag("@media"))),
                     tag("{"),
                     // Collect contents with-in rules.
                     terminated(Parser::scope_contents, tag("}")),
@@ -686,10 +742,10 @@ impl Parser {
                 Parser::dangling_block,
                 // Or a Block
                 Parser::block,
-                // Or an at rule
+                // @supports and @media
                 Parser::at_rule,
-                // Or a Rule
-                Parser::rule,
+                // @keyframes
+                map(Parser::keyframes, |m| ScopeContent::Rule(m)),
             )))),
         )(i);
 

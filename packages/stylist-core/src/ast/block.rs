@@ -9,7 +9,7 @@ pub enum BlockContent {
 }
 
 impl ToStyleStr for BlockContent {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
         match self {
             Self::StyleAttr(ref m) => m.write_style(w, ctx),
             Self::RuleBlock(ref m) => m.write_style(w, ctx),
@@ -43,7 +43,7 @@ pub struct Block {
 }
 
 impl Block {
-    fn cond_str(&self, ctx: &mut StyleContext<'_>) -> Option<String> {
+    fn cond_str(&self, ctx: &mut StyleContext<'_, '_>) -> Option<String> {
         if self.condition.is_empty() {
             return None;
         }
@@ -62,22 +62,16 @@ impl Block {
 }
 
 impl ToStyleStr for Block {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
-        // Close last clause.
-        ctx.write_finishing_clause(w);
-
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
         // TODO: nested block, which is not supported at the moment.
         let cond_s = self.cond_str(ctx);
 
-        let mut final_ctx = cond_s
-            .as_ref()
-            .map(|m| ctx.with_condition(m))
-            .unwrap_or_else(|| ctx.to_block_context());
+        let mut block_ctx = ctx.with_block_condition(cond_s);
 
         for attr in self.content.iter() {
-            attr.write_style(w, &mut final_ctx);
+            attr.write_style(w, &mut block_ctx);
         }
 
-        final_ctx.write_finishing_clause(w);
+        block_ctx.finish(w);
     }
 }

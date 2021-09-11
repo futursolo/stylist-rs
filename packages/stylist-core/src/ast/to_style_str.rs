@@ -14,5 +14,5 @@ pub trait ToStyleStr {
     }
 
     // If None is passed as class_name, it means to write a global style.
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>);
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>);
 }

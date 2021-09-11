@@ -53,15 +53,24 @@ mod tests {
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@keyframes move".into()].into(),
-                content: vec![String::from(
-                    r#"from {
-width: 100px;
-}
-to {
-width: 200px;
-}"#,
-                )
-                .into()]
+                content: vec![
+                    RuleContent::RuleBlock(RuleBlock {
+                        condition: vec!["from".into()].into(),
+                        content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                            key: "width".into(),
+                            value: vec!["100px".into()].into(),
+                        })]
+                        .into(),
+                    }),
+                    RuleContent::RuleBlock(RuleBlock {
+                        condition: vec!["to".into()].into(),
+                        content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                            key: "width".into(),
+                            value: vec!["200px".into()].into(),
+                        })]
+                        .into(),
+                    }),
+                ]
                 .into(),
             }),
         ]);
@@ -74,12 +83,12 @@ width: 200px;
     background-color: red;
 }
 @keyframes move {
-from {
-width: 100px;
-}
-to {
-width: 200px;
-}
+    from {
+        width: 100px;
+    }
+    to {
+        width: 200px;
+    }
 }
 "#
         );
@@ -113,13 +122,24 @@ width: 200px;
                 RuleContent::Rule(
                     Rule {
                         condition: vec!["@keyframes move".into()].into(),
-                        content: vec![r#"from {
-width: 100px;
-}
-to {
-width: 200px;
-}"#
-                        .into()]
+                        content: vec![
+                            RuleContent::RuleBlock(RuleBlock {
+                                condition: vec!["from".into()].into(),
+                                content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                                    key: "width".into(),
+                                    value: vec!["100px".into()].into(),
+                                })]
+                                .into(),
+                            }),
+                            RuleContent::RuleBlock(RuleBlock {
+                                condition: vec!["to".into()].into(),
+                                content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                                    key: "width".into(),
+                                    value: vec!["200px".into()].into(),
+                                })]
+                                .into(),
+                            }),
+                        ]
                         .into(),
                     }
                     .into(),
@@ -141,12 +161,12 @@ width: 200px;
 }
 @media only screen and (min-width: 1000px) {
     @keyframes move {
-from {
-width: 100px;
-}
-to {
-width: 200px;
-}
+        from {
+            width: 100px;
+        }
+        to {
+            width: 200px;
+        }
     }
 }
 "#

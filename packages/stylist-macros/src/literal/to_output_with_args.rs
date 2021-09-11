@@ -167,11 +167,14 @@ impl ToOutputWithArgs for RuleContent {
                 let block = m.to_output_with_args(args, args_used);
                 OutputRuleContent::Block(block)
             }
+            Self::RuleBlock(ref m) => {
+                let rule_block = m.to_output_with_args(args, args_used);
+                OutputRuleContent::RuleBlock(rule_block)
+            }
             Self::Rule(ref m) => {
                 let rule = m.to_output_with_args(args, args_used);
                 OutputRuleContent::Rule(rule)
-            }
-            Self::String(ref m) => OutputRuleContent::String(m.as_ref().to_string()),
+            } // Self::String(ref m) => OutputRuleContent::String(m.as_ref().to_string()),
         }
     }
 }

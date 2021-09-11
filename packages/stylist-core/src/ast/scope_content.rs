@@ -29,7 +29,7 @@ pub enum ScopeContent {
 }
 
 impl ToStyleStr for ScopeContent {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
         match self {
             ScopeContent::Block(ref b) => b.write_style(w, ctx),
             ScopeContent::Rule(ref r) => r.write_style(w, ctx),
