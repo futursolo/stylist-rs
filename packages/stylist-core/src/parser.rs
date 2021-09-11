@@ -682,9 +682,9 @@ impl Parser {
                     ),
                 ),
                 // Map Results into a scope
-                |mut p: (Vec<StringFragment>, Vec<RuleBlock>)| Rule {
+                |p: (Vec<StringFragment>, Vec<RuleBlock>)| Rule {
                     condition: p.0.into(),
-                    content: p.1.drain(..).map(|m| RuleContent::RuleBlock(m)).collect(),
+                    content: p.1.into_iter().map(RuleContent::RuleBlock).collect(),
                 },
             )),
         )(i);
@@ -713,10 +713,10 @@ impl Parser {
                     terminated(Parser::scope_contents, tag("}")),
                 ),
                 // Map Results into a scope
-                |mut p: (Vec<StringFragment>, Vec<ScopeContent>)| {
+                |p: (Vec<StringFragment>, Vec<ScopeContent>)| {
                     ScopeContent::Rule(Rule {
                         condition: p.0.into(),
-                        content: p.1.drain(..).map(|i| i.into()).collect(),
+                        content: p.1.into_iter().map(|i| i.into()).collect(),
                     })
                 },
             )),
@@ -745,7 +745,7 @@ impl Parser {
                 // @supports and @media
                 Parser::at_rule,
                 // @keyframes
-                map(Parser::keyframes, |m| ScopeContent::Rule(m)),
+                map(Parser::keyframes, ScopeContent::Rule),
             )))),
         )(i);
 

@@ -20,8 +20,6 @@ pub struct StyleContext<'a, 'b> {
     state: Mutex<ContextState>,
 }
 
-static INDENT: &str = "    ";
-
 impl<'a, 'b> StyleContext<'a, 'b> {
     pub fn new(class_name: Option<&'a str>) -> Self {
         Self {
@@ -104,7 +102,7 @@ impl<'a, 'b> StyleContext<'a, 'b> {
 
     fn write_padding_impl(&self, w: &mut String, no: usize) {
         for _ in 0..no {
-            w.push_str(INDENT);
+            w.push_str("    ");
         }
     }
 
