@@ -1,13 +1,5 @@
 use std::borrow::Cow;
-use std::sync::Mutex;
-
-#[derive(Debug, Clone, PartialEq)]
-enum ContextState {
-    // Either a finishing clause has been printed, or the starting block is not printed.
-    Closed,
-    // A start clause has been printed, but a finishing clause is not printed.
-    Open,
-}
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Debug)]
 pub struct StyleContext<'a, 'b> {
@@ -17,7 +9,7 @@ pub struct StyleContext<'a, 'b> {
     rules: Vec<Cow<'a, str>>,
     selectors: Vec<Cow<'a, str>>,
 
-    state: Mutex<ContextState>,
+    is_open: AtomicBool,
 }
 
 impl<'a, 'b> StyleContext<'a, 'b> {
@@ -28,13 +20,12 @@ impl<'a, 'b> StyleContext<'a, 'b> {
             rules: Vec::new(),
             selectors: Vec::new(),
 
-            state: Mutex::new(ContextState::Closed),
+            is_open: AtomicBool::new(false),
         }
     }
 
     pub fn is_open(&self) -> bool {
-        let state = self.state.try_lock().unwrap();
-        *state == ContextState::Open
+        self.is_open.load(Ordering::Relaxed)
     }
 
     // We close until we can find a parent that has nothing differs from current path.
@@ -128,23 +119,18 @@ impl<'a, 'b> StyleContext<'a, 'b> {
     }
 
     pub fn finish(&self, w: &mut String) {
-        let mut state = self.state.try_lock().unwrap();
-
-        if *state == ContextState::Open {
+        if self.is_open() {
             self.write_finish_impl(w, self.unique_conditions().len());
         }
-
-        *state = ContextState::Closed;
+        self.is_open.store(false, Ordering::Relaxed);
     }
 
     pub fn start(&self, w: &mut String) {
-        let mut state = self.state.try_lock().unwrap();
-
-        if *state == ContextState::Closed {
+        if !self.is_open() {
             self.close_until_common_parent(w);
             self.write_start_impl(w, self.unique_conditions());
         }
-        *state = ContextState::Open;
+        self.is_open.store(true, Ordering::Relaxed);
     }
 
     pub fn write_padding(&self, w: &mut String) {
@@ -173,7 +159,7 @@ impl<'a, 'b> StyleContext<'a, 'b> {
             rules: self.rules.clone(),
             selectors,
 
-            state: Mutex::new(ContextState::Closed),
+            is_open: AtomicBool::new(false),
         }
     }
 
@@ -187,7 +173,7 @@ impl<'a, 'b> StyleContext<'a, 'b> {
             rules,
             selectors: self.selectors.clone(),
 
-            state: Mutex::new(ContextState::Closed),
+            is_open: AtomicBool::new(false),
         }
     }
 }
