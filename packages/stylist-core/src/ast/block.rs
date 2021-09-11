@@ -9,7 +9,7 @@ pub enum BlockContent {
 }
 
 impl ToStyleStr for BlockContent {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         match self {
             Self::StyleAttr(ref m) => m.write_style(w, ctx),
             Self::RuleBlock(ref m) => m.write_style(w, ctx),
@@ -43,7 +43,7 @@ pub struct Block {
 }
 
 impl Block {
-    fn cond_str(&self, ctx: &mut StyleContext<'_, '_>) -> Option<String> {
+    fn cond_str(&self, ctx: &mut StyleContext<'_>) -> Option<String> {
         if self.condition.is_empty() {
             return None;
         }
@@ -62,7 +62,7 @@ impl Block {
 }
 
 impl ToStyleStr for Block {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         // TODO: nested block, which is not supported at the moment.
         let cond_s = self.cond_str(ctx);
 

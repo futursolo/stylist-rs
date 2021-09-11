@@ -9,10 +9,6 @@ pub enum RuleContent {
     Block(Block),
     /// A nested rule
     Rule(Box<Rule>),
-    // /// A raw string literal, i.e. something that wasn't parsed.
-    // /// This is an escape-hatch and may get removed in the future
-    // /// for a more meaningful alternative
-    // String(Cow<'static, str>),
     /// A RuleBlock
     RuleBlock(RuleBlock),
 }
@@ -27,37 +23,14 @@ impl From<ScopeContent> for RuleContent {
 }
 
 impl ToStyleStr for RuleContent {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         match self {
             RuleContent::Block(ref m) => m.write_style(w, ctx),
             RuleContent::Rule(ref m) => m.write_style(w, ctx),
             RuleContent::RuleBlock(ref m) => m.write_style(w, ctx),
-            // RuleContent::String(ref s) => {
-            //     ctx.write_starting_clause(w);
-            //     w.push_str(s);
-            //     w.push('\n');
-            // }
         }
     }
 }
-
-// impl From<String> for RuleContent {
-//     fn from(s: String) -> Self {
-//         Self::String(s.into())
-//     }
-// }
-
-// impl From<&'static str> for RuleContent {
-//     fn from(s: &'static str) -> Self {
-//         Self::String(s.into())
-//     }
-// }
-
-// impl From<Cow<'static, str>> for RuleContent {
-//     fn from(s: Cow<'static, str>) -> Self {
-//         Self::String(s)
-//     }
-// }
 
 /// An At-Rule can contain both other blocks and in some cases more At-Rules.
 ///
@@ -81,7 +54,7 @@ pub struct Rule {
 }
 
 impl ToStyleStr for Rule {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         let mut cond = "".to_string();
         for frag in self.condition.iter() {
             frag.write_style(&mut cond, ctx);

@@ -13,7 +13,7 @@ pub struct StyleAttribute {
 }
 
 impl ToStyleStr for StyleAttribute {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         // Always try to print block
         ctx.start(w);
         ctx.write_padding(w);

@@ -2,9 +2,9 @@ use std::borrow::Cow;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Debug)]
-pub struct StyleContext<'a, 'b> {
+pub struct StyleContext<'a> {
     pub class_name: Option<&'a str>,
-    parent_ctx: Option<&'b StyleContext<'a, 'b>>,
+    parent_ctx: Option<&'a StyleContext<'a>>,
 
     rules: Vec<Cow<'a, str>>,
     selectors: Vec<Cow<'a, str>>,
@@ -12,7 +12,7 @@ pub struct StyleContext<'a, 'b> {
     is_open: AtomicBool,
 }
 
-impl<'a, 'b> StyleContext<'a, 'b> {
+impl<'a> StyleContext<'a> {
     pub fn new(class_name: Option<&'a str>) -> Self {
         Self {
             parent_ctx: None,
@@ -38,7 +38,7 @@ impl<'a, 'b> StyleContext<'a, 'b> {
         }
     }
 
-    pub fn open_parent(&self) -> Option<&'b StyleContext<'a, 'b>> {
+    pub fn open_parent(&self) -> Option<&StyleContext<'a>> {
         match self.parent_ctx {
             Some(m) => {
                 if m.is_open() {
@@ -137,7 +137,7 @@ impl<'a, 'b> StyleContext<'a, 'b> {
         self.write_padding_impl(w, self.conditions().len());
     }
 
-    pub fn with_block_condition<S>(&'b self, cond: Option<S>) -> Self
+    pub fn with_block_condition<S>(&'a self, cond: Option<S>) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -163,7 +163,7 @@ impl<'a, 'b> StyleContext<'a, 'b> {
         }
     }
 
-    pub fn with_rule_condition<S: Into<Cow<'a, str>>>(&'b self, cond: S) -> Self {
+    pub fn with_rule_condition<S: Into<Cow<'a, str>>>(&'a self, cond: S) -> Self {
         let mut rules = self.rules.clone();
         rules.push(cond.into());
 

@@ -9,7 +9,7 @@ pub struct StringFragment {
 }
 
 impl ToStyleStr for StringFragment {
-    fn write_style(&self, w: &mut String, _ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, _ctx: &mut StyleContext<'_>) {
         w.push_str(&self.inner);
     }
 }

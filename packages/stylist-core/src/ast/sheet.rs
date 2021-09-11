@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use super::{ScopeContent, StyleContext, ToStyleStr};
 
-/// The top node of a style string.
+/// The top node of a stylesheet.
 // Once a sheet is constructed, it becomes immutable.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Sheet(Arc<Cow<'static, [ScopeContent]>>);
@@ -48,7 +48,7 @@ impl Default for Sheet {
 }
 
 impl ToStyleStr for Sheet {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         for scope in self.0.iter() {
             scope.write_style(w, ctx);
         }

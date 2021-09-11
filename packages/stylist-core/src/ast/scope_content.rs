@@ -24,12 +24,10 @@ use super::{Block, Rule, StyleContext, ToStyleStr};
 pub enum ScopeContent {
     Block(Block),
     Rule(Rule),
-    // e.g. media rules nested in support rules and vice versa
-    // Scope(Scope),
 }
 
 impl ToStyleStr for ScopeContent {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         match self {
             ScopeContent::Block(ref b) => b.write_style(w, ctx),
             ScopeContent::Rule(ref r) => r.write_style(w, ctx),

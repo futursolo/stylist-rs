@@ -14,7 +14,7 @@ pub struct Selector {
 }
 
 impl ToStyleStr for Selector {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_, '_>) {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         let mut joined_s = "".to_string();
 
         for frag in self.fragments.iter() {
