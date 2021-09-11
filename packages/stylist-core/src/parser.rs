@@ -6,14 +6,14 @@ use nom::{
     character::complete::{alpha1, alphanumeric1, anychar, char, none_of},
     combinator::{map, map_res, not, opt, recognize},
     error::{context, convert_error, ErrorKind, ParseError, VerboseError},
-    multi::{many0, many1, separated_list0},
+    multi::{many0, many1, separated_list1},
     sequence::{delimited, pair, preceded, separated_pair, terminated},
     IResult,
 };
 
 use crate::ast::{
-    Block, BlockContent, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment,
-    StyleAttribute,
+    Block, BlockContent, Rule, RuleBlock, RuleBlockContent, RuleContent, ScopeContent, Selector,
+    Sheet, StringFragment, StyleAttribute,
 };
 use crate::{Error, Result};
 
@@ -177,39 +177,6 @@ impl Parser {
         result
     }
 
-    /// Parse a style attribute such as "width: 10px;"
-    fn dangling_attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Dangling Attribute: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleAttribute",
-            Self::trimmed(map(
-                separated_pair(
-                    // Key
-                    Self::style_attr_key,
-                    // Separator
-                    tag(":"),
-                    // Value
-                    terminated(Self::style_attr_value, tag(";")),
-                ),
-                move |p: (&str, StringFragment)| -> StyleAttribute {
-                    StyleAttribute {
-                        key: p.0.trim().to_string().into(),
-                        value: vec![p.1].into(),
-                    }
-                },
-            )),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Dangling Attribute: {:#?}", result);
-
-        result
-    }
-
     /// Parse a style attribute such as "width: 10px"
     fn attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
         #[cfg(test)]
@@ -240,35 +207,28 @@ impl Parser {
         result
     }
 
-    /// Parse attributes outside of a { ... }.
-    fn dangling_attributes(i: &str) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
-        #[cfg(test)]
-        trace!("Dangling Attributes: {}", i);
-
-        Self::expect_non_empty(i)?;
-
-        let result = context(
-            "StyleAttributes",
-            Self::trimmed(many1(Self::dangling_attribute)),
-        )(i);
-
-        #[cfg(test)]
-        trace!("Dangling Attributes: {:#?}", result);
-
-        result
-    }
-
-    fn attributes(i: &str) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
+    fn attributes(
+        i: &str,
+        dangling: bool,
+    ) -> IResult<&str, Vec<StyleAttribute>, VerboseError<&str>> {
         #[cfg(test)]
         trace!("Attributes: {}", i);
 
         Self::expect_non_empty(i)?;
 
+        let final_semicolon = |i| {
+            if dangling {
+                map(tag(";"), |m| Some(m))(i)
+            } else {
+                opt(tag(";"))(i)
+            }
+        };
+
         let result = context(
             "StyleAttributes",
             Self::trimmed(terminated(
-                separated_list0(tag(";"), Self::attribute),
-                preceded(opt(Self::sp), opt(tag(";"))),
+                separated_list1(tag(";"), Self::attribute),
+                preceded(opt(Self::sp), final_semicolon),
             )),
         )(i);
 
@@ -374,13 +334,32 @@ impl Parser {
         result
     }
 
-    fn block_content(i: &str) -> IResult<&str, Vec<BlockContent>, VerboseError<&str>> {
-        context(
-            "BlockContent",
-            map(Self::attributes, |m: Vec<StyleAttribute>| {
-                m.into_iter().map(|m| m.into()).collect()
-            }),
-        )(i)
+    fn block_contents(i: &str) -> IResult<&str, Vec<BlockContent>, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Block Contents: {}", i);
+
+        Self::expect_non_empty(i)?;
+
+        let result = context(
+            "BlockContents",
+            Self::trimmed(map(
+                many0(alt((
+                    // Either Style Attributes
+                    map(
+                        |i| Parser::attributes(i, false),
+                        |m| m.into_iter().map(BlockContent::StyleAttr).collect(),
+                    ),
+                    // Or an at rule
+                    map(Parser::rule_block, |m| vec![BlockContent::RuleBlock(m)]),
+                ))),
+                |m: Vec<Vec<BlockContent>>| m.into_iter().flatten().collect(),
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Block Contents: {:#?}", result);
+
+        result
     }
 
     /// Parse a [`Block`].
@@ -396,7 +375,7 @@ impl Parser {
                 separated_pair(
                     Self::condition,
                     tag("{"),
-                    terminated(Self::trim_cmt(Self::block_content), tag("}")),
+                    terminated(Self::trim_cmt(Self::block_contents), tag("}")),
                 ),
                 |p: (Vec<Selector>, Vec<BlockContent>)| {
                     ScopeContent::Block(Block {
@@ -409,6 +388,69 @@ impl Parser {
 
         #[cfg(test)]
         trace!("Block: {:#?}", result);
+
+        result
+    }
+
+    fn rule_block_contents(i: &str) -> IResult<&str, Vec<RuleBlockContent>, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Rule Block Contents: {}", i);
+
+        Self::expect_non_empty(i)?;
+
+        let result = map(
+            context(
+                "RuleBlockContents",
+                many0(alt((
+                    // Either Style Attributes
+                    map(
+                        |i| Parser::attributes(i, false),
+                        |m: Vec<StyleAttribute>| {
+                            m.into_iter().map(RuleBlockContent::StyleAttr).collect()
+                        },
+                    ),
+                    // Or an at rule
+                    map(Parser::rule_block, |m: RuleBlock| {
+                        vec![RuleBlockContent::RuleBlock(Box::new(m))]
+                    }),
+                ))),
+            ),
+            |m: Vec<Vec<RuleBlockContent>>| m.into_iter().flatten().collect(),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Rule Block Contents: {:#?}", result);
+
+        result
+    }
+
+    /// Parses a Rule Block
+    fn rule_block(i: &str) -> IResult<&str, RuleBlock, VerboseError<&str>> {
+        #[cfg(test)]
+        trace!("Rule Block: {}", i);
+
+        Self::expect_non_empty(i)?;
+
+        let result = context(
+            "RuleBlock",
+            Self::trimmed(map(
+                separated_pair(
+                    // Collect at Rules.
+                    Self::at_rule_condition,
+                    tag("{"),
+                    // Collect contents with-in rules.
+                    terminated(Self::rule_block_contents, tag("}")),
+                ),
+                // Map Results into a scope
+                |p: (Vec<StringFragment>, Vec<RuleBlockContent>)| RuleBlock {
+                    condition: p.0.into(),
+                    content: p.1.into_iter().map(|i| i.into()).collect(),
+                },
+            )),
+        )(i);
+
+        #[cfg(test)]
+        trace!("Rule Block: {:#?}", result);
 
         result
     }
@@ -528,7 +570,7 @@ impl Parser {
         let result = context(
             "StyleDanglingBlock",
             Self::trimmed(map(
-                Self::dangling_attributes,
+                |i| Self::attributes(i, true),
                 |attr: Vec<StyleAttribute>| {
                     ScopeContent::Block(Block {
                         condition: Cow::Borrowed(&[]),
@@ -1354,6 +1396,79 @@ mod tests {
                     value: vec!["black".into()].into(),
                 }
                 .into()]
+                .into(),
+            }),
+            ScopeContent::Rule(Rule {
+                condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
+                content: vec![RuleContent::Block(Block {
+                    condition: Cow::Borrowed(&[]),
+                    content: vec![StyleAttribute {
+                        key: "display".into(),
+                        value: vec!["flex".into()].into(),
+                    }
+                    .into()]
+                    .into(),
+                })]
+                .into(),
+            }),
+        ]);
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_rule_block() {
+        let test_str = r#"
+                span {
+                    @media screen and (max-width: 500px) {
+                        background-color: blue;
+                    }
+                }
+
+                div {
+                    @supports (max-width: 500px) {
+                        @media screen and (max-width: 500px) {
+                            background-color: blue;
+                        }
+                    }
+                }
+
+                @media screen and ${breakpoint} {
+                    display: flex;
+                }
+            "#;
+
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![
+            ScopeContent::Block(Block {
+                condition: vec![vec!["span".into()].into()].into(),
+                content: vec![BlockContent::RuleBlock(RuleBlock {
+                    condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()]
+                        .into(),
+                    content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                        key: "background-color".into(),
+                        value: vec!["blue".into()].into(),
+                    })]
+                    .into(),
+                })]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec![vec!["div".into()].into()].into(),
+                content: vec![BlockContent::RuleBlock(RuleBlock {
+                    condition: vec!["@supports ".into(), "(max-width: 500px)".into()].into(),
+                    content: vec![RuleBlockContent::RuleBlock(Box::new(RuleBlock {
+                        condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()]
+                            .into(),
+                        content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                            key: "background-color".into(),
+                            value: vec!["blue".into()].into(),
+                        })]
+                        .into(),
+                    }))]
+                    .into(),
+                })]
                 .into(),
             }),
             ScopeContent::Rule(Rule {

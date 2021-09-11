@@ -348,6 +348,12 @@ mod tests {
 
                 header, footer {
                     border: 1px solid black;
+
+                    @supports (max-width: 500px) {
+                        @media screen and (max-width: 500px) {
+                            display: flex;
+                        }
+                    }
                 }
             "#,
         )
@@ -374,6 +380,13 @@ mod tests {
 }}
 .{style_name} header, .{style_name} footer {{
     border: 1px solid black;
+}}
+@supports (max-width: 500px) {{
+    @media screen and (max-width: 500px) {{
+        .{style_name} header, .{style_name} footer {{
+            display: flex;
+        }}
+    }}
 }}
 "#,
                 style_name = style.get_class_name()
