@@ -218,7 +218,7 @@ impl Parser {
 
         let final_semicolon = |i| {
             if dangling {
-                map(tag(";"), |m| Some(m))(i)
+                map(tag(";"), Some)(i)
             } else {
                 opt(tag(";"))(i)
             }
@@ -444,7 +444,7 @@ impl Parser {
                 // Map Results into a scope
                 |p: (Vec<StringFragment>, Vec<RuleBlockContent>)| RuleBlock {
                     condition: p.0.into(),
-                    content: p.1.into_iter().map(|i| i.into()).collect(),
+                    content: p.1.into(),
                 },
             )),
         )(i);
