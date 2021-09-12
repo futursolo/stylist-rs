@@ -13,6 +13,9 @@ pub mod ast;
 #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
 #[cfg(feature = "parser")]
 mod parser;
+#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg(feature = "parser")]
+pub mod tokens;
 
 #[cfg(test)]
 mod tests {
