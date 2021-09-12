@@ -191,3 +191,6 @@ pub use stylist_macros::global_style;
 /// [`macros`]: self
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 pub use stylist_macros::css;
+
+#[doc(hidden)]
+pub use stylist_core::bow::Bow;
