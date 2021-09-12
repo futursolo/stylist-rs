@@ -18,16 +18,17 @@ use syn::{
     token, Lit,
 };
 
-mod preserved_token;
-pub use preserved_token::PreservedToken;
-mod simple_block;
-pub use simple_block::{BlockKind, SimpleBlock};
 mod function_token;
-pub use function_token::FunctionToken;
-mod stream;
-pub use stream::ComponentValueStream;
 mod interpolated_expression;
+mod preserved_token;
+mod simple_block;
+mod stream;
+
+pub use function_token::FunctionToken;
 pub use interpolated_expression::InterpolatedExpression;
+pub use preserved_token::PreservedToken;
+pub use simple_block::{BlockKind, SimpleBlock};
+pub use stream::ComponentValueStream;
 
 #[derive(Debug, Clone)]
 pub enum ComponentValue {

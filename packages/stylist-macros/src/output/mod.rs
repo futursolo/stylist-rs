@@ -12,7 +12,7 @@ mod sheet;
 mod str_frag;
 mod style_attr;
 
-mod context_recorder;
+mod context;
 mod maybe_static;
 
 pub use block::OutputBlock;
@@ -24,16 +24,16 @@ pub use sheet::OutputSheet;
 pub use str_frag::{fragment_coalesce, OutputFragment};
 pub use style_attr::OutputAttribute;
 
-pub use context_recorder::ContextRecorder;
+pub use context::ReifyContext;
 pub use maybe_static::IntoCowVecTokens;
 
 /// Reify a structure into an expression of a specific type.
 pub trait Reify {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream;
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream;
 }
 
 impl Reify for syn::Error {
-    fn into_token_stream(self, _ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, _ctx: &mut ReifyContext) -> TokenStream {
         self.into_compile_error()
     }
 }

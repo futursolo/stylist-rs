@@ -1,6 +1,6 @@
 use super::{
-    fragment_coalesce, ContextRecorder, IntoCowVecTokens, OutputFragment, OutputRuleBlockContent,
-    Reify,
+    fragment_coalesce, IntoCowVecTokens, OutputFragment, OutputRuleBlockContent, Reify,
+    ReifyContext,
 };
 use itertools::Itertools;
 use proc_macro2::TokenStream;
@@ -13,7 +13,7 @@ pub struct OutputRule {
 }
 
 impl Reify for OutputRule {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         let condition = self
             .condition
             .into_iter()

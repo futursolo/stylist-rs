@@ -3,16 +3,18 @@
 //! ```text
 //! struct Sheet
 //! └── Vec<enum ScopeContent>
-//!     ├── struct Block
-//!     │   ├── condition: Vec<Selector>
-//!     │   └── Vec<struct StyleAttribute>
-//!     │       ├── key: String
-//!     │       └── value: Vec<StringFragment>
-//!     └── struct Rule
-//!         ├── condition: Vec<StringFragment>
-//!         └── Vec<enum RuleContent>
-//!             ├── Block (*)
-//!             └── Rule (*)
+//!         ├── struct Block
+//!         │   ├── condition: Vec<Selector>
+//!         │   │                  └── fragments: Vec<StringFragment>
+//!         │   └── content: Vec<enum RuleBlockContent>
+//!         │                    ├── StyleAttr (*)
+//!         │                    │   ├── key: String
+//!         │                    │   └── value: Vec<StringFragment>
+//!         │                    ├── Block (*)
+//!         │                    └── Rule (*)
+//!         └── content: struct Rule
+//!                      ├── condition: Vec<StringFragment>
+//!                      └── Vec<enum RuleBlockContent>
 //! ```
 //!
 //! # Note

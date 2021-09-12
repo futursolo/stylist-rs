@@ -24,11 +24,11 @@ enum AllowedUsage {
 }
 
 #[derive(Debug, Clone)]
-pub struct ContextRecorder {
+pub struct ReifyContext {
     usage: AllowedUsage,
 }
 
-impl Default for ContextRecorder {
+impl Default for ReifyContext {
     fn default() -> Self {
         Self {
             usage: AllowedUsage::Static,
@@ -36,7 +36,7 @@ impl Default for ContextRecorder {
     }
 }
 
-impl ContextRecorder {
+impl ReifyContext {
     pub fn new() -> Self {
         Self::default()
     }

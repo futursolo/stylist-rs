@@ -1,4 +1,4 @@
-use super::{ContextRecorder, IntoCowVecTokens, OutputScopeContent, Reify};
+use super::{IntoCowVecTokens, OutputScopeContent, Reify, ReifyContext};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -8,7 +8,7 @@ pub struct OutputSheet {
 }
 
 impl Reify for OutputSheet {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         let contents = self.contents.into_cow_vec_tokens(ctx);
 
         let quoted_sheet = quote! {

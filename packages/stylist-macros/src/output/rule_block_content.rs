@@ -1,4 +1,4 @@
-use super::{ContextRecorder, OutputAttribute, OutputBlock, OutputRule, Reify};
+use super::{OutputAttribute, OutputBlock, OutputRule, Reify, ReifyContext};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -10,7 +10,7 @@ pub enum OutputRuleBlockContent {
 }
 
 impl Reify for OutputRuleBlockContent {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         match self {
             Self::Rule(m) => {
                 let tokens = m.into_token_stream(ctx);

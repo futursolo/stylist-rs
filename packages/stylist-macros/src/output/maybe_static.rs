@@ -1,4 +1,4 @@
-use super::{ContextRecorder, Reify};
+use super::{Reify, ReifyContext};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -10,7 +10,7 @@ where
     // as elements the values formed by the expressions in this stream.
     // Depending on the context in which the expression can be expanded,
     // uses either Cow::Owned or Cow::Borrowed (currently always Cow::Owned).
-    fn into_cow_vec_tokens(self, ctx: &mut ContextRecorder) -> TokenStream;
+    fn into_cow_vec_tokens(self, ctx: &mut ReifyContext) -> TokenStream;
 }
 
 impl<I> IntoCowVecTokens for I
@@ -18,7 +18,7 @@ where
     I: IntoIterator,
     I::Item: Reify,
 {
-    fn into_cow_vec_tokens(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_cow_vec_tokens(self, ctx: &mut ReifyContext) -> TokenStream {
         let contents: Vec<TokenStream> =
             self.into_iter().map(|m| m.into_token_stream(ctx)).collect();
 

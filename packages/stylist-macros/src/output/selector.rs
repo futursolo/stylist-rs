@@ -1,4 +1,4 @@
-use super::{fragment_coalesce, ContextRecorder, IntoCowVecTokens, OutputFragment, Reify};
+use super::{fragment_coalesce, IntoCowVecTokens, OutputFragment, Reify, ReifyContext};
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -9,7 +9,7 @@ pub struct OutputSelector {
 }
 
 impl Reify for OutputSelector {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         let parts = self
             .selectors
             .into_iter()

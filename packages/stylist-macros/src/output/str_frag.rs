@@ -1,4 +1,4 @@
-use super::{ContextRecorder, Reify};
+use super::{Reify, ReifyContext};
 use crate::{
     inline::{component_value::PreservedToken, css_ident::CssIdent},
     literal::argument::Argument,
@@ -101,7 +101,7 @@ impl OutputFragment {
 }
 
 impl Reify for OutputFragment {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         match self.try_into_string() {
             Err(t) => {
                 ctx.uses_dynamic_argument();
