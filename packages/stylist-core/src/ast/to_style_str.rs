@@ -5,7 +5,6 @@ use super::StyleContext;
 pub trait ToStyleStr {
     fn to_style_str(&self, class_name: Option<&str>) -> String {
         let mut s = String::new();
-
         let mut ctx = StyleContext::new(class_name);
 
         self.write_style(&mut s, &mut ctx);

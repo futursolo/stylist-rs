@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+/// A context to faciliate [`ToStyleStr`](super::ToStyleStr).
 #[derive(Debug)]
 pub struct StyleContext<'a> {
     pub class_name: Option<&'a str>,
@@ -13,7 +14,7 @@ pub struct StyleContext<'a> {
 }
 
 impl<'a> StyleContext<'a> {
-    pub fn new(class_name: Option<&'a str>) -> Self {
+    pub(crate) fn new(class_name: Option<&'a str>) -> Self {
         Self {
             parent_ctx: None,
             class_name,
@@ -24,12 +25,12 @@ impl<'a> StyleContext<'a> {
         }
     }
 
-    pub fn is_open(&self) -> bool {
+    fn is_open(&self) -> bool {
         self.is_open.load(Ordering::Relaxed)
     }
 
     // We close until we can find a parent that has nothing differs from current path.
-    pub fn close_until_common_parent(&self, w: &mut String) {
+    fn close_until_common_parent(&self, w: &mut String) {
         while let Some(m) = self.open_parent() {
             if self.differ_conditions().is_empty() {
                 break;
@@ -38,17 +39,14 @@ impl<'a> StyleContext<'a> {
         }
     }
 
-    pub fn open_parent(&self) -> Option<&StyleContext<'a>> {
-        match self.parent_ctx {
-            Some(m) => {
-                if m.is_open() {
-                    Some(m)
-                } else {
-                    m.open_parent()
-                }
+    fn open_parent(&self) -> Option<&StyleContext<'a>> {
+        self.parent_ctx.and_then(|m| {
+            if m.is_open() {
+                Some(m)
+            } else {
+                m.open_parent()
             }
-            None => None,
-        }
+        })
     }
 
     fn conditions(&self) -> Vec<&str> {
@@ -101,43 +99,36 @@ impl<'a> StyleContext<'a> {
         self.write_padding_impl(w, self.common_conditions().len())
     }
 
-    fn write_finish_impl(&self, w: &mut String, no: usize) {
-        for i in (0..no).rev() {
-            self.write_min_padding(w);
-            self.write_padding_impl(w, i);
-            w.push_str("}\n");
-        }
-    }
-
-    fn write_start_impl(&self, w: &mut String, conds: Vec<&str>) {
-        for (index, cond) in conds.iter().enumerate() {
-            self.write_min_padding(w);
-            self.write_padding_impl(w, index);
-            w.push_str(cond);
-            w.push_str(" {\n");
-        }
-    }
-
-    pub fn finish(&self, w: &mut String) {
+    pub(crate) fn finish(&self, w: &mut String) {
         if self.is_open() {
-            self.write_finish_impl(w, self.unique_conditions().len());
+            for i in (0..self.unique_conditions().len()).rev() {
+                self.write_min_padding(w);
+                self.write_padding_impl(w, i);
+                w.push_str("}\n");
+            }
         }
         self.is_open.store(false, Ordering::Relaxed);
     }
 
-    pub fn start(&self, w: &mut String) {
+    pub(crate) fn start(&self, w: &mut String) {
         if !self.is_open() {
             self.close_until_common_parent(w);
-            self.write_start_impl(w, self.unique_conditions());
+
+            for (index, cond) in self.unique_conditions().iter().enumerate() {
+                self.write_min_padding(w);
+                self.write_padding_impl(w, index);
+                w.push_str(cond);
+                w.push_str(" {\n");
+            }
         }
         self.is_open.store(true, Ordering::Relaxed);
     }
 
-    pub fn write_padding(&self, w: &mut String) {
+    pub(crate) fn write_padding(&self, w: &mut String) {
         self.write_padding_impl(w, self.conditions().len());
     }
 
-    pub fn with_block_condition<S>(&'a self, cond: Option<S>) -> Self
+    pub(crate) fn with_block_condition<S>(&'a self, cond: Option<S>) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -163,7 +154,7 @@ impl<'a> StyleContext<'a> {
         }
     }
 
-    pub fn with_rule_condition<S: Into<Cow<'a, str>>>(&'a self, cond: S) -> Self {
+    pub(crate) fn with_rule_condition<S: Into<Cow<'a, str>>>(&'a self, cond: S) -> Self {
         let mut rules = self.rules.clone();
         rules.push(cond.into());
 
