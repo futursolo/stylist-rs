@@ -1,21 +1,18 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
+use std::fmt;
 
-use crate::{
-    ast::{
-        Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StyleAttribute,
-    },
-    Error, Result,
+use crate::ast::{
+    Block, Rule, RuleContent, ScopeContent, Selector, Sheet, StringFragment, StyleAttribute,
 };
-use nom::{
-    branch::alt,
-    bytes::complete::{is_not, tag, take_while1},
-    character::complete::{alpha1, alphanumeric1, anychar, char, none_of},
-    combinator::{map, map_res, not, opt, recognize},
-    error::{context, convert_error, ErrorKind, ParseError, VerboseError},
-    multi::{many0, many1, separated_list0},
-    sequence::{delimited, pair, preceded, separated_pair, terminated},
-    IResult,
-};
+use crate::{Error, Result};
+use nom::branch::alt;
+use nom::bytes::complete::{is_not, tag, take_while1};
+use nom::character::complete::{alpha1, alphanumeric1, anychar, char, none_of};
+use nom::combinator::{map, map_res, not, opt, recognize};
+use nom::error::{context, convert_error, ErrorKind, ParseError, VerboseError};
+use nom::multi::{many0, many1, separated_list0};
+use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
+use nom::IResult;
 
 #[cfg(test)]
 use log::trace;
@@ -32,14 +29,30 @@ where
     O: fmt::Debug,
     F: fmt::Debug + nom::error::ContextError<I>,
 {
+    #[cfg(test)]
+    thread_local! {
+        static NESTING_LEVEL: std::cell::RefCell<isize> = std::cell::RefCell::new(0);
+    }
+
     move |i| {
         #[cfg(test)]
-        trace!("> {}: {}", ctx, i);
+        let nesting_lvl = NESTING_LEVEL.with(|lvl| {
+            let mut l = lvl.borrow_mut();
+            let r = *l;
+            *l += 1;
+            r
+        });
+        #[cfg(test)]
+        trace!("> {} {}: {}", nesting_lvl, ctx, i);
 
         let result = context(ctx, |i| p.parse(i))(i);
 
         #[cfg(test)]
-        trace!("< {}: {:#?}", ctx, result);
+        trace!("< {} {}: {:#?}", nesting_lvl, ctx, result);
+        #[cfg(test)]
+        NESTING_LEVEL.with(|lvl| {
+            *lvl.borrow_mut() -= 1;
+        });
 
         result
     }
