@@ -54,11 +54,8 @@ impl Tokenize<InputTokens> for Ident {
         while let Some(m) = input.pop_front() {
             // Accepts only - and ident.
             let valid = match &m {
-                RTokenTree::Ident(_) => match tokens.last() {
-                    // You cannot have 2 consecutive idents without whitespaces
-                    Some(RTokenTree::Ident(_)) => false,
-                    _ => true,
-                },
+                // You cannot have 2 consecutive idents without whitespaces
+                RTokenTree::Ident(_) => !matches!(tokens.last(), Some(RTokenTree::Ident(_))),
                 RTokenTree::Punct(c) => c.as_char() == '-',
                 _ => false,
             };

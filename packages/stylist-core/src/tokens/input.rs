@@ -60,7 +60,7 @@ impl InputStr {
             location,
             Self {
                 inner: self.inner.substr(mid..),
-                token: self.token.clone(),
+                token: self.token,
             },
         )
     }
