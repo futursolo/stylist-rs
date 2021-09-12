@@ -14,7 +14,7 @@ pub struct StyleContext<'a> {
 }
 
 impl<'a> StyleContext<'a> {
-    pub(crate) fn new(class_name: Option<&'a str>) -> Self {
+    pub fn new(class_name: Option<&'a str>) -> Self {
         Self {
             parent_ctx: None,
             class_name,
@@ -27,6 +27,10 @@ impl<'a> StyleContext<'a> {
 
     fn is_open(&self) -> bool {
         self.is_open.load(Ordering::Relaxed)
+    }
+
+    fn set_open(&self, value: bool) {
+        self.is_open.store(value, Ordering::Relaxed);
     }
 
     // We close until we can find a parent that has nothing differs from current path.
@@ -99,7 +103,7 @@ impl<'a> StyleContext<'a> {
         self.write_padding_impl(w, self.common_conditions().len())
     }
 
-    pub(crate) fn finish(&self, w: &mut String) {
+    pub fn finish(&self, w: &mut String) {
         if self.is_open() {
             for i in (0..self.unique_conditions().len()).rev() {
                 self.write_min_padding(w);
@@ -107,10 +111,10 @@ impl<'a> StyleContext<'a> {
                 w.push_str("}\n");
             }
         }
-        self.is_open.store(false, Ordering::Relaxed);
+        self.set_open(false);
     }
 
-    pub(crate) fn start(&self, w: &mut String) {
+    pub fn start(&self, w: &mut String) {
         if !self.is_open() {
             self.close_until_common_parent(w);
 
@@ -121,14 +125,14 @@ impl<'a> StyleContext<'a> {
                 w.push_str(" {\n");
             }
         }
-        self.is_open.store(true, Ordering::Relaxed);
+        self.set_open(true);
     }
 
-    pub(crate) fn write_padding(&self, w: &mut String) {
+    pub fn write_padding(&self, w: &mut String) {
         self.write_padding_impl(w, self.conditions().len());
     }
 
-    pub(crate) fn with_block_condition<S>(&'a self, cond: Option<S>) -> Self
+    pub fn with_block_condition<S>(&'a self, cond: Option<S>) -> Self
     where
         S: Into<Cow<'a, str>>,
     {
@@ -154,7 +158,7 @@ impl<'a> StyleContext<'a> {
         }
     }
 
-    pub(crate) fn with_rule_condition<S: Into<Cow<'a, str>>>(&'a self, cond: S) -> Self {
+    pub fn with_rule_condition<S: Into<Cow<'a, str>>>(&'a self, cond: S) -> Self {
         let mut rules = self.rules.clone();
         rules.push(cond.into());
 

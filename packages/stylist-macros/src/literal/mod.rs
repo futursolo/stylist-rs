@@ -15,7 +15,7 @@ mod to_output_with_args;
 use argument::Argument;
 use to_output_with_args::ToOutputWithArgs;
 
-use crate::output::{ContextRecorder, Reify};
+use crate::output::{Reify, ReifyContext};
 
 pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
     let mut tokens = input.into_iter();
@@ -129,6 +129,6 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
         }
     }
 
-    let mut ctx = ContextRecorder::new();
+    let mut ctx = ReifyContext::new();
     output.into_token_stream(&mut ctx)
 }

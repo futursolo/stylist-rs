@@ -1,4 +1,4 @@
-use super::{ContextRecorder, IntoCowVecTokens, OutputRuleBlockContent, OutputSelector, Reify};
+use super::{IntoCowVecTokens, OutputRuleBlockContent, OutputSelector, Reify, ReifyContext};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -9,7 +9,7 @@ pub struct OutputBlock {
 }
 
 impl Reify for OutputBlock {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         let condition = self.condition.into_cow_vec_tokens(ctx);
         let content = self.content.into_cow_vec_tokens(ctx);
 
