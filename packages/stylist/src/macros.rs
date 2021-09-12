@@ -84,6 +84,20 @@
 //! string interpolation as in `${"4em"}`. Similarly, some color hash-tokens like `#44444e` as misinterpreted,
 //! use the same workaround here: `${"#44444e"}`.
 //!
+//! The stable Rust tokenizer also currently offers no way to inspect whitespace between tokens, as tracked in
+//! [the Span inspection API issue](https://github.com/rust-lang/rust/issues/54725). This means that, e.g. the two
+//! selectors `.class-a.class-b` and `.class-a .class-b` can not be differentiated. **The macro errs on side of the
+//! former input without any spaces.** If you meant to write the latter, use `.class-a *.class-b`.
+//!
+//! To be more specific, a space is inserted between two tokens `L R` iff (regardless of the space being present in the macro input):
+//! - `L` is either a closing bracket `)}]`, an identifier `red`, a literal string `"\e600"` or number `3px`, or the '*' character.
+//! - `R` is either an identifier, a literal string or number, the '*' or '#' character.
+//! Spacing around interpolation is ignored regardless.
+//!
+//! Be aware that the above is subject to change once the Span API is stabilized. To avoid future rewriting, use spacing
+//! in your source code that follows the same rules. Refer to the associated [bug report](https://github.com/futursolo/stylist-rs/issues/41)
+//! to discuss this limitation and offer additional suggestions
+//!
 //! ## Note
 //!
 //! This syntax provides more precise error locations and advanced diagnostics information.
