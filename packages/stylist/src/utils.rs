@@ -1,5 +1,5 @@
 #[cfg(feature = "random")]
-pub fn get_rand_str() -> String {
+pub(crate) fn get_rand_str() -> String {
     use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
     let mut rng = thread_rng();
@@ -12,7 +12,7 @@ pub fn get_rand_str() -> String {
 }
 
 #[cfg(any(test, not(feature = "random")))]
-pub fn get_next_style_id() -> String {
+pub(crate) fn get_next_style_id() -> String {
     use once_cell::sync::Lazy;
     use std::sync::atomic::{AtomicU64, Ordering};
 

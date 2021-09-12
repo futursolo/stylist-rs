@@ -11,7 +11,7 @@ use super::{
     fragment_spacing, CssScope, IntoOutputContext,
 };
 use crate::{
-    output::{OutputFragment, OutputRule, OutputRuleBlock},
+    output::{OutputFragment, OutputRule},
     spacing_iterator::SpacedIterator,
 };
 
@@ -103,10 +103,10 @@ impl CssAtRule {
         }
     }
 
-    pub fn into_rule_block_output(mut self, ctx: &mut IntoOutputContext) -> OutputRuleBlock {
+    pub fn into_rule_block_output(mut self, ctx: &mut IntoOutputContext) -> OutputRule {
         ctx.extend_errors(self.errors.drain(0..));
 
-        OutputRuleBlock {
+        OutputRule {
             condition: self.condition_output(),
             content: match self.contents {
                 CssAtRuleContent::Scope(m) => m.into_rule_block_output(ctx),

@@ -1,27 +1,6 @@
 use std::borrow::Cow;
 
-use super::{RuleBlock, Selector, StyleAttribute, StyleContext, ToStyleStr};
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum BlockContent {
-    StyleAttr(StyleAttribute),
-    RuleBlock(RuleBlock),
-}
-
-impl ToStyleStr for BlockContent {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
-        match self {
-            Self::StyleAttr(ref m) => m.write_style(w, ctx),
-            Self::RuleBlock(ref m) => m.write_style(w, ctx),
-        }
-    }
-}
-
-impl From<StyleAttribute> for BlockContent {
-    fn from(s: StyleAttribute) -> Self {
-        BlockContent::StyleAttr(s)
-    }
-}
+use super::{RuleBlockContent, Selector, StyleContext, ToStyleStr};
 
 /// A block is a set of css properties that apply to elements that
 /// match the condition. The CSS standard calls these "Qualified rules".
@@ -39,7 +18,7 @@ pub struct Block {
     /// If the value is set as [`&[]`], it signals to substitute with the classname generated for the
     /// [`Sheet`](super::Sheet) in which this is contained.
     pub condition: Cow<'static, [Selector]>,
-    pub content: Cow<'static, [BlockContent]>,
+    pub content: Cow<'static, [RuleBlockContent]>,
 }
 
 impl Block {

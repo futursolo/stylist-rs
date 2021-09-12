@@ -1,11 +1,11 @@
-use super::{ContextRecorder, IntoCowVecTokens, OutputBlockContent, OutputSelector, Reify};
+use super::{ContextRecorder, IntoCowVecTokens, OutputRuleBlockContent, OutputSelector, Reify};
 use proc_macro2::TokenStream;
 use quote::quote;
 
 #[derive(Debug)]
 pub struct OutputBlock {
     pub condition: Vec<OutputSelector>,
-    pub content: Vec<OutputBlockContent>,
+    pub content: Vec<OutputRuleBlockContent>,
 }
 
 impl Reify for OutputBlock {

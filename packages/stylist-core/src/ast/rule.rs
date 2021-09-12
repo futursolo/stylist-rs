@@ -1,36 +1,6 @@
 use std::borrow::Cow;
 
-use super::{Block, RuleBlock, ScopeContent, StringFragment, StyleContext, ToStyleStr};
-
-/// Everything that can be inside a rule.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum RuleContent {
-    /// A block
-    Block(Block),
-    /// A nested rule
-    Rule(Box<Rule>),
-    /// A RuleBlock
-    RuleBlock(RuleBlock),
-}
-
-impl From<ScopeContent> for RuleContent {
-    fn from(scope: ScopeContent) -> Self {
-        match scope {
-            ScopeContent::Block(b) => RuleContent::Block(b),
-            ScopeContent::Rule(r) => RuleContent::Rule(r.into()),
-        }
-    }
-}
-
-impl ToStyleStr for RuleContent {
-    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
-        match self {
-            RuleContent::Block(ref m) => m.write_style(w, ctx),
-            RuleContent::Rule(ref m) => m.write_style(w, ctx),
-            RuleContent::RuleBlock(ref m) => m.write_style(w, ctx),
-        }
-    }
-}
+use super::{RuleBlockContent, StringFragment, StyleContext, ToStyleStr};
 
 /// An At-Rule can contain both other blocks and in some cases more At-Rules.
 ///
@@ -50,7 +20,7 @@ pub struct Rule {
     pub condition: Cow<'static, [StringFragment]>,
     /// Note that not all At-Rules allow arbitrary other At-Rules to appear
     /// inside them, or arbitrary blocks. No safeguards at this point!
-    pub content: Cow<'static, [RuleContent]>,
+    pub content: Cow<'static, [RuleBlockContent]>,
 }
 
 impl ToStyleStr for Rule {

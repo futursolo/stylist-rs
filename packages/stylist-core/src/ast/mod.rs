@@ -3,7 +3,7 @@
 mod block;
 mod context;
 mod rule;
-mod rule_block;
+mod rule_block_content;
 mod scope_content;
 mod selector;
 mod sheet;
@@ -13,9 +13,9 @@ mod to_style_str;
 
 pub use context::StyleContext;
 
-pub use block::{Block, BlockContent};
-pub use rule::{Rule, RuleContent};
-pub use rule_block::{RuleBlock, RuleBlockContent};
+pub use block::Block;
+pub use rule::Rule;
+pub use rule_block_content::RuleBlockContent;
 pub use scope_content::ScopeContent;
 pub use selector::Selector;
 pub use sheet::Sheet;
@@ -54,22 +54,22 @@ mod tests {
             ScopeContent::Rule(Rule {
                 condition: vec!["@keyframes move".into()].into(),
                 content: vec![
-                    RuleContent::RuleBlock(RuleBlock {
+                    RuleBlockContent::Rule(Box::new(Rule {
                         condition: vec!["from".into()].into(),
                         content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
                             key: "width".into(),
                             value: vec!["100px".into()].into(),
                         })]
                         .into(),
-                    }),
-                    RuleContent::RuleBlock(RuleBlock {
+                    })),
+                    RuleBlockContent::Rule(Box::new(Rule {
                         condition: vec!["to".into()].into(),
                         content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
                             key: "width".into(),
                             value: vec!["200px".into()].into(),
                         })]
                         .into(),
-                    }),
+                    })),
                 ]
                 .into(),
             }),
@@ -101,7 +101,7 @@ mod tests {
         let test_block = Sheet::from(vec![ScopeContent::Rule(Rule {
             condition: vec!["@media only screen and (min-width: 1000px)".into()].into(),
             content: vec![
-                RuleContent::Block(Block {
+                RuleBlockContent::Block(Box::new(Block {
                     condition: Cow::Borrowed(&[]),
                     content: vec![StyleAttribute {
                         key: "width".into(),
@@ -109,8 +109,8 @@ mod tests {
                     }
                     .into()]
                     .into(),
-                }),
-                RuleContent::Block(Block {
+                })),
+                RuleBlockContent::Block(Box::new(Block {
                     condition: vec![vec![".inner".into()].into()].into(),
                     content: vec![StyleAttribute {
                         key: "background-color".into(),
@@ -118,27 +118,27 @@ mod tests {
                     }
                     .into()]
                     .into(),
-                }),
-                RuleContent::Rule(
+                })),
+                RuleBlockContent::Rule(
                     Rule {
                         condition: vec!["@keyframes move".into()].into(),
                         content: vec![
-                            RuleContent::RuleBlock(RuleBlock {
+                            RuleBlockContent::Rule(Box::new(Rule {
                                 condition: vec!["from".into()].into(),
                                 content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
                                     key: "width".into(),
                                     value: vec!["100px".into()].into(),
                                 })]
                                 .into(),
-                            }),
-                            RuleContent::RuleBlock(RuleBlock {
+                            })),
+                            RuleBlockContent::Rule(Box::new(Rule {
                                 condition: vec!["to".into()].into(),
                                 content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
                                     key: "width".into(),
                                     value: vec!["200px".into()].into(),
                                 })]
                                 .into(),
-                            }),
+                            })),
                         ]
                         .into(),
                     }

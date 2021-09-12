@@ -1,4 +1,4 @@
-use crate::output::{OutputBlock, OutputBlockContent};
+use crate::output::{OutputBlock, OutputRuleBlockContent};
 use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 
 use super::{CssAttribute, CssBlockQualifier, CssScope, IntoOutputContext};
@@ -20,7 +20,7 @@ impl Parse for CssQualifiedRule {
 impl CssQualifiedRule {
     pub fn into_output(self, ctx: &mut IntoOutputContext) -> OutputBlock {
         let condition = self.qualifier.into_output(ctx);
-        let content = self.scope.into_block_output(ctx);
+        let content = self.scope.into_rule_block_output(ctx);
 
         OutputBlock { condition, content }
     }
@@ -33,7 +33,7 @@ impl CssQualifiedRule {
         let mut output_attrs = Vec::new();
 
         for attr in attrs {
-            output_attrs.push(OutputBlockContent::StyleAttr(attr.into_output(ctx)))
+            output_attrs.push(OutputRuleBlockContent::StyleAttr(attr.into_output(ctx)))
         }
 
         OutputBlock {

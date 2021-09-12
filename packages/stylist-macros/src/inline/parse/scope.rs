@@ -4,10 +4,8 @@ use syn::{
     token,
 };
 
-use super::{CssScopeContent, IntoOutputContext};
-use crate::output::{
-    OutputAttribute, OutputBlock, OutputBlockContent, OutputRuleBlockContent, OutputRuleContent,
-};
+use super::{CssAttribute, CssQualifiedRule, CssScopeContent, IntoOutputContext};
+use crate::output::OutputRuleBlockContent;
 
 #[derive(Debug)]
 pub struct CssScope {
@@ -25,38 +23,37 @@ impl Parse for CssScope {
 }
 
 impl CssScope {
-    pub fn into_rule_output(self, ctx: &mut IntoOutputContext) -> Vec<OutputRuleContent> {
+    pub fn into_rule_output(self, ctx: &mut IntoOutputContext) -> Vec<OutputRuleBlockContent> {
         let mut attrs = Vec::new();
         let mut contents = Vec::new();
 
-        let collect_attrs = |attrs: &mut Vec<OutputAttribute>,
-                             contents: &mut Vec<OutputRuleContent>| {
+        let collect_attrs = |attrs: &mut Vec<CssAttribute>,
+                             contents: &mut Vec<OutputRuleBlockContent>,
+                             ctx: &mut IntoOutputContext| {
             if !attrs.is_empty() {
-                contents.push(OutputRuleContent::Block(OutputBlock {
-                    condition: Vec::new(),
-                    content: attrs
-                        .drain(0..)
-                        .map(OutputBlockContent::StyleAttr)
-                        .collect(),
-                }));
+                contents.push(OutputRuleBlockContent::Block(Box::new(
+                    CssQualifiedRule::into_dangling_output(attrs.drain(0..).collect(), ctx),
+                )));
             }
         };
 
         for scope in self.contents {
             match scope {
-                CssScopeContent::Attribute(m) => attrs.push(m.into_output(ctx)),
+                CssScopeContent::Attribute(m) => attrs.push(m),
                 CssScopeContent::AtRule(m) => {
-                    collect_attrs(&mut attrs, &mut contents);
-                    contents.push(OutputRuleContent::Rule(m.into_rule_output(ctx)));
+                    collect_attrs(&mut attrs, &mut contents, ctx);
+                    contents.push(OutputRuleBlockContent::Rule(Box::new(
+                        m.into_rule_output(ctx),
+                    )));
                 }
                 CssScopeContent::Nested(m) => {
-                    collect_attrs(&mut attrs, &mut contents);
-                    contents.push(OutputRuleContent::Block(m.into_output(ctx)));
+                    collect_attrs(&mut attrs, &mut contents, ctx);
+                    contents.push(OutputRuleBlockContent::Block(Box::new(m.into_output(ctx))));
                 }
             }
         }
 
-        collect_attrs(&mut attrs, &mut contents);
+        collect_attrs(&mut attrs, &mut contents, ctx);
 
         contents
     }
@@ -74,34 +71,11 @@ impl CssScope {
                 }
 
                 CssScopeContent::AtRule(m) => {
-                    contents.push(OutputRuleBlockContent::RuleBlock(Box::new(
+                    contents.push(OutputRuleBlockContent::Rule(Box::new(
                         m.into_rule_block_output(ctx),
                     )));
                 }
 
-                CssScopeContent::Nested(m) => {
-                    ctx.push_error(ParseError::new_spanned(
-                        m.qualifier,
-                        "Can not nest qualified blocks (yet)",
-                    ));
-                }
-            }
-        }
-
-        contents
-    }
-
-    pub fn into_block_output(self, ctx: &mut IntoOutputContext) -> Vec<OutputBlockContent> {
-        let mut contents = Vec::new();
-
-        for scope in self.contents {
-            match scope {
-                CssScopeContent::Attribute(m) => {
-                    contents.push(OutputBlockContent::StyleAttr(m.into_output(ctx)))
-                }
-                CssScopeContent::AtRule(m) => {
-                    contents.push(OutputBlockContent::RuleBlock(m.into_rule_block_output(ctx)))
-                }
                 CssScopeContent::Nested(m) => {
                     ctx.push_error(ParseError::new_spanned(
                         m.qualifier,

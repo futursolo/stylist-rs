@@ -5,8 +5,8 @@ use proc_macro_error::abort_call_site;
 use stylist_core::ast::*;
 
 use crate::output::{
-    OutputAttribute, OutputBlock, OutputBlockContent, OutputFragment, OutputRule, OutputRuleBlock,
-    OutputRuleBlockContent, OutputRuleContent, OutputScopeContent, OutputSelector, OutputSheet,
+    OutputAttribute, OutputBlock, OutputFragment, OutputRule, OutputRuleBlockContent,
+    OutputScopeContent, OutputSelector, OutputSheet,
 };
 
 use super::{argument::Argument, fstring};
@@ -38,33 +38,6 @@ impl ToOutputWithArgs for Selector {
     }
 }
 
-impl ToOutputWithArgs for RuleBlock {
-    type Output = OutputRuleBlock;
-
-    fn to_output_with_args(
-        &self,
-        args: &HashMap<String, Argument>,
-        args_used: &mut HashSet<String>,
-    ) -> Self::Output {
-        let mut condition = Vec::new();
-
-        for i in self.condition.iter() {
-            condition.extend(i.to_output_with_args(args, args_used));
-        }
-
-        let mut contents = Vec::new();
-
-        for i in self.content.iter() {
-            contents.push(i.to_output_with_args(args, args_used));
-        }
-
-        OutputRuleBlock {
-            condition,
-            content: contents,
-        }
-    }
-}
-
 impl ToOutputWithArgs for RuleBlockContent {
     type Output = OutputRuleBlockContent;
 
@@ -74,34 +47,17 @@ impl ToOutputWithArgs for RuleBlockContent {
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
         match self {
-            Self::RuleBlock(ref m) => {
+            Self::Rule(ref m) => {
                 let block = m.to_output_with_args(args, args_used);
-                OutputRuleBlockContent::RuleBlock(Box::new(block))
+                OutputRuleBlockContent::Rule(Box::new(block))
+            }
+            Self::Block(ref m) => {
+                let block = m.to_output_with_args(args, args_used);
+                OutputRuleBlockContent::Block(Box::new(block))
             }
             Self::StyleAttr(ref m) => {
                 let rule = m.to_output_with_args(args, args_used);
                 OutputRuleBlockContent::StyleAttr(rule)
-            }
-        }
-    }
-}
-
-impl ToOutputWithArgs for BlockContent {
-    type Output = OutputBlockContent;
-
-    fn to_output_with_args(
-        &self,
-        args: &HashMap<String, Argument>,
-        args_used: &mut HashSet<String>,
-    ) -> Self::Output {
-        match self {
-            Self::RuleBlock(ref m) => {
-                let block = m.to_output_with_args(args, args_used);
-                OutputBlockContent::RuleBlock(block)
-            }
-            Self::StyleAttr(ref m) => {
-                let rule = m.to_output_with_args(args, args_used);
-                OutputBlockContent::StyleAttr(rule)
             }
         }
     }
@@ -150,31 +106,6 @@ impl ToOutputWithArgs for Block {
         OutputBlock {
             condition: selector_list,
             content,
-        }
-    }
-}
-
-impl ToOutputWithArgs for RuleContent {
-    type Output = OutputRuleContent;
-
-    fn to_output_with_args(
-        &self,
-        args: &HashMap<String, Argument>,
-        args_used: &mut HashSet<String>,
-    ) -> Self::Output {
-        match self {
-            Self::Block(ref m) => {
-                let block = m.to_output_with_args(args, args_used);
-                OutputRuleContent::Block(block)
-            }
-            Self::RuleBlock(ref m) => {
-                let rule_block = m.to_output_with_args(args, args_used);
-                OutputRuleContent::RuleBlock(rule_block)
-            }
-            Self::Rule(ref m) => {
-                let rule = m.to_output_with_args(args, args_used);
-                OutputRuleContent::Rule(rule)
-            } // Self::String(ref m) => OutputRuleContent::String(m.as_ref().to_string()),
         }
     }
 }

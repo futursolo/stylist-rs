@@ -70,28 +70,28 @@ fn test_sheet_interpolation() {
         ScopeContent::Rule(Rule {
             condition: vec!["@keyframes myframe".into()].into(),
             content: vec![
-                RuleContent::RuleBlock(RuleBlock {
+                RuleBlockContent::Rule(Box::new(Rule {
                     condition: vec!["from".into()].into(),
                     content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
                         key: "width".into(),
                         value: vec!["100px".into()].into(),
                     })]
                     .into(),
-                }),
-                RuleContent::RuleBlock(RuleBlock {
+                })),
+                RuleBlockContent::Rule(Box::new(Rule {
                     condition: vec!["to".into()].into(),
                     content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
                         key: "width".into(),
                         value: vec!["200px".into()].into(),
                     })]
                     .into(),
-                }),
+                })),
             ]
             .into(),
         }),
         ScopeContent::Rule(Rule {
             condition: vec!["@media screen and ".into(), "(max-width: 500px)".into()].into(),
-            content: vec![RuleContent::Block(Block {
+            content: vec![RuleBlockContent::Block(Box::new(Block {
                 condition: vec![].into(),
                 content: vec![StyleAttribute {
                     key: "background-color".into(),
@@ -99,7 +99,7 @@ fn test_sheet_interpolation() {
                 }
                 .into()]
                 .into(),
-            })]
+            }))]
             .into(),
         }),
     ]);

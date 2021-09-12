@@ -1,5 +1,6 @@
 use super::{
-    fragment_coalesce, ContextRecorder, IntoCowVecTokens, OutputFragment, OutputRuleContent, Reify,
+    fragment_coalesce, ContextRecorder, IntoCowVecTokens, OutputFragment, OutputRuleBlockContent,
+    Reify,
 };
 use itertools::Itertools;
 use proc_macro2::TokenStream;
@@ -8,7 +9,7 @@ use quote::quote;
 #[derive(Debug)]
 pub struct OutputRule {
     pub condition: Vec<OutputFragment>,
-    pub content: Vec<OutputRuleContent>,
+    pub content: Vec<OutputRuleBlockContent>,
 }
 
 impl Reify for OutputRule {
