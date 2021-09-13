@@ -22,7 +22,7 @@ impl Reify for OutputSheet {
 
         if ctx.is_static() {
             quote! { {
-                use ::stylist::vendor::once_cell::sync::Lazy;
+                use ::stylist::macros::vendor::once_cell::sync::Lazy;
 
                 static SHEET_REF: Lazy<::stylist::ast::Sheet> = Lazy::new(
                     || #quoted_sheet

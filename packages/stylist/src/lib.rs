@@ -194,13 +194,65 @@ pub mod yew;
 #[cfg(feature = "macros")]
 pub mod macros;
 
+/// A procedural macro that parses a string literal into a [`Sheet`].
+///
+/// This macro supports string interpolation, please see documentation of [`css!`] macro for
+/// usage.
+///
+/// [`Sheet`]: crate::ast::Sheet
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
-#[doc(no_inline)]
-pub use macros::{css, global_style, style};
+pub use stylist_macros::sheet;
+
+/// A procedural macro that parses a string literal into a [`Style`].
+///
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
+///
+/// # Example
+///
+/// ```
+/// use stylist::style;
+///
+/// // Returns a Style instance.
+/// let style = style!("color: red;");
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::style;
+
+/// A procedural macro that parses a string literal into a [`GlobalStyle`].
+///
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
+///
+/// # Example
+///
+/// ```
+/// use stylist::global_style;
+///
+/// // Returns a GlobalStyle instance.
+/// let style = global_style!("color: red;");
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::global_style;
+
+/// A procedural macro that parses a string literal into a [`StyleSource`].
+///
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
+///
+/// # Example
+///
+/// ```
+/// use stylist::css;
+/// use stylist::yew::Global;
+/// use yew::prelude::*;
+///
+/// let rendered = html! {<div class=css!("color: red;") />};
+/// let rendered_global = html! {<Global css=css!("color: red;") />};
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::css;
 
 #[doc(inline)]
 pub use stylist_core::{Error, Result};
-
-#[doc(hidden)]
-pub mod vendor;

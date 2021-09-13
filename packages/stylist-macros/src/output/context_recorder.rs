@@ -37,9 +37,9 @@ enum ExpressionKind {
 
 impl ExpressionKind {
     // Compute the jointly allowed usage of two expression that are used together.
-    pub fn joint_kind(l: ExpressionKind, r: ExpressionKind) -> ExpressionKind {
+    pub fn join(&self, rhs: Self) -> Self {
         use ExpressionKind::*;
-        match (l, r) {
+        match (self, rhs) {
             (Dynamic, _) | (_, Dynamic) => Dynamic,
             (Static, _) | (_, Static) => Static,
             _ => Const,
@@ -66,16 +66,16 @@ impl ContextRecorder {
     }
 
     pub fn uses_nested(&mut self, other: &Self) {
-        self.usage = ExpressionKind::joint_kind(self.usage, other.usage);
+        self.usage = self.usage.join(other.usage);
     }
 
     // Record the usage of a dynamic expression
     pub fn uses_dynamic_argument(&mut self) {
-        self.usage = ExpressionKind::joint_kind(self.usage, ExpressionKind::Dynamic);
+        self.usage = self.usage.join(ExpressionKind::Dynamic);
     }
     // Record the usage of an expression that is not allowed in const context
     pub fn uses_static(&mut self) {
-        self.usage = ExpressionKind::joint_kind(self.usage, ExpressionKind::Static);
+        self.usage = self.usage.join(ExpressionKind::Static);
     }
 
     pub fn is_static(&self) -> bool {

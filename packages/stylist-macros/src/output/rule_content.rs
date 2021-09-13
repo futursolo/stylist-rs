@@ -20,7 +20,7 @@ impl Reify for OutputRuleContent {
                 let bowed_block = if inner.is_const() {
                     let const_ident = Ident::new("block", Span::mixed_site());
                     quote! {
-                        ::stylist::macros::Bow::Borrowed({
+                        ::stylist::ast::Bow::Borrowed({
                             const #const_ident: ::stylist::ast::Rule = #block_tokens;
                             &#const_ident
                         })
@@ -29,7 +29,7 @@ impl Reify for OutputRuleContent {
                     ctx.uses_static(); // Box::new
                     ctx.uses_nested(&inner); // #block_tokens
                     quote! {
-                        ::stylist::macros::Bow::Boxed(
+                        ::stylist::ast::Bow::Boxed(
                             ::std::boxed::Box::new(#block_tokens)
                         )
                     }

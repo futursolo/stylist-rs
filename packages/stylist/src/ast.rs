@@ -23,11 +23,5 @@
 #[doc(inline)]
 pub use stylist_core::ast::*;
 
-/// A procedural macro that parses a string literal into a [`Sheet`].
-///
-/// This macro supports string interpolation, please see documentation of [`css!`](crate::css) macro for
-/// usage.
 #[doc(inline)]
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::sheet;
+pub use stylist_core::bow::Bow;
