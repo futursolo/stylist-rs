@@ -2,7 +2,7 @@ use std::iter::FromIterator;
 
 use arcstr::Substr;
 
-use super::{InputStr, InputTokens, Location, Token, TokenTree, Tokenize};
+use super::{InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize};
 
 #[derive(Debug, Clone)]
 pub struct Ident {
@@ -26,7 +26,7 @@ impl Token for Ident {
 }
 
 impl Tokenize<InputStr> for Ident {
-    fn tokenize(input: InputStr) -> Result<(TokenTree, InputStr), InputStr> {
+    fn tokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
         let valid_first_char =
             |c: char| c.is_ascii_alphabetic() || c == '-' || c == '_' || !c.is_ascii();
         let valid_rest_char =
@@ -41,12 +41,12 @@ impl Tokenize<InputStr> for Ident {
         let len = 1 + chars.take_while(valid_rest_char).count();
         let (inner, location, rest) = input.split_at(len);
 
-        Ok((TokenTree::Ident(Ident { inner, location }), rest))
+        Ok((TokenTree::Ident(Ident { inner, location }).into(), rest))
     }
 }
 
 impl Tokenize<InputTokens> for Ident {
-    fn tokenize(mut input: InputTokens) -> Result<(TokenTree, InputTokens), InputTokens> {
+    fn tokenize(mut input: InputTokens) -> Result<(TokenStream, InputTokens), InputTokens> {
         use super::rtokens::*;
 
         let mut tokens = Vec::new();
@@ -82,7 +82,7 @@ impl Tokenize<InputTokens> for Ident {
                 inner: s.into(),
                 location,
             };
-            Ok((TokenTree::Ident(ident), input))
+            Ok((TokenTree::Ident(ident).into(), input))
         }
     }
 }

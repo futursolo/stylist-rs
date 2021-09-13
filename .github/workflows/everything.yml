@@ -45,31 +45,32 @@ jobs:
         env:
           RUSTFLAGS: "--cfg releasing"
 
-      - name: Setup trunk
-        uses: jetli/trunk-action@v0.1.0
-        with:
-          version: "latest"
+      # Disabled until properly gated.
+      # - name: Setup trunk
+      #   uses: jetli/trunk-action@v0.1.0
+      #   with:
+      #     version: "latest"
 
-      - name: Setup Rust wasm
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          profile: minimal
+      # - name: Setup Rust wasm
+      #   uses: actions-rs/toolchain@v1
+      #   with:
+      #     toolchain: stable
+      #     target: wasm32-unknown-unknown
+      #     profile: minimal
 
-      - name: Run cargo build --all-features --all --target=wasm32-unknown-unknown
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --all-features --all --target=wasm32-unknown-unknown
-        env:
-          RUSTFLAGS: "--cfg releasing"
+      # - name: Run cargo build --all-features --all --target=wasm32-unknown-unknown
+      #   uses: actions-rs/cargo@v1
+      #   with:
+      #     command: build
+      #     args: --all-features --all --target=wasm32-unknown-unknown
+      #   env:
+      #     RUSTFLAGS: "--cfg releasing"
 
-      - name: Install wasm-pack
-        run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+      # - name: Install wasm-pack
+      #   run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
-      - name: Run Browser Tests
-        run: wasm-pack test --headless --chrome --firefox examples/yew-integration
+      # - name: Run Browser Tests
+      #   run: wasm-pack test --headless --chrome --firefox examples/yew-integration
 
   publish:
     name: Publish to crates.io
