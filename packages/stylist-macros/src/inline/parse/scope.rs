@@ -29,9 +29,9 @@ impl CssScope {
         let mut attrs = Vec::new();
         let mut contents = Vec::new();
 
-        let collect_attrs = |attrs: &mut Vec<CssAttribute>,
-                             contents: &mut Vec<OutputRuleBlockContent>,
-                             ctx: &mut IntoOutputContext| {
+        let flush_attrs = |attrs: &mut Vec<CssAttribute>,
+                           contents: &mut Vec<OutputRuleBlockContent>,
+                           ctx: &mut IntoOutputContext| {
             if !attrs.is_empty() {
                 contents.push(OutputRuleBlockContent::Block(Box::new(
                     CssQualifiedRule::into_dangling_output(mem::take(attrs), ctx),
@@ -43,19 +43,19 @@ impl CssScope {
             match scope {
                 CssScopeContent::Attribute(m) => attrs.push(m),
                 CssScopeContent::AtRule(m) => {
-                    collect_attrs(&mut attrs, &mut contents, ctx);
+                    flush_attrs(&mut attrs, &mut contents, ctx);
                     contents.push(OutputRuleBlockContent::Rule(Box::new(
                         m.into_rule_output(ctx),
                     )));
                 }
                 CssScopeContent::Nested(m) => {
-                    collect_attrs(&mut attrs, &mut contents, ctx);
+                    flush_attrs(&mut attrs, &mut contents, ctx);
                     contents.push(OutputRuleBlockContent::Block(Box::new(m.into_output(ctx))));
                 }
             }
         }
 
-        collect_attrs(&mut attrs, &mut contents, ctx);
+        flush_attrs(&mut attrs, &mut contents, ctx);
 
         contents
     }

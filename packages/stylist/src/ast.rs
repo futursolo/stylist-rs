@@ -1,20 +1,20 @@
 //! This module contains the semantic representation of a CSS StyleSheet.
 //!
 //! ```text
-//! struct Sheet
+//! Sheet
 //! └── Vec<enum ScopeContent>
-//!         ├── struct Block
-//!         │   ├── condition: Vec<Selector>
-//!         │   │                  └── fragments: Vec<StringFragment>
-//!         │   └── content: Vec<enum RuleBlockContent>
-//!         │                    ├── StyleAttr (*)
-//!         │                    │   ├── key: String
-//!         │                    │   └── value: Vec<StringFragment>
-//!         │                    ├── Block (*)
-//!         │                    └── Rule (*)
-//!         └── content: struct Rule
-//!                      ├── condition: Vec<StringFragment>
-//!                      └── Vec<enum RuleBlockContent>
+//!     ├── Block
+//!     │   ├── condition: Vec<Selector>
+//!     │   │   └── fragments: Vec<StringFragment>
+//!     │   └── content: Vec<enum RuleBlockContent>
+//!     │       ├── StyleAttr
+//!     │       │   ├── key: String
+//!     │       │   └── value: Vec<StringFragment>
+//!     │       ├── Block (*)
+//!     │       └── Rule (*)
+//!     └── Rule
+//!         ├── condition: Vec<StringFragment>
+//!         └── Vec<enum RuleBlockContent (*)>
 //! ```
 //!
 //! # Note
