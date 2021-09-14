@@ -137,7 +137,7 @@ impl<'a> StyleContext<'a> {
             // Use class name of scope context
             .or_else(|| self.class_name.map(|m| format!(".{}", m).into()))
             // Use html
-            .or_else(|| Some("html".into()));
+            .or_else(|| Some(":root".into()));
 
         Self {
             parent_ctx: Some(self),
