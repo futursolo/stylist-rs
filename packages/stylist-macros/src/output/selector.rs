@@ -16,7 +16,7 @@ impl Reify for OutputSelector {
             .into_iter()
             // optimize successive (string) literals
             .coalesce(fragment_coalesce)
-            .into_cow_vec_tokens(ctx);
+            .into_cow_vec_tokens(quote! {::stylist::ast::StringFragment}, ctx);
         quote! {
             ::stylist::ast::Selector {
                 fragments: #parts,
@@ -39,7 +39,9 @@ impl Reify for OutputQualifier {
             ..
         } = self;
 
-        let selectors = selectors.into_iter().into_cow_vec_tokens(ctx);
+        let selectors = selectors
+            .into_iter()
+            .into_cow_vec_tokens(quote! {::stylist::ast::Selector}, ctx);
         let errors = errors.into_iter().map(|e| e.into_compile_error());
 
         quote! {

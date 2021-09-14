@@ -14,7 +14,8 @@ impl Reify for OutputQualifiedRule {
             attributes,
         } = self;
         let qualifier = qualifier.into_token_stream(ctx);
-        let attributes = attributes.into_cow_vec_tokens(ctx);
+        let attributes =
+            attributes.into_cow_vec_tokens(quote! {::stylist::ast::StyleAttribute}, ctx);
 
         quote! {
             ::stylist::ast::Block {

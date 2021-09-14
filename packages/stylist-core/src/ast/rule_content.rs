@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fmt;
 
 use super::{Block, Rule, ScopeContent, ToStyleStr};
+use crate::bow::Bow;
 use crate::Result;
 
 /// Everything that can be inside a rule.
@@ -10,7 +11,7 @@ pub enum RuleContent {
     /// A block
     Block(Block),
     /// A nested rule
-    Rule(Box<Rule>),
+    Rule(Bow<'static, Rule>),
     /// A raw string literal, i.e. something that wasn't parsed.
     /// This is an escape-hatch and may get removed in the future
     /// for a more meaningful alternative

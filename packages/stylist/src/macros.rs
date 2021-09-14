@@ -1,7 +1,6 @@
-//! Utility macros for writing styles.
+//! This module contains runtime support for the macros and documents their usage.
 //!
-//! This module contains also runtime support for the macros and documents their usage. There are two
-//! syntaxes available: [string literal] and [inline].
+//! There are two syntaxes available: [string literal] and [inline].
 //!
 //! # String Literal
 //!
@@ -136,58 +135,7 @@
 //! [inline]: #inline
 //! [`Display`]: std::fmt::Display
 
-/// A procedural macro that parses a string literal into a [`Style`].
-///
-/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
-///
-/// # Example
-///
-/// ```
-/// use stylist::style;
-///
-/// // Returns a Style instance.
-/// let style = style!("color: red;");
-/// ```
-///
-/// [`Style`]: crate::Style
-/// [`macros`]: self
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-pub use stylist_macros::style;
-
-/// A procedural macro that parses a string literal into a [`GlobalStyle`].
-///
-/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
-///
-/// # Example
-///
-/// ```
-/// use stylist::global_style;
-///
-/// // Returns a GlobalStyle instance.
-/// let style = global_style!("color: red;");
-/// ```
-///
-/// [`GlobalStyle`]: crate::GlobalStyle
-/// [`macros`]: self
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-pub use stylist_macros::global_style;
-
-/// A procedural macro that parses a string literal into a [`StyleSource`].
-///
-/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
-///
-/// # Example
-///
-/// ```
-/// use stylist::css;
-/// use stylist::yew::Global;
-/// use yew::prelude::*;
-///
-/// let rendered = html! {<div class=css!("color: red;") />};
-/// let rendered_global = html! {<Global css=css!("color: red;") />};
-/// ```
-///
-/// [`StyleSource`]: crate::StyleSource
-/// [`macros`]: self
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-pub use stylist_macros::css;
+#[doc(hidden)]
+pub mod vendor {
+    pub use once_cell;
+}

@@ -45,7 +45,7 @@ impl ToOutputWithArgs for StyleAttribute {
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
-        let key = OutputFragment::Str(self.key.as_ref().to_string());
+        let key = self.key.as_ref().to_string();
 
         let mut values = Vec::new();
 
@@ -54,7 +54,7 @@ impl ToOutputWithArgs for StyleAttribute {
         }
 
         OutputAttribute {
-            key,
+            key: key.into(),
             values,
             errors: Vec::new(),
         }
@@ -138,7 +138,7 @@ impl ToOutputWithArgs for StringFragment {
                     };
 
                     args_used.insert(arg.name.clone());
-                    fragments_out.push(arg.into());
+                    fragments_out.push(arg.clone().into());
                 }
             }
         }

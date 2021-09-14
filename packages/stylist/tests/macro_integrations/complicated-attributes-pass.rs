@@ -1,6 +1,6 @@
 fn main() {
     let _ = env_logger::builder().is_test(true).try_init();
-    let sheet = stylist::ast::sheet! {
+    let sheet = stylist::sheet! {
         border: medium dashed green;
         // pseudo class, sibling
         &:checked + label {

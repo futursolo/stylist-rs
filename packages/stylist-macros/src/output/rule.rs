@@ -23,8 +23,8 @@ impl Reify for OutputAtRule {
         let condition = prelude
             .into_iter()
             .coalesce(fragment_coalesce)
-            .into_cow_vec_tokens(ctx);
-        let content = contents.into_cow_vec_tokens(ctx);
+            .into_cow_vec_tokens(quote! {::stylist::ast::StringFragment}, ctx);
+        let content = contents.into_cow_vec_tokens(quote! {::stylist::ast::RuleContent}, ctx);
         let errors = errors.into_iter().map(|e| e.into_compile_error());
 
         quote! {
