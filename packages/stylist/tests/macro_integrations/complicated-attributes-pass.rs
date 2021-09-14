@@ -56,11 +56,11 @@ box-shadow: 3px 3px red,-1rem 0 0.4rem olive;
 .{cls} article span {{
 box-shadow: inset 0 1px 2px rgba(0.32,0,0,15%);
 }}
-.{cls} a[href*="login"], .{cls} a[href^="https://"], .{cls} a[rel~="tag"], .{cls} a[lang|="en"] {{
+.{cls} a[href *="login"], .{cls} a[href^="https://"], .{cls} a[rel~="tag"], .{cls} a[lang|="en"] {{
 background-image: url("images/pdf.png");
 }}
 .{cls} #content::after {{
-content: " (" attr(x)")";
+content: " (" attr(x) ")";
 }}
 "#,
         cls = style.get_class_name()
