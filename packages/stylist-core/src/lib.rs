@@ -38,8 +38,11 @@ mod tests {
                     border: 1px solid black;
 
                     @supports (max-width: 500px) {
+                        max-width: 500px;
+
                         @media screen and (max-width: 500px) {
                             display: flex;
+                            flex-direction: row;
                         }
                     }
                 }
@@ -69,9 +72,15 @@ mod tests {
     border: 1px solid black;
 }
 @supports (max-width: 500px) {
+    .test-style-cls header, .test-style-cls footer {
+        max-width: 500px;
+    }
+}
+@supports (max-width: 500px) {
     @media screen and (max-width: 500px) {
         .test-style-cls header, .test-style-cls footer {
             display: flex;
+            flex-direction: row;
         }
     }
 }

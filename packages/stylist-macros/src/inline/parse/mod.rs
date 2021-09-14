@@ -1,4 +1,5 @@
 use proc_macro2::TokenStream;
+use syn::parse::Error as ParseError;
 
 use crate::output::OutputFragment;
 
@@ -20,7 +21,7 @@ pub use scope_content::CssScopeContent;
 
 #[derive(Debug, Default)]
 pub struct IntoOutputContext {
-    errors: Vec<syn::parse::Error>,
+    errors: Vec<ParseError>,
 }
 
 impl IntoOutputContext {
@@ -30,12 +31,12 @@ impl IntoOutputContext {
 
     pub fn extend_errors<I>(&mut self, errors: I)
     where
-        I: IntoIterator<Item = syn::parse::Error>,
+        I: IntoIterator<Item = ParseError>,
     {
         self.errors.extend(errors);
     }
 
-    pub fn push_error(&mut self, error: syn::parse::Error) {
+    pub fn push_error(&mut self, error: ParseError) {
         self.errors.push(error);
     }
 
