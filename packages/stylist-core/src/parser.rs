@@ -178,7 +178,7 @@ impl Parser {
     fn attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
         traced_context(
             "StyleAttribute",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 separated_pair(
                     // Key
                     Self::style_attr_key,
@@ -208,7 +208,7 @@ impl Parser {
 
         traced_context(
             "StyleAttributes",
-            expect_non_empty(Self::trimmed(terminated(
+            Self::trimmed(expect_non_empty(terminated(
                 separated_list1(tag(";"), Self::attribute),
                 preceded(opt(Self::sp), final_semicolon),
             ))),
@@ -226,7 +226,7 @@ impl Parser {
             terminated(many0(alt((is_not(r#"\""#), escaped_char))), tag("\"")),
         ));
 
-        traced_context("String", expect_non_empty(Self::trimmed(parse_str)))(i)
+        traced_context("String", Self::trimmed(expect_non_empty(parse_str)))(i)
     }
 
     /// Parse a string interpolation.
@@ -235,7 +235,7 @@ impl Parser {
     fn interpolation(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         traced_context(
             "Interpolation",
-            expect_non_empty(Self::trimmed(delimited(
+            Self::trimmed(expect_non_empty(delimited(
                 tag("${"),
                 Self::trimmed(recognize(preceded(
                     alpha1,
@@ -252,7 +252,7 @@ impl Parser {
     fn selector(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
         traced_context(
             "Selector",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 recognize(many1(alt((
                     recognize(preceded(none_of("$,}@{\""), opt(is_not("$,\"{")))),
                     Self::string,
@@ -267,7 +267,7 @@ impl Parser {
     fn condition(i: &str) -> IResult<&str, Vec<Selector>, VerboseError<&str>> {
         traced_context(
             "Condition",
-            expect_non_empty(Self::trimmed(many1(terminated(
+            Self::trimmed(expect_non_empty(many1(terminated(
                 Self::selector,
                 opt(tag(",")),
             )))),
@@ -277,7 +277,7 @@ impl Parser {
     fn block_contents(i: &str) -> IResult<&str, Vec<RuleBlockContent>, VerboseError<&str>> {
         traced_context(
             "BlockContents",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 many0(alt((
                     // Either Style Attributes
                     map(
@@ -298,12 +298,11 @@ impl Parser {
     /// Parse a [`Block`].
     fn block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         traced_context(
-            "StyleBlock",
-            expect_non_empty(Self::trimmed(map(
-                separated_pair(
+            "Block",
+            Self::trimmed(expect_non_empty(map(
+                pair(
                     Self::condition,
-                    tag("{"),
-                    terminated(Self::trimmed(Self::block_contents), tag("}")),
+                    delimited(tag("{"), Self::trimmed(Self::block_contents), tag("}")),
                 ),
                 |p: (Vec<Selector>, Vec<RuleBlockContent>)| {
                     ScopeContent::Block(Block {
@@ -349,7 +348,7 @@ impl Parser {
 
         traced_context(
             "RuleBlock",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 separated_pair(
                     // Collect at Rules.
                     cond,
@@ -370,7 +369,7 @@ impl Parser {
     fn dangling_block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         traced_context(
             "DanglingBlock",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 |i| Self::attributes(i, true),
                 |attr: Vec<StyleAttribute>| {
                     ScopeContent::Block(Block {
@@ -390,7 +389,7 @@ impl Parser {
     fn scope(i: &str) -> IResult<&str, Vec<ScopeContent>, VerboseError<&str>> {
         traced_context(
             "Scope",
-            expect_non_empty(Self::trimmed(Parser::scope_contents)),
+            Self::trimmed(expect_non_empty(Parser::scope_contents)),
         )(i)
     }
 
@@ -405,7 +404,7 @@ impl Parser {
 
         traced_context(
             "AtRuleCondition",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 pair(
                     tags,
                     map(
@@ -458,7 +457,7 @@ impl Parser {
     fn at_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         traced_context(
             "AtRule",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 separated_pair(
                     // Collect at Rules.
                     |i| Self::at_rule_condition(i, (tag("@supports"), tag("@media"))),
@@ -488,7 +487,7 @@ impl Parser {
     fn scope_contents(i: &str) -> IResult<&str, Vec<ScopeContent>, VerboseError<&str>> {
         traced_context(
             "ScopeContents",
-            expect_non_empty(Self::trimmed(many0(alt((
+            Self::trimmed(expect_non_empty(many0(alt((
                 // Either a dangling block
                 Parser::dangling_block,
                 // Or a Block
