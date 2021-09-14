@@ -42,23 +42,20 @@ impl Tokenize<InputTokens> for Punct {
         use super::rtokens::*;
 
         if let Some(m) = input.get(0).cloned() {
-            match m {
-                RTokenTree::Punct(ref p) => {
-                    input.pop_front();
+            if let RTokenTree::Punct(ref p) = m {
+                input.pop_front();
 
-                    let s = p.as_char().to_string();
-                    let location = Location::Span(m.clone().into());
+                let s = p.as_char().to_string();
+                let location = Location::Span(m.clone().into());
 
-                    return Ok((
-                        TokenTree::Punct(Punct {
-                            inner: s.into(),
-                            location,
-                        })
-                        .into(),
-                        input,
-                    ));
-                }
-                _ => (),
+                return Ok((
+                    TokenTree::Punct(Punct {
+                        inner: s.into(),
+                        location,
+                    })
+                    .into(),
+                    input,
+                ));
             }
         }
 

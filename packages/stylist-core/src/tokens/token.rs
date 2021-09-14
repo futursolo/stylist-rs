@@ -14,6 +14,8 @@ pub trait Token {
 
 impl Tokenize<InputStr> for TokenTree {
     fn tokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
-        Ident::tokenize(input).or_else(|i| Spacing::tokenize(i))
+        Ident::tokenize(input)
+            .or_else(Spacing::tokenize)
+            .or_else(Punct::tokenize)
     }
 }
