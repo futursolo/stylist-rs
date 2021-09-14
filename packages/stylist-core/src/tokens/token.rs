@@ -1,10 +1,11 @@
-use super::{Ident, InputStr, Location, Punct, Spacing, TokenStream, Tokenize};
+use super::{Comment, Ident, InputStr, Location, Punct, Spacing, TokenStream, Tokenize};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum TokenTree {
     Ident(Ident),
     Spacing(Spacing),
     Punct(Punct),
+    Comment(Comment),
 }
 
 pub trait Token {
@@ -17,5 +18,6 @@ impl Tokenize<InputStr> for TokenTree {
         Ident::tokenize(input)
             .or_else(Spacing::tokenize)
             .or_else(Punct::tokenize)
+            .or_else(Comment::tokenize)
     }
 }

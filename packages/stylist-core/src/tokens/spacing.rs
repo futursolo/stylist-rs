@@ -1,6 +1,6 @@
 use arcstr::Substr;
 
-use super::{InputStr, Location, Token, TokenStream, TokenTree, Tokenize};
+use super::{InputStr, Location, RTokenize, Token, TokenStream, TokenTree, Tokenize};
 
 #[derive(Debug, Clone)]
 pub struct Spacing {
@@ -31,6 +31,22 @@ impl Tokenize<InputStr> for Spacing {
 
         if len > 0 {
             let (inner, location, rest) = input.split_at(len);
+
+            Ok((TokenTree::Spacing(Spacing { inner, location }).into(), rest))
+        } else {
+            Err(input)
+        }
+    }
+}
+
+impl RTokenize<InputStr> for Spacing {
+    fn rtokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
+        let chars = input.chars().rev();
+        let len = chars.take_while(|c| " \t\r\n".contains(*c)).count();
+
+        if len > 0 {
+            let input_len = input.len();
+            let (rest, location, inner) = input.rsplit_at(input_len - len);
 
             Ok((TokenTree::Spacing(Spacing { inner, location }).into(), rest))
         } else {

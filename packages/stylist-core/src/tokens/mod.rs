@@ -1,3 +1,4 @@
+mod comment;
 mod ident;
 mod input;
 mod location;
@@ -7,6 +8,7 @@ mod token;
 mod token_stream;
 mod tokenize;
 
+pub use comment::Comment;
 pub use ident::Ident;
 pub use input::{InputStr, InputTokens};
 pub use location::Location;
@@ -14,7 +16,7 @@ pub use punct::Punct;
 pub use spacing::Spacing;
 pub use token::{Token, TokenTree};
 pub use token_stream::TokenStream;
-pub use tokenize::Tokenize;
+pub use tokenize::{RTokenize, Tokenize};
 
 mod rtokens {
     pub use proc_macro2::{

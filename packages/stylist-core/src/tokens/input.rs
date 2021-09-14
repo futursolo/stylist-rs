@@ -50,6 +50,8 @@ impl Deref for InputStr {
 impl InputStr {
     pub fn split_at(self, mid: usize) -> (Substr, Location, InputStr) {
         let left = self.inner.substr(0..mid);
+        let right = self.inner.substr(mid..);
+
         let location = Location::Literal {
             token: self.token.clone(),
             range: left.range(),
@@ -59,9 +61,28 @@ impl InputStr {
             left,
             location,
             Self {
-                inner: self.inner.substr(mid..),
+                inner: right,
                 token: self.token,
             },
+        )
+    }
+
+    pub fn rsplit_at(self, mid: usize) -> (InputStr, Location, Substr) {
+        let left = self.inner.substr(0..mid);
+        let right = self.inner.substr(mid..);
+
+        let location = Location::Literal {
+            token: self.token.clone(),
+            range: right.range(),
+        };
+
+        (
+            Self {
+                inner: left,
+                token: self.token,
+            },
+            location,
+            right,
         )
     }
 
