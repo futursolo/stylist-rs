@@ -40,14 +40,14 @@ impl Comment {
 
         let mut ending = false;
         let mut ended = false;
-        while let Some(m) = chars.next() {
+        for c in chars {
             if ending {
-                if m == '/' {
+                if c == '/' {
                     len += 1;
                     ended = true;
                     break;
                 }
-            } else if m == '*' {
+            } else if c == '*' {
                 len += 1;
                 ending = true;
                 continue;
