@@ -1,3 +1,5 @@
+use std::mem;
+
 use syn::{
     braced,
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
@@ -32,7 +34,7 @@ impl CssScope {
                              ctx: &mut IntoOutputContext| {
             if !attrs.is_empty() {
                 contents.push(OutputRuleBlockContent::Block(Box::new(
-                    CssQualifiedRule::into_dangling_output(attrs.drain(0..).collect(), ctx),
+                    CssQualifiedRule::into_dangling_output(mem::take(attrs), ctx),
                 )));
             }
         };
