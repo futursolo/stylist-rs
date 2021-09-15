@@ -8,6 +8,7 @@ impl Display for Foo {
     }
 }
 impl Foo {
+    #[allow(dead_code)]
     fn to_string(&self) -> String {
         "confused user impl".into()
     }
