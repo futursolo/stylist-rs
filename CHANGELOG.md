@@ -22,6 +22,7 @@
 - Fixed comment handling.
 - Panic-based behaviour now displays the error with `{}`(`std::fmt::Display`)
   in browser developer console.
+- `@supports` and `@media` can now appear in a `Block`.
 
 ## v0.8
 
