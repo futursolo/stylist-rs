@@ -8,6 +8,8 @@
   `Into<StyleSource>` as a source for a stylesheet.
 - `style_str` method in `YieldStyle` renamed to `style_from`
   and returns a `StyleSource<'static>`.
+- Accepted at-rules are limited to `@keyframe`, `@supports` and
+  `@media`.
 
 ### Other Changes:
 - Added a Procedural Macro API that parses the Stylesheet at the compile
@@ -17,6 +19,9 @@
 - Updated `nom` to `v7`.
 - Runtime parser is now optional (disabling `parser` will make the bundle
   ~70K smaller).
+- Fixed comment handling.
+- Panic-based behaviour now displays the error with `{}`(`std::fmt::Display`)
+  in browser developer console.
 
 ## v0.8
 

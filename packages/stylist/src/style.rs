@@ -293,7 +293,7 @@ impl Style {
     ///
     /// // Example Output:
     /// // .my-component-uSu9NZZu {
-    /// // background-color: red;
+    /// //     background-color: red;
     /// // }
     /// println!("{}", style.get_style_str());
     /// # Ok::<(), stylist::Error>(())
@@ -310,6 +310,10 @@ impl Style {
     /// Unregister current style from style registry.
     ///
     /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
+    ///
+    /// # Note
+    ///
+    /// Most of time, you don't need to unmount a style.
     pub fn unregister(&self) {
         let reg = self.inner.manager().get_registry();
         let mut reg = reg.borrow_mut();

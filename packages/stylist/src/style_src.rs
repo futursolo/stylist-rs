@@ -52,7 +52,7 @@ pub struct StyleSource<'a> {
 }
 
 impl StyleSource<'_> {
-    pub fn try_to_sheet(&self) -> Result<Sheet> {
+    pub(crate) fn try_to_sheet(&self) -> Result<Sheet> {
         match self.inner {
             SheetSource::Sheet(ref m) => Ok(m.clone()),
             #[cfg(feature = "parser")]

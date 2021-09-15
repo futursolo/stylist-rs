@@ -10,6 +10,42 @@
 //!
 //! ## Usage
 //!
+//! ### Yew Integration
+//!
+//! To enable yew integration. Enable feature `yew_integration` in `Cargo.toml`.
+//!
+//! You can create a style and use it with yew like this:
+//!
+//! ```rust
+//! use std::borrow::Cow;
+//!
+//! use yew::prelude::*;
+//! use stylist::css;
+//!
+//! struct MyStyledComponent {}
+//!
+//! impl Component for MyStyledComponent {
+//!     type Message = ();
+//!     type Properties = ();
+//!
+//!     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+//!         Self {}
+//!     }
+//!
+//!     fn change(&mut self, _: Self::Properties) -> ShouldRender {
+//!         false
+//!     }
+//!
+//!     fn update(&mut self, _: Self::Message) -> ShouldRender {
+//!         false
+//!     }
+//!
+//!     fn view(&self) -> Html {
+//!         html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
+//!     }
+//! }
+//! ```
+//!
 //! ### Procedural Macros
 //!
 //! To create a stylesheet, you can use [`style!`]:
@@ -26,7 +62,7 @@
 //!             width: 100px
 //!         }
 //!     "#
-//! );
+//! ).expect("Failed to mount style!");
 //! ```
 //!
 //! ### Style API
@@ -50,7 +86,7 @@
 //!
 //! ### YieldStyle API
 //!
-//! Alternatively, any struct that implements [`YieldStyle`] trait can call
+//! Any struct that implements [`YieldStyle`] trait can call
 //! [`self.style()`](YieldStyle::style) to get a [`Style`] instance.
 //!
 //! ```rust
@@ -117,42 +153,6 @@
 //! }
 //! ```
 //!
-//! ## Yew Integration
-//!
-//! To enable yew integration. Enable feature `yew_integration` in `Cargo.toml`.
-//!
-//! Then create a style and use it with yew like this:
-//!
-//! ```rust
-//! use std::borrow::Cow;
-//!
-//! use yew::prelude::*;
-//! use stylist::css;
-//!
-//! struct MyStyledComponent {}
-//!
-//! impl Component for MyStyledComponent {
-//!     type Message = ();
-//!     type Properties = ();
-//!
-//!     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-//!         Self {}
-//!     }
-//!
-//!     fn change(&mut self, _: Self::Properties) -> ShouldRender {
-//!         false
-//!     }
-//!
-//!     fn update(&mut self, _: Self::Message) -> ShouldRender {
-//!         false
-//!     }
-//!
-//!     fn view(&self) -> Html {
-//!         html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
-//!     }
-//! }
-//! ```
-//!
 //! ### Theming
 //!
 //! There're theming examples using
@@ -194,17 +194,7 @@ pub mod yew;
 #[cfg(feature = "macros")]
 pub mod macros;
 
-/// A procedural macro that parses a string literal into a [`Sheet`].
-///
-/// This macro supports string interpolation, please see documentation of [`css!`] macro for
-/// usage.
-///
-/// [`Sheet`]: crate::ast::Sheet
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::sheet;
-
-/// A procedural macro that parses a string literal into a [`Style`].
+/// A procedural macro that parses a string literal or an inline stylesheet into a [`Style`].
 ///
 /// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
 ///
@@ -220,7 +210,7 @@ pub use stylist_macros::sheet;
 #[cfg(feature = "macros")]
 pub use stylist_macros::style;
 
-/// A procedural macro that parses a string literal into a [`GlobalStyle`].
+/// A procedural macro that parses a string literal or an inline stylesheet into a [`GlobalStyle`].
 ///
 /// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
 ///
@@ -236,7 +226,7 @@ pub use stylist_macros::style;
 #[cfg(feature = "macros")]
 pub use stylist_macros::global_style;
 
-/// A procedural macro that parses a string literal into a [`StyleSource`].
+/// A procedural macro that parses a string literal or an inline stylesheet into a [`StyleSource`].
 ///
 /// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
 ///

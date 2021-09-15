@@ -18,8 +18,6 @@ use super::{RuleBlockContent, StringFragment, StyleContext, ToStyleStr};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Rule {
     pub condition: Cow<'static, [StringFragment]>,
-    /// Note that not all At-Rules allow arbitrary other At-Rules to appear
-    /// inside them, or arbitrary blocks. No safeguards at this point!
     pub content: Cow<'static, [RuleBlockContent]>,
 }
 

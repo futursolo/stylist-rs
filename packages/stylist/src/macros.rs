@@ -4,7 +4,7 @@
 //!
 //! # String Literal
 //!
-//! This introduces a syntax that is simliar to the [`format!`] macro from the standard library.
+//! This syntax is simliar to the [`format!`] macro from the standard library.
 //!
 //! The first argument of this syntax is a string literal followed by an argument list. This macro
 //! will replace `${arg}` with the argument in the argument list when creating the AST.
@@ -57,15 +57,15 @@
 //!
 //! // Example Output:
 //! // .stylist-fIEWv6EP {
-//! // color: red;
+//! //     color: red;
 //! // }
 //! // stylist-fIEWv6EP span, .stylist-fIEWv6EP div.selected {
-//! // background-color: blue;
+//! //     background-color: blue;
 //! // }
 //! // @media screen and (max-width: 500px) {
-//! // .stylist-fIEWv6EP {
-//! // display: flex;
-//! // }
+//! //     .stylist-fIEWv6EP {
+//! //         display: flex;
+//! //     }
 //! // }
 //! println!("{}", style.get_style_str());
 //! ```
@@ -77,6 +77,8 @@
 //! Like in string interpolation syntax, interpolated values are allowed in most places through the `${expr}`
 //! syntax. In distinction, the braces contain a rust expression of any type implementing [`Display`]
 //! will be evaluated in the surrounding context.
+//!
+//! ## Known Limitations
 //!
 //! Due to the tokenizer of the Rust complier, there are some quirks with literals. For example, `4em` would be
 //! tokenized as a floating point literal with a missing exponent and a suffix of `m`. To work around this issue, use
@@ -125,15 +127,15 @@
 //!
 //! // Example Output:
 //! // .stylist-fIEWv6EP {
-//! // color: red;
+//! //     color: red;
 //! // }
 //! // stylist-fIEWv6EP span, .stylist-fIEWv6EP div.selected {
-//! // background-color: blue;
+//! //     background-color: blue;
 //! // }
 //! // @media screen and (max-width: 500px) {
-//! // .stylist-fIEWv6EP {
-//! // display: flex;
-//! // }
+//! //     .stylist-fIEWv6EP {
+//! //         display: flex;
+//! //     }
 //! // }
 //! println!("{}", style.get_style_str());
 //! ```
@@ -143,7 +145,7 @@
 //! Stylist currently does not check or escape the content of interpolated strings. It is possible
 //! to pass invalid strings that would result in an invalid stylesheet. In debug mode, if feature `parser` is
 //! enabled, Stylist will attempt to parse the stylesheet again after interpolated strings are
-//! substituted with its actual value to check if the final stylesheet is invalid.
+//! substituted with its actual value to check if the final stylesheet is valid.
 //!
 //! [string literal]: #string-literal
 //! [inline]: #inline

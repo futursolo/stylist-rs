@@ -2,8 +2,9 @@ use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use Bow::*;
 
-// Read as "box on write", a copy on write type where the
-// alternative is a Box.
+/// A clone-on-write smart pointer with boxed owned data.
+///
+/// This type behaves like [`Cow`](std::borrow::Cow) but uses [`Box`] to store the owned value.
 #[derive(Debug)]
 pub enum Bow<'a, T: 'a + ?Sized> {
     Borrowed(&'a T),

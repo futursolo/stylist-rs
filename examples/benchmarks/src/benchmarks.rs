@@ -1,5 +1,5 @@
-use stylist::ast::Sheet;
-use stylist::{sheet, Style};
+use stylist::ast::{sheet, Sheet};
+use stylist::Style;
 
 use crate::utils::now;
 

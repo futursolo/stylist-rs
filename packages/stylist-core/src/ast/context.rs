@@ -16,6 +16,7 @@ pub struct StyleContext<'a> {
 }
 
 impl<'a> StyleContext<'a> {
+    /// Creates a new context.
     pub fn new(class_name: Option<&'a str>) -> Self {
         Self {
             parent_ctx: None,
@@ -95,17 +96,7 @@ impl<'a> StyleContext<'a> {
         self.write_padding_impl(w, self.common_conditions().count())
     }
 
-    pub fn finish(&self, w: &mut String) {
-        if self.is_open() {
-            for i in (0..self.unique_conditions().count()).rev() {
-                self.write_min_padding(w);
-                self.write_padding_impl(w, i);
-                w.push_str("}\n");
-            }
-        }
-        self.set_open(false);
-    }
-
+    /// Writes the condition and `{`.
     pub fn start(&self, w: &mut String) {
         if !self.is_open() {
             self.close_until_common_parent(w);
@@ -120,10 +111,24 @@ impl<'a> StyleContext<'a> {
         self.set_open(true);
     }
 
+    /// Writes `}`.
+    pub fn finish(&self, w: &mut String) {
+        if self.is_open() {
+            for i in (0..self.unique_conditions().count()).rev() {
+                self.write_min_padding(w);
+                self.write_padding_impl(w, i);
+                w.push_str("}\n");
+            }
+        }
+        self.set_open(false);
+    }
+
+    /// Write the space that matches the indentation level of current context.
     pub fn write_padding(&self, w: &mut String) {
         self.write_padding_impl(w, self.conditions().count());
     }
 
+    /// Creates a child context for a block.
     pub fn with_block_condition<S>(&'a self, cond: Option<S>) -> Self
     where
         S: Into<Cow<'a, str>>,
@@ -149,6 +154,7 @@ impl<'a> StyleContext<'a> {
         }
     }
 
+    /// Creates a child context for a rule.
     pub fn with_rule_condition<S: Into<Cow<'a, str>>>(&'a self, cond: S) -> Self {
         let mut rules = self.rules.clone();
         rules.push(cond.into());

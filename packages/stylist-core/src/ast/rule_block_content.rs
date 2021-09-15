@@ -1,6 +1,7 @@
 use super::{Block, Rule, StyleAttribute, StyleContext, ToStyleStr};
 use crate::bow::Bow;
 
+/// The content of a [`Rule`] or a [`Block`]
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RuleBlockContent {
     StyleAttr(StyleAttribute),
