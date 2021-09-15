@@ -1,6 +1,6 @@
 fn main() {
     let _ = env_logger::builder().is_test(true).try_init();
-    let sheet = stylist::ast::sheet! {
+    let sheet = stylist::sheet! {
         border: medium dashed green;
         // pseudo class, sibling
         &:checked + label {
@@ -56,11 +56,11 @@ fn main() {
 .{cls} article span {{
     box-shadow: inset 0 1px 2px rgba(0.32,0,0,15%);
 }}
-.{cls} a[href*="login"], .{cls} a[href^="https://"], .{cls} a[rel~="tag"], .{cls} a[lang|="en"] {{
+.{cls} a[href *="login"], .{cls} a[href^="https://"], .{cls} a[rel~="tag"], .{cls} a[lang|="en"] {{
     background-image: url("images/pdf.png");
 }}
 .{cls} #content::after {{
-    content: " (" attr(x)")";
+    content: " (" attr(x) ")";
 }}
 "#,
         cls = style.get_class_name()

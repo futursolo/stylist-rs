@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 
 use stylist::ast::*;
+use stylist::sheet;
 
 fn init() {
     let _ = env_logger::builder().is_test(true).try_init();
@@ -70,36 +71,45 @@ fn test_sheet_interpolation() {
         ScopeContent::Rule(Rule {
             condition: vec!["@keyframes myframe".into()].into(),
             content: vec![
-                RuleBlockContent::Rule(Box::new(Rule {
-                    condition: vec!["from".into()].into(),
-                    content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
-                        key: "width".into(),
-                        value: vec!["100px".into()].into(),
-                    })]
+                RuleBlockContent::Rule(
+                    Rule {
+                        condition: vec!["from".into()].into(),
+                        content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                            key: "width".into(),
+                            value: vec!["100px".into()].into(),
+                        })]
+                        .into(),
+                    }
                     .into(),
-                })),
-                RuleBlockContent::Rule(Box::new(Rule {
-                    condition: vec!["to".into()].into(),
-                    content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
-                        key: "width".into(),
-                        value: vec!["200px".into()].into(),
-                    })]
+                ),
+                RuleBlockContent::Rule(
+                    Rule {
+                        condition: vec!["to".into()].into(),
+                        content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                            key: "width".into(),
+                            value: vec!["200px".into()].into(),
+                        })]
+                        .into(),
+                    }
                     .into(),
-                })),
+                ),
             ]
             .into(),
         }),
         ScopeContent::Rule(Rule {
             condition: vec!["@media screen and ".into(), "(max-width: 500px)".into()].into(),
-            content: vec![RuleBlockContent::Block(Box::new(Block {
-                condition: vec![].into(),
-                content: vec![StyleAttribute {
-                    key: "background-color".into(),
-                    value: vec!["brown".into()].into(),
+            content: vec![RuleBlockContent::Block(
+                Block {
+                    condition: vec![].into(),
+                    content: vec![StyleAttribute {
+                        key: "background-color".into(),
+                        value: vec!["brown".into()].into(),
+                    }
+                    .into()]
+                    .into(),
                 }
-                .into()]
                 .into(),
-            }))]
+            )]
             .into(),
         }),
     ]);

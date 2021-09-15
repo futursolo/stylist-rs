@@ -18,8 +18,10 @@ impl Reify for OutputRule {
             .condition
             .into_iter()
             .coalesce(fragment_coalesce)
-            .into_cow_vec_tokens(ctx);
-        let content = self.content.into_cow_vec_tokens(ctx);
+            .into_cow_vec_tokens(quote! {::stylist::ast::StringFragment}, ctx);
+        let content = self
+            .content
+            .into_cow_vec_tokens(quote! {::stylist::ast::RuleBlockContent}, ctx);
 
         quote! {
             ::stylist::ast::Rule {

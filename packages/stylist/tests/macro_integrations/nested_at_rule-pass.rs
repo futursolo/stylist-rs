@@ -1,25 +1,30 @@
 fn main() {
     let _ = env_logger::builder().is_test(true).try_init();
+    let dynamic_value = "blue";
     let style = stylist::style! {
-        .outer {
+        @supports (display: grid) {
             @media print {
                 background-color: grey;
             }
-            @supports (display: grid) {
-                margin: 2cm;
+            @media print {
+                color: ${dynamic_value};
             }
         }
     }
     .unwrap();
     let expected_reusult = format!(
-        r#"@media print {{
-    .{cls} .outer {{
-        background-color: grey;
+        r#"@supports (display:grid) {{
+    @media print {{
+        .{cls} {{
+            background-color: grey;
+        }}
     }}
 }}
 @supports (display:grid) {{
-    .{cls} .outer {{
-        margin: 2cm;
+    @media print {{
+        .{cls} {{
+            color: blue;
+        }}
     }}
 }}
 "#,
