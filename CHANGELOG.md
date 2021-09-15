@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.1
+
+### Other Changes:
+- Removed an unused import.
+
 ## v0.9
 
 ### Breaking Changes:

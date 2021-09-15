@@ -3,8 +3,6 @@ use std::borrow::Cow;
 #[cfg(not(feature = "parser"))]
 use std::marker::PhantomData;
 
-use stylist_core::ResultDisplay;
-
 use crate::ast::Sheet;
 use crate::Result;
 #[cfg(feature = "yew_integration")]
@@ -62,6 +60,7 @@ impl StyleSource<'_> {
 
     #[cfg(feature = "yew_integration")]
     pub(crate) fn to_style(&self) -> Style {
+        use stylist_core::ResultDisplay;
         Style::new(self.clone()).expect_display("Failed to create style")
     }
 }
