@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.9.2
+
+### Other Changes:
+- Fixed a misconfiguration causing documentation fails to build on `docs.rs`.
+
 ## v0.9.1
 
 ### Other Changes:
