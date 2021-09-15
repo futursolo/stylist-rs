@@ -48,11 +48,11 @@ impl ExpressionKind {
 }
 
 #[derive(Debug, Clone)]
-pub struct ContextRecorder {
+pub struct ReifyContext {
     usage: ExpressionKind,
 }
 
-impl Default for ContextRecorder {
+impl Default for ReifyContext {
     fn default() -> Self {
         Self {
             usage: ExpressionKind::Const,
@@ -60,7 +60,7 @@ impl Default for ContextRecorder {
     }
 }
 
-impl ContextRecorder {
+impl ReifyContext {
     pub fn new() -> Self {
         Self::default()
     }

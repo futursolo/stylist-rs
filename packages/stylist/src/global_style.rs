@@ -15,8 +15,8 @@ use crate::{Result, StyleSource};
 ///
 /// This class is equivalent to [`Style`](crate::Style) but for global styles.
 ///
-/// It will replace Current Selectors (`&`) with `html` and apply dangling style attributes to
-/// html.
+/// It will replace Current Selectors (`&`) with `:root` and apply dangling style attributes to
+/// the root element (`html` when style is not applied in a Shadow DOM).
 #[derive(Debug, Clone)]
 pub struct GlobalStyle {
     inner: Rc<StyleContent>,
@@ -46,7 +46,7 @@ impl GlobalStyle {
             return Ok(Self { inner: m });
         }
 
-        let style_str = key.ast.to_style_str(None)?;
+        let style_str = key.ast.to_style_str(None);
 
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.
@@ -153,8 +153,8 @@ mod tests {
             GlobalStyle::new("background-color: black;").expect("Failed to create Style.");
         assert_eq!(
             global_style.get_style_str(),
-            r#"html {
-background-color: black;
+            r#":root {
+    background-color: black;
 }
 "#
         );
@@ -184,24 +184,24 @@ background-color: black;
 
         assert_eq!(
             global_style.get_style_str(),
-            r#"html {
-background-color: black;
+            r#":root {
+    background-color: black;
 }
 .with-class {
-color: red;
+    color: red;
 }
 @media screen and (max-width: 600px) {
-html {
-color: yellow;
-}
+    :root {
+        color: yellow;
+    }
 }
 @supports (display: grid) {
-html {
-display: grid;
-}
+    :root {
+        display: grid;
+    }
 }
 header, footer {
-border: 1px solid black;
+    border: 1px solid black;
 }
 "#,
         )

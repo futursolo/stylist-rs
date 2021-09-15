@@ -14,16 +14,18 @@ fn main() {
     .unwrap();
     let expected_reusult = format!(
         r#"@supports (display:grid) {{
-@media print {{
-.{cls} {{
-background-color: grey;
+    @media print {{
+        .{cls} {{
+            background-color: grey;
+        }}
+    }}
 }}
-}}
-@media print {{
-.{cls} {{
-color: blue;
-}}
-}}
+@supports (display:grid) {{
+    @media print {{
+        .{cls} {{
+            color: blue;
+        }}
+    }}
 }}
 "#,
         cls = style.get_class_name()

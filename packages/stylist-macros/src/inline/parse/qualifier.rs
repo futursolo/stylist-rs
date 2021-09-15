@@ -1,11 +1,8 @@
 use super::{
     super::component_value::{ComponentValue, ComponentValueStream, PreservedToken},
-    fragment_spacing,
+    fragment_spacing, IntoOutputContext,
 };
-use crate::{
-    output::{OutputQualifier, OutputSelector},
-    spacing_iterator::SpacedIterator,
-};
+use crate::{output::OutputSelector, spacing_iterator::SpacedIterator};
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
@@ -14,17 +11,17 @@ use syn::{
     token,
 };
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct CssBlockQualifier {
     qualifiers: Vec<ComponentValue>,
-    qualifier_errors: Vec<ParseError>,
+    errors: Vec<ParseError>,
 }
 
 impl Parse for CssBlockQualifier {
     fn parse(input: &ParseBuffer) -> ParseResult<Self> {
         let mut component_iter = ComponentValueStream::from(input);
         let mut qualifiers = vec![];
-        let mut qualifier_errors = vec![];
+        let mut errors = vec![];
         loop {
             // Consume all tokens till the next '{'-block
             if input.peek(token::Brace) {
@@ -37,12 +34,9 @@ impl Parse for CssBlockQualifier {
             if token_errors.is_empty() {
                 qualifiers.push(next_token);
             }
-            qualifier_errors.extend(token_errors);
+            errors.extend(token_errors);
         }
-        Ok(Self {
-            qualifiers,
-            qualifier_errors,
-        })
+        Ok(Self { qualifiers, errors })
     }
 }
 
@@ -54,26 +48,15 @@ impl ToTokens for CssBlockQualifier {
     }
 }
 
-impl Default for CssBlockQualifier {
-    fn default() -> Self {
-        Self {
-            qualifiers: vec![],
-            qualifier_errors: vec![],
-        }
-    }
-}
-
 impl CssBlockQualifier {
-    pub fn is_empty(&self) -> bool {
-        self.qualifiers.is_empty()
-    }
+    pub fn into_output(self, ctx: &mut IntoOutputContext) -> Vec<OutputSelector> {
+        ctx.extend_errors(self.errors);
 
-    pub fn into_output(self) -> OutputQualifier {
         fn is_not_comma(q: &ComponentValue) -> bool {
             !matches!(q, ComponentValue::Token(PreservedToken::Punct(ref p)) if p.as_char() == ',')
         }
-        let selector_list = self
-            .qualifiers
+
+        self.qualifiers
             .into_iter()
             .peekable()
             .batching(|it| {
@@ -93,11 +76,6 @@ impl CssBlockQualifier {
                 it.next(); // Consume the comma
                 Some(selector)
             })
-            .collect();
-
-        OutputQualifier {
-            selector_list,
-            errors: self.qualifier_errors,
-        }
+            .collect()
     }
 }

@@ -41,10 +41,11 @@ fn test_sheet_interpolation() {
     let expected = Sheet::from(vec![
         ScopeContent::Block(Block {
             condition: Cow::Borrowed(&[]),
-            style_attributes: vec![StyleAttribute {
+            content: vec![StyleAttribute {
                 key: "background-color".into(),
                 value: vec!["red".into()].into(),
-            }]
+            }
+            .into()]
             .into(),
         }),
         ScopeContent::Block(Block {
@@ -53,42 +54,62 @@ fn test_sheet_interpolation() {
                 vec![".some-selector".into()].into(),
             ]
             .into(),
-            style_attributes: vec![
+            content: vec![
                 StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["blue".into()].into(),
-                },
+                }
+                .into(),
                 StyleAttribute {
                     key: "width".into(),
                     value: vec!["100".into(), "px".into()].into(),
-                },
+                }
+                .into(),
             ]
             .into(),
         }),
         ScopeContent::Rule(Rule {
             condition: vec!["@keyframes myframe".into()].into(),
             content: vec![
-                "from".into(),
-                "{".into(),
-                "width: 100px;".into(),
-                "}".into(),
-                "to".into(),
-                "{".into(),
-                "width: 200px;".into(),
-                "}".into(),
+                RuleBlockContent::Rule(
+                    Rule {
+                        condition: vec!["from".into()].into(),
+                        content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                            key: "width".into(),
+                            value: vec!["100px".into()].into(),
+                        })]
+                        .into(),
+                    }
+                    .into(),
+                ),
+                RuleBlockContent::Rule(
+                    Rule {
+                        condition: vec!["to".into()].into(),
+                        content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                            key: "width".into(),
+                            value: vec!["200px".into()].into(),
+                        })]
+                        .into(),
+                    }
+                    .into(),
+                ),
             ]
             .into(),
         }),
         ScopeContent::Rule(Rule {
             condition: vec!["@media screen and ".into(), "(max-width: 500px)".into()].into(),
-            content: vec![RuleContent::Block(Block {
-                condition: vec![].into(),
-                style_attributes: vec![StyleAttribute {
-                    key: "background-color".into(),
-                    value: vec!["brown".into()].into(),
-                }]
+            content: vec![RuleBlockContent::Block(
+                Block {
+                    condition: vec![].into(),
+                    content: vec![StyleAttribute {
+                        key: "background-color".into(),
+                        value: vec!["brown".into()].into(),
+                    }
+                    .into()]
+                    .into(),
+                }
                 .into(),
-            })]
+            )]
             .into(),
         }),
     ]);
@@ -113,10 +134,11 @@ fn test_sheet_escaped() {
             },
         ]
         .into(),
-        style_attributes: vec![StyleAttribute {
+        content: vec![StyleAttribute {
             key: "content".into(),
             value: vec!["\"${var_b}\"".into()].into(),
-        }]
+        }
+        .into()]
         .into(),
     })]);
     assert_eq!(parsed, expected);

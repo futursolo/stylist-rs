@@ -19,7 +19,7 @@ fn main() {
     .unwrap();
     let expected_result = format!(
         r#".{cls} {{
-display: none;
+    display: none;
 }}
 "#,
         cls = style.get_class_name()

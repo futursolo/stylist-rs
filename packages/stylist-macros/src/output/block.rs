@@ -1,26 +1,26 @@
-use super::{ContextRecorder, IntoCowVecTokens, OutputAttribute, OutputQualifier, Reify};
+use super::{IntoCowVecTokens, OutputRuleBlockContent, OutputSelector, Reify, ReifyContext};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-pub struct OutputQualifiedRule {
-    pub qualifier: OutputQualifier,
-    pub attributes: Vec<OutputAttribute>,
+#[derive(Debug)]
+pub struct OutputBlock {
+    pub condition: Vec<OutputSelector>,
+    pub content: Vec<OutputRuleBlockContent>,
 }
 
-impl Reify for OutputQualifiedRule {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
-        let Self {
-            qualifier,
-            attributes,
-        } = self;
-        let qualifier = qualifier.into_token_stream(ctx);
-        let attributes =
-            attributes.into_cow_vec_tokens(quote! {::stylist::ast::StyleAttribute}, ctx);
+impl Reify for OutputBlock {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
+        let condition = self
+            .condition
+            .into_cow_vec_tokens(quote! { ::stylist::ast::Selector }, ctx);
+        let content = self
+            .content
+            .into_cow_vec_tokens(quote! { ::stylist::ast::RuleBlockContent }, ctx);
 
         quote! {
             ::stylist::ast::Block {
-                condition: #qualifier,
-                style_attributes: #attributes,
+                condition: #condition,
+                content: #content,
             }
         }
     }

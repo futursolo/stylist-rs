@@ -8,36 +8,43 @@ use syn::{
 };
 
 #[derive(Debug, Clone)]
-pub enum SimpleBlock {
-    Braced {
-        brace: token::Brace,
-        contents: Vec<ComponentValue>,
-    },
-    Bracketed {
-        bracket: token::Bracket,
-        contents: Vec<ComponentValue>,
-    },
-    Paren {
-        paren: token::Paren,
-        contents: Vec<ComponentValue>,
-    },
+pub enum BlockKind {
+    Braced(token::Brace),
+    Bracketed(token::Bracket),
+    Paren(token::Paren),
+}
+
+impl BlockKind {
+    pub fn surround_tokens(&self) -> (char, char) {
+        match self {
+            Self::Braced(_) => ('{', '}'),
+            Self::Bracketed(_) => ('[', ']'),
+            Self::Paren(_) => ('(', ')'),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct SimpleBlock {
+    pub kind: BlockKind,
+    pub contents: Vec<ComponentValue>,
 }
 
 impl ToTokens for SimpleBlock {
     fn to_tokens(&self, toks: &mut TokenStream) {
-        match self {
-            Self::Braced { brace, contents } => brace.surround(toks, |toks| {
-                for c in contents.iter() {
+        match self.kind {
+            BlockKind::Braced(ref m) => m.surround(toks, |toks| {
+                for c in self.contents.iter() {
                     c.to_tokens(toks);
                 }
             }),
-            Self::Bracketed { bracket, contents } => bracket.surround(toks, |toks| {
-                for c in contents.iter() {
+            BlockKind::Bracketed(ref m) => m.surround(toks, |toks| {
+                for c in self.contents.iter() {
                     c.to_tokens(toks);
                 }
             }),
-            Self::Paren { paren, contents } => paren.surround(toks, |toks| {
-                for c in contents.iter() {
+            BlockKind::Paren(ref m) => m.surround(toks, |toks| {
+                for c in self.contents.iter() {
                     c.to_tokens(toks);
                 }
             }),
@@ -52,17 +59,26 @@ impl Parse for SimpleBlock {
             let inside;
             let brace = braced!(inside in input);
             let contents = ComponentValue::parse_multiple(&inside)?;
-            Ok(Self::Braced { brace, contents })
+            Ok(Self {
+                kind: BlockKind::Braced(brace),
+                contents,
+            })
         } else if lookahead.peek(token::Bracket) {
             let inside;
             let bracket = bracketed!(inside in input);
             let contents = ComponentValue::parse_multiple(&inside)?;
-            Ok(Self::Bracketed { bracket, contents })
+            Ok(Self {
+                kind: BlockKind::Bracketed(bracket),
+                contents,
+            })
         } else if lookahead.peek(token::Paren) {
             let inside;
             let paren = parenthesized!(inside in input);
             let contents = ComponentValue::parse_multiple(&inside)?;
-            Ok(Self::Paren { paren, contents })
+            Ok(Self {
+                kind: BlockKind::Paren(paren),
+                contents,
+            })
         } else {
             Err(lookahead.error())
         }

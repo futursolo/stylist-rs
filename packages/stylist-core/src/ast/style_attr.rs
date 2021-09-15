@@ -1,8 +1,6 @@
 use std::borrow::Cow;
-use std::fmt;
 
-use super::{StringFragment, ToStyleStr};
-use crate::Result;
+use super::{StringFragment, StyleContext, ToStyleStr};
 
 /// A simple CSS property in the form of a key value pair. Mirrors what would
 /// be called a "Declaration" in the CSS standard.
@@ -15,15 +13,18 @@ pub struct StyleAttribute {
 }
 
 impl ToStyleStr for StyleAttribute {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
-        write!(w, "{}: ", self.key)?;
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
+        // Always try to print block
+        ctx.start(w);
+        ctx.write_padding(w);
+
+        w.push_str(&self.key);
+        w.push_str(": ");
 
         for i in self.value.iter() {
-            i.write_style(w, class_name)?;
+            i.write_style(w, ctx);
         }
 
-        write!(w, ";")?;
-
-        Ok(())
+        w.push_str(";\n");
     }
 }

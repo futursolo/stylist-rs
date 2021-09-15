@@ -1,36 +1,31 @@
 use super::{
-    fragment_coalesce, ContextRecorder, IntoCowVecTokens, OutputFragment, OutputRuleContent, Reify,
+    fragment_coalesce, IntoCowVecTokens, OutputFragment, OutputRuleBlockContent, Reify,
+    ReifyContext,
 };
 use itertools::Itertools;
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::parse::Error as ParseError;
 
-pub struct OutputAtRule {
-    pub prelude: Vec<OutputFragment>,
-    pub contents: Vec<OutputRuleContent>,
-    pub errors: Vec<ParseError>,
+#[derive(Debug)]
+pub struct OutputRule {
+    pub condition: Vec<OutputFragment>,
+    pub content: Vec<OutputRuleBlockContent>,
 }
 
-impl Reify for OutputAtRule {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
-        let Self {
-            prelude,
-            contents,
-            errors,
-        } = self;
-
-        let condition = prelude
+impl Reify for OutputRule {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
+        let condition = self
+            .condition
             .into_iter()
             .coalesce(fragment_coalesce)
             .into_cow_vec_tokens(quote! {::stylist::ast::StringFragment}, ctx);
-        let content = contents.into_cow_vec_tokens(quote! {::stylist::ast::RuleContent}, ctx);
-        let errors = errors.into_iter().map(|e| e.into_compile_error());
+        let content = self
+            .content
+            .into_cow_vec_tokens(quote! {::stylist::ast::RuleBlockContent}, ctx);
 
         quote! {
             ::stylist::ast::Rule {
                 condition: {
-                    #( #errors )*
                     #condition
                 },
                 content: #content,

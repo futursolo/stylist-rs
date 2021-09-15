@@ -176,7 +176,7 @@ impl Style {
 
         let id = StyleId(format!("{}-{}", key.prefix, get_entropy()));
 
-        let style_str = key.ast.to_style_str(Some(&id))?;
+        let style_str = key.ast.to_style_str(Some(&id));
 
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.
@@ -348,6 +348,12 @@ mod tests {
 
                 header, footer {
                     border: 1px solid black;
+
+                    @supports (max-width: 500px) {
+                        @media screen and (max-width: 500px) {
+                            display: flex;
+                        }
+                    }
                 }
             "#,
         )
@@ -357,23 +363,30 @@ mod tests {
             style.get_style_str(),
             format!(
                 r#".{style_name} {{
-background-color: black;
+    background-color: black;
 }}
 .{style_name} .with-class {{
-color: red;
+    color: red;
 }}
 @media screen and (max-width: 600px) {{
-.{style_name} {{
-color: yellow;
-}}
+    .{style_name} {{
+        color: yellow;
+    }}
 }}
 @supports (display: grid) {{
-.{style_name} {{
-display: grid;
-}}
+    .{style_name} {{
+        display: grid;
+    }}
 }}
 .{style_name} header, .{style_name} footer {{
-border: 1px solid black;
+    border: 1px solid black;
+}}
+@supports (max-width: 500px) {{
+    @media screen and (max-width: 500px) {{
+        .{style_name} header, .{style_name} footer {{
+            display: flex;
+        }}
+    }}
 }}
 "#,
                 style_name = style.get_class_name()

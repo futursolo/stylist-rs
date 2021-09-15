@@ -1,4 +1,4 @@
-use super::{ContextRecorder, Reify};
+use super::{Reify, ReifyContext};
 use proc_macro2::{Span, TokenStream};
 use quote::{quote, quote_spanned};
 use syn::{spanned::Spanned, LitStr};
@@ -6,7 +6,7 @@ use syn::{spanned::Spanned, LitStr};
 #[derive(Debug)]
 pub enum OutputCowString {
     Str(String),
-    Raw(TokenStream, ContextRecorder),
+    Raw(TokenStream, ReifyContext),
 }
 
 impl From<String> for OutputCowString {
@@ -17,7 +17,7 @@ impl From<String> for OutputCowString {
 
 impl OutputCowString {
     pub fn from_displayable_spanned(source: impl Spanned, expr: impl Reify) -> Self {
-        let mut inner_context = ContextRecorder::default();
+        let mut inner_context = ReifyContext::new();
         let expr = expr.into_token_stream(&mut inner_context);
         inner_context.uses_static(); // .to_string().into()
         Self::Raw(
@@ -30,7 +30,7 @@ impl OutputCowString {
 }
 
 impl Reify for OutputCowString {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         match self {
             Self::Raw(t, ref inner) => {
                 ctx.uses_nested(inner);

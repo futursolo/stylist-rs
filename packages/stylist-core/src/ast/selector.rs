@@ -1,7 +1,6 @@
-use std::{borrow::Cow, fmt};
+use std::borrow::Cow;
 
-use super::{StringFragment, ToStyleStr};
-use crate::Result;
+use super::{StringFragment, StyleContext, ToStyleStr};
 
 /// A CSS Selector.
 ///
@@ -15,44 +14,40 @@ pub struct Selector {
 }
 
 impl ToStyleStr for Selector {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
         let mut joined_s = "".to_string();
 
         for frag in self.fragments.iter() {
-            frag.write_style(&mut joined_s, class_name)?;
+            frag.write_style(&mut joined_s, ctx);
         }
 
-        if let Some(m) = class_name {
+        if let Some(ref m) = ctx.class_name {
+            let scoped_class = format!(".{}", m);
             // If contains current selector or root pseudo class, replace them with class name.
             if joined_s.contains('&') || joined_s.contains(":root") {
-                let scoped_class = format!(".{}", m);
-
-                write!(
-                    w,
-                    "{}",
-                    joined_s
+                w.push_str(
+                    &joined_s
                         .replace("&", scoped_class.as_str())
-                        .replace(":root", scoped_class.as_str())
-                )?;
-
-            // If selector starts with a pseudo-class, apply it to the root element.
-            } else if joined_s.starts_with(':') {
-                write!(w, ".{}{}", m, joined_s)?;
-
-            // For other selectors, scope it to be the children of the root element.
+                        .replace(":root", scoped_class.as_str()),
+                );
             } else {
-                write!(w, ".{} {}", m, joined_s)?;
+                w.push_str(&scoped_class);
+
+                // If selector starts with a pseudo-class, apply it to the root element.
+                // For other selectors, scope it to be the children of the root element.
+                if !joined_s.starts_with(':') {
+                    w.push(' ');
+                }
+                w.push_str(&joined_s);
             }
 
         // For global styles, if it contains &, it will be replaced with html.
         } else if joined_s.contains('&') {
-            write!(w, "{}", joined_s.replace("&", "html"))?;
+            w.push_str(&joined_s.replace("&", ":root"));
         // For other styles, it will be written as is.
         } else {
-            write!(w, "{}", joined_s)?;
+            w.push_str(&joined_s);
         }
-
-        Ok(())
     }
 }
 
@@ -69,50 +64,42 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_selector_gen_simple() -> Result<()> {
+    fn test_selector_gen_simple() {
         let s: Selector = vec![".abc".into()].into();
 
         assert_eq!(
-            s.to_style_str(Some("stylist-abcdefgh"))?,
+            s.to_style_str(Some("stylist-abcdefgh")),
             ".stylist-abcdefgh .abc"
         );
-
-        Ok(())
     }
 
     #[test]
-    fn test_selector_pseduo() -> Result<()> {
+    fn test_selector_pseduo() {
         let s: Selector = vec![":hover".into()].into();
 
         assert_eq!(
-            s.to_style_str(Some("stylist-abcdefgh"))?,
+            s.to_style_str(Some("stylist-abcdefgh")),
             ".stylist-abcdefgh:hover"
         );
-
-        Ok(())
     }
 
     #[test]
-    fn test_selector_root_pseduo() -> Result<()> {
+    fn test_selector_root_pseduo() {
         let s: Selector = vec![":root.big".into()].into();
 
         assert_eq!(
-            s.to_style_str(Some("stylist-abcdefgh"))?,
+            s.to_style_str(Some("stylist-abcdefgh")),
             ".stylist-abcdefgh.big"
         );
-
-        Ok(())
     }
 
     #[test]
-    fn test_selector_gen_current() -> Result<()> {
+    fn test_selector_gen_current() {
         let s: Selector = vec!["&.big".into()].into();
 
         assert_eq!(
-            s.to_style_str(Some("stylist-abcdefgh"))?,
+            s.to_style_str(Some("stylist-abcdefgh")),
             ".stylist-abcdefgh.big"
         );
-
-        Ok(())
     }
 }

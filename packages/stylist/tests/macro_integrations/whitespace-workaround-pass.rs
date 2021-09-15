@@ -21,16 +21,16 @@ fn main() {
     .unwrap();
     let expected_result = format!(
         r#".{cls}.class-a.class-b {{
-color: red;
+    color: red;
 }}
 .{cls}.class-a.class-b {{
-color: black;
+    color: black;
 }}
 .{cls}.class-a *.class-b {{
-color: white;
+    color: white;
 }}
 .{cls}.class-a #content {{
-color: white;
+    color: white;
 }}
 "#,
         cls = style.get_class_name()

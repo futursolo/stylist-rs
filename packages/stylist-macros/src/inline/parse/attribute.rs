@@ -1,26 +1,21 @@
-use super::{
-    super::{
-        component_value::{
-            ComponentValue, ComponentValueStream, InterpolatedExpression, PreservedToken,
-        },
-        css_ident::CssIdent,
-    },
-    fragment_spacing,
-};
-use crate::{
-    output::{OutputAttribute, OutputCowString},
-    spacing_iterator::SpacedIterator,
-};
 use syn::{
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
     spanned::Spanned,
     token,
 };
 
+use super::{fragment_spacing, IntoOutputContext};
+use crate::inline::component_value::{
+    ComponentValue, ComponentValueStream, InterpolatedExpression, PreservedToken,
+};
+use crate::inline::css_ident::CssIdent;
+use crate::output::{OutputAttribute, OutputCowString};
+use crate::spacing_iterator::SpacedIterator;
+
 #[derive(Debug)]
 pub enum CssAttributeName {
     Identifier(CssIdent),
-    InjectedExpr(InterpolatedExpression),
+    Expr(InterpolatedExpression),
 }
 
 #[derive(Debug)]
@@ -94,14 +89,16 @@ impl ComponentValue {
             ComponentValue::Token(PreservedToken::Ident(i)) => {
                 Some(CssAttributeName::Identifier(i))
             }
-            ComponentValue::Expr(expr) => Some(CssAttributeName::InjectedExpr(expr)),
+            ComponentValue::Expr(expr) => Some(CssAttributeName::Expr(expr)),
             _ => None,
         }
     }
 }
 
 impl CssAttribute {
-    pub(super) fn into_output(self) -> OutputAttribute {
+    pub(super) fn into_output(self, ctx: &mut IntoOutputContext) -> OutputAttribute {
+        ctx.extend_errors(self.value.errors);
+
         let values = self
             .value
             .values
@@ -112,7 +109,6 @@ impl CssAttribute {
         OutputAttribute {
             key: self.name.into_output(),
             values,
-            errors: self.value.errors,
         }
     }
 }
@@ -121,7 +117,7 @@ impl CssAttributeName {
     fn into_output(self) -> OutputCowString {
         match self {
             Self::Identifier(name) => name.into(),
-            Self::InjectedExpr(expr) => expr.to_output_fragment(),
+            Self::Expr(expr) => expr.to_output_fragment(),
         }
         .into_inner()
     }

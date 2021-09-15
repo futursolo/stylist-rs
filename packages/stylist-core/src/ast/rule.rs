@@ -1,8 +1,6 @@
 use std::borrow::Cow;
-use std::fmt;
 
-use super::{RuleContent, StringFragment, ToStyleStr};
-use crate::Result;
+use super::{RuleBlockContent, StringFragment, StyleContext, ToStyleStr};
 
 /// An At-Rule can contain both other blocks and in some cases more At-Rules.
 ///
@@ -22,24 +20,28 @@ pub struct Rule {
     pub condition: Cow<'static, [StringFragment]>,
     /// Note that not all At-Rules allow arbitrary other At-Rules to appear
     /// inside them, or arbitrary blocks. No safeguards at this point!
-    pub content: Cow<'static, [RuleContent]>,
+    pub content: Cow<'static, [RuleBlockContent]>,
 }
 
 impl ToStyleStr for Rule {
-    fn write_style<W: fmt::Write>(&self, w: &mut W, class_name: Option<&str>) -> Result<()> {
+    fn write_style(&self, w: &mut String, ctx: &mut StyleContext<'_>) {
+        let mut cond = "".to_string();
         for frag in self.condition.iter() {
-            frag.write_style(w, class_name)?;
+            frag.write_style(&mut cond, ctx);
         }
 
-        writeln!(w, " {{")?;
+        let mut rule_ctx = ctx.with_rule_condition(&cond);
+
+        // keyframes should always be printed as they contain a global name.
+        let always_print = cond.starts_with("@keyframes");
+        if always_print {
+            rule_ctx.start(w);
+        }
 
         for i in self.content.iter() {
-            i.write_style(w, class_name)?;
-            writeln!(w)?;
+            i.write_style(w, &mut rule_ctx);
         }
 
-        write!(w, "}}")?;
-
-        Ok(())
+        rule_ctx.finish(w);
     }
 }

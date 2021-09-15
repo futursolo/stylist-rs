@@ -5,8 +5,8 @@ use proc_macro_error::abort_call_site;
 use stylist_core::ast::*;
 
 use crate::output::{
-    OutputAtRule, OutputAttribute, OutputFragment, OutputQualifiedRule, OutputQualifier,
-    OutputRuleContent, OutputScopeContent, OutputSelector, OutputSheet,
+    OutputAttribute, OutputBlock, OutputFragment, OutputRule, OutputRuleBlockContent,
+    OutputScopeContent, OutputSelector, OutputSheet,
 };
 
 use super::{argument::Argument, fstring};
@@ -38,8 +38,34 @@ impl ToOutputWithArgs for Selector {
     }
 }
 
+impl ToOutputWithArgs for RuleBlockContent {
+    type Output = OutputRuleBlockContent;
+
+    fn to_output_with_args(
+        &self,
+        args: &HashMap<String, Argument>,
+        args_used: &mut HashSet<String>,
+    ) -> Self::Output {
+        match self {
+            Self::Rule(ref m) => {
+                let block = m.to_output_with_args(args, args_used);
+                OutputRuleBlockContent::Rule(Box::new(block))
+            }
+            Self::Block(ref m) => {
+                let block = m.to_output_with_args(args, args_used);
+                OutputRuleBlockContent::Block(Box::new(block))
+            }
+            Self::StyleAttr(ref m) => {
+                let rule = m.to_output_with_args(args, args_used);
+                OutputRuleBlockContent::StyleAttr(rule)
+            }
+        }
+    }
+}
+
 impl ToOutputWithArgs for StyleAttribute {
     type Output = OutputAttribute;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -56,13 +82,13 @@ impl ToOutputWithArgs for StyleAttribute {
         OutputAttribute {
             key: key.into(),
             values,
-            errors: Vec::new(),
         }
     }
 }
 
 impl ToOutputWithArgs for Block {
-    type Output = OutputQualifiedRule;
+    type Output = OutputBlock;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -74,45 +100,22 @@ impl ToOutputWithArgs for Block {
             selector_list.push(i.to_output_with_args(args, args_used));
         }
 
-        let mut attributes = Vec::new();
+        let mut content = Vec::new();
 
-        for i in self.style_attributes.iter() {
-            attributes.push(i.to_output_with_args(args, args_used));
+        for i in self.content.iter() {
+            content.push(i.to_output_with_args(args, args_used));
         }
 
-        OutputQualifiedRule {
-            qualifier: OutputQualifier {
-                selector_list,
-                errors: Vec::new(),
-            },
-            attributes,
-        }
-    }
-}
-
-impl ToOutputWithArgs for RuleContent {
-    type Output = OutputRuleContent;
-    fn to_output_with_args(
-        &self,
-        args: &HashMap<String, Argument>,
-        args_used: &mut HashSet<String>,
-    ) -> Self::Output {
-        match self {
-            Self::Block(ref m) => {
-                let block = m.to_output_with_args(args, args_used);
-                OutputRuleContent::Block(block)
-            }
-            Self::Rule(ref m) => {
-                let rule = m.to_output_with_args(args, args_used);
-                OutputRuleContent::AtRule(rule)
-            }
-            Self::String(ref m) => OutputRuleContent::String(m.as_ref().to_string()),
+        OutputBlock {
+            condition: selector_list,
+            content,
         }
     }
 }
 
 impl ToOutputWithArgs for StringFragment {
     type Output = Vec<OutputFragment>;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -148,34 +151,32 @@ impl ToOutputWithArgs for StringFragment {
 }
 
 impl ToOutputWithArgs for Rule {
-    type Output = OutputAtRule;
+    type Output = OutputRule;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
         args_used: &mut HashSet<String>,
     ) -> Self::Output {
-        let mut prelude = Vec::new();
+        let mut condition = Vec::new();
 
         for i in self.condition.iter() {
-            prelude.extend(i.to_output_with_args(args, args_used));
+            condition.extend(i.to_output_with_args(args, args_used));
         }
 
-        let mut contents = Vec::new();
+        let mut content = Vec::new();
 
         for i in self.content.iter() {
-            contents.push(i.to_output_with_args(args, args_used));
+            content.push(i.to_output_with_args(args, args_used));
         }
 
-        OutputAtRule {
-            prelude,
-            contents,
-            errors: Vec::new(),
-        }
+        OutputRule { condition, content }
     }
 }
 
 impl ToOutputWithArgs for ScopeContent {
     type Output = OutputScopeContent;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,
@@ -188,7 +189,7 @@ impl ToOutputWithArgs for ScopeContent {
             }
             Self::Rule(ref m) => {
                 let rule = m.to_output_with_args(args, args_used);
-                OutputScopeContent::AtRule(rule)
+                OutputScopeContent::Rule(rule)
             }
         }
     }
@@ -196,6 +197,7 @@ impl ToOutputWithArgs for ScopeContent {
 
 impl ToOutputWithArgs for Sheet {
     type Output = OutputSheet;
+
     fn to_output_with_args(
         &self,
         args: &HashMap<String, Argument>,

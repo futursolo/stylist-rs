@@ -1,19 +1,18 @@
+use syn::{
+    parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
+    token,
+};
+
 use super::{
     super::{
         component_value::{ComponentValue, ComponentValueStream},
         css_ident::CssIdent,
     },
-    fragment_spacing, normalize_hierarchy_impl, CssBlockQualifier, CssScope, OutputSheetContent,
+    fragment_spacing, CssScope, IntoOutputContext,
 };
 use crate::{
-    output::{OutputAtRule, OutputFragment, OutputRuleContent},
+    output::{OutputFragment, OutputRule},
     spacing_iterator::SpacedIterator,
-};
-use proc_macro2::TokenStream;
-use quote::ToTokens;
-use syn::{
-    parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
-    token,
 };
 
 #[derive(Debug)]
@@ -76,58 +75,45 @@ impl Parse for CssAtRule {
 }
 
 impl CssAtRule {
-    pub(super) fn fold_in_context(self, ctx: CssBlockQualifier) -> OutputSheetContent {
-        if !ctx.is_empty() {
-            return OutputSheetContent::Error(ParseError::new_spanned(
-                self.prelude_span(),
-                "Can not nest @-rules (yet)",
-            ));
-        }
-        let contents = match self.contents {
-            CssAtRuleContent::Empty(_) => Vec::new(),
-            CssAtRuleContent::Scope(scope) => normalize_hierarchy_impl(ctx, scope.contents)
-                .map(|c| match c {
-                    OutputSheetContent::AtRule(rule) => OutputRuleContent::AtRule(rule),
-                    OutputSheetContent::QualifiedRule(block) => OutputRuleContent::Block(block),
-                    OutputSheetContent::Error(err) => OutputRuleContent::Err(err),
-                })
-                .collect(),
-        };
+    pub fn condition_output(&self) -> Vec<OutputFragment> {
         let mut prelude = vec![OutputFragment::Str(format!(
             "@{} ",
             self.name.to_output_string()
         ))];
         prelude.extend(
             self.prelude
+                .clone()
                 .into_iter()
                 .flat_map(|p| p.to_output_fragments())
                 .spaced_with(fragment_spacing),
         );
-        OutputSheetContent::AtRule(OutputAtRule {
-            prelude,
-            contents,
-            errors: self.errors,
-        })
+
+        prelude
     }
-}
 
-impl CssAtRule {
-    fn prelude_span(&self) -> PreludeSpan {
-        PreludeSpan { rule: self }
+    pub fn into_rule_output(self, ctx: &mut IntoOutputContext) -> OutputRule {
+        let condition = self.condition_output();
+        ctx.extend_errors(self.errors);
+
+        OutputRule {
+            condition,
+            content: match self.contents {
+                CssAtRuleContent::Scope(m) => m.into_rule_output(ctx),
+                CssAtRuleContent::Empty(_) => Vec::new(),
+            },
+        }
     }
-}
 
-struct PreludeSpan<'a> {
-    rule: &'a CssAtRule,
-}
+    pub fn into_rule_block_output(self, ctx: &mut IntoOutputContext) -> OutputRule {
+        let condition = self.condition_output();
+        ctx.extend_errors(self.errors);
 
-impl<'a> ToTokens for PreludeSpan<'a> {
-    fn to_tokens(&self, toks: &mut TokenStream) {
-        let rule = self.rule;
-        rule.at.to_tokens(toks);
-        rule.name.to_tokens(toks);
-        for c in rule.prelude.iter() {
-            c.to_tokens(toks);
+        OutputRule {
+            condition,
+            content: match self.contents {
+                CssAtRuleContent::Scope(m) => m.into_rule_block_output(ctx),
+                CssAtRuleContent::Empty(_) => Vec::new(),
+            },
         }
     }
 }

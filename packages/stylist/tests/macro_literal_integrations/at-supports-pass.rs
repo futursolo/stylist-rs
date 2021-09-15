@@ -7,9 +7,9 @@ fn main() {
     .unwrap();
     let expected_result = format!(
         r#"@supports (display:grid) {{
-.{cls} {{
-background-color: grey;
-}}
+    .{cls} {{
+        background-color: grey;
+    }}
 }}
 "#,
         cls = style.get_class_name()

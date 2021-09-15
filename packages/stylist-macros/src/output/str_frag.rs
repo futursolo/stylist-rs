@@ -1,11 +1,12 @@
-use super::{ContextRecorder, OutputCowString, Reify};
+use proc_macro2::{Delimiter, TokenStream};
+use quote::quote;
+use syn::{spanned::Spanned, Expr, ExprLit, Lit};
+
+use super::{OutputCowString, Reify, ReifyContext};
 use crate::{
     inline::{component_value::PreservedToken, css_ident::CssIdent},
     literal::argument::Argument,
 };
-use proc_macro2::{Delimiter, TokenStream};
-use quote::quote;
-use syn::{spanned::Spanned, Expr, ExprLit, Lit};
 
 #[derive(Debug, Clone)]
 pub enum OutputFragment {
@@ -98,7 +99,7 @@ impl OutputFragment {
 }
 
 impl Reify for OutputFragment {
-    fn into_token_stream(self, ctx: &mut ContextRecorder) -> TokenStream {
+    fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         let inner = self.into_inner().into_token_stream(ctx);
         quote! {
             ::stylist::ast::StringFragment {

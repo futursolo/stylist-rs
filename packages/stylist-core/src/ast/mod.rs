@@ -1,8 +1,9 @@
 // this module is documented at stylist::ast
 
 mod block;
+mod context;
 mod rule;
-mod rule_content;
+mod rule_block_content;
 mod scope_content;
 mod selector;
 mod sheet;
@@ -10,9 +11,11 @@ mod str_frag;
 mod style_attr;
 mod to_style_str;
 
+pub use context::StyleContext;
+
 pub use block::Block;
 pub use rule::Rule;
-pub use rule_content::RuleContent;
+pub use rule_block_content::RuleBlockContent;
 pub use scope_content::ScopeContent;
 pub use selector::Selector;
 pub use sheet::Sheet;
@@ -32,49 +35,66 @@ mod tests {
         let test_block = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: Cow::Borrowed(&[]),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "width".into(),
                     value: vec!["100vw".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Block(Block {
                 condition: vec![vec![".inner".into()].into()].into(),
-                style_attributes: vec![StyleAttribute {
+                content: vec![StyleAttribute {
                     key: "background-color".into(),
                     value: vec!["red".into()].into(),
-                }]
+                }
+                .into()]
                 .into(),
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@keyframes move".into()].into(),
-                content: vec![String::from(
-                    r#"from {
-width: 100px;
-}
-to {
-width: 200px;
-}"#,
-                )
-                .into()]
+                content: vec![
+                    RuleBlockContent::Rule(
+                        Rule {
+                            condition: vec!["from".into()].into(),
+                            content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                                key: "width".into(),
+                                value: vec!["100px".into()].into(),
+                            })]
+                            .into(),
+                        }
+                        .into(),
+                    ),
+                    RuleBlockContent::Rule(
+                        Rule {
+                            condition: vec!["to".into()].into(),
+                            content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                                key: "width".into(),
+                                value: vec!["200px".into()].into(),
+                            })]
+                            .into(),
+                        }
+                        .into(),
+                    ),
+                ]
                 .into(),
             }),
         ]);
         assert_eq!(
-            test_block.to_style_str(Some("test"))?,
+            test_block.to_style_str(Some("test")),
             r#".test {
-width: 100vw;
+    width: 100vw;
 }
 .test .inner {
-background-color: red;
+    background-color: red;
 }
 @keyframes move {
-from {
-width: 100px;
-}
-to {
-width: 200px;
-}
+    from {
+        width: 100px;
+    }
+    to {
+        width: 200px;
+    }
 }
 "#
         );
@@ -87,32 +107,57 @@ width: 200px;
         let test_block = Sheet::from(vec![ScopeContent::Rule(Rule {
             condition: vec!["@media only screen and (min-width: 1000px)".into()].into(),
             content: vec![
-                RuleContent::Block(Block {
-                    condition: Cow::Borrowed(&[]),
-                    style_attributes: vec![StyleAttribute {
-                        key: "width".into(),
-                        value: vec!["100vw".into()].into(),
-                    }]
+                RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "width".into(),
+                            value: vec!["100vw".into()].into(),
+                        }
+                        .into()]
+                        .into(),
+                    }
                     .into(),
-                }),
-                RuleContent::Block(Block {
-                    condition: vec![vec![".inner".into()].into()].into(),
-                    style_attributes: vec![StyleAttribute {
-                        key: "background-color".into(),
-                        value: vec!["red".into()].into(),
-                    }]
+                ),
+                RuleBlockContent::Block(
+                    Block {
+                        condition: vec![vec![".inner".into()].into()].into(),
+                        content: vec![StyleAttribute {
+                            key: "background-color".into(),
+                            value: vec!["red".into()].into(),
+                        }
+                        .into()]
+                        .into(),
+                    }
                     .into(),
-                }),
-                RuleContent::Rule(
+                ),
+                RuleBlockContent::Rule(
                     Rule {
                         condition: vec!["@keyframes move".into()].into(),
-                        content: vec![r#"from {
-width: 100px;
-}
-to {
-width: 200px;
-}"#
-                        .into()]
+                        content: vec![
+                            RuleBlockContent::Rule(
+                                Rule {
+                                    condition: vec!["from".into()].into(),
+                                    content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                                        key: "width".into(),
+                                        value: vec!["100px".into()].into(),
+                                    })]
+                                    .into(),
+                                }
+                                .into(),
+                            ),
+                            RuleBlockContent::Rule(
+                                Rule {
+                                    condition: vec!["to".into()].into(),
+                                    content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                                        key: "width".into(),
+                                        value: vec!["200px".into()].into(),
+                                    })]
+                                    .into(),
+                                }
+                                .into(),
+                            ),
+                        ]
                         .into(),
                     }
                     .into(),
@@ -121,22 +166,26 @@ width: 200px;
             .into(),
         })]);
         assert_eq!(
-            test_block.to_style_str(Some("test"))?,
+            test_block.to_style_str(Some("test")),
             r#"@media only screen and (min-width: 1000px) {
-.test {
-width: 100vw;
+    .test {
+        width: 100vw;
+    }
 }
-.test .inner {
-background-color: red;
+@media only screen and (min-width: 1000px) {
+    .test .inner {
+        background-color: red;
+    }
 }
-@keyframes move {
-from {
-width: 100px;
-}
-to {
-width: 200px;
-}
-}
+@media only screen and (min-width: 1000px) {
+    @keyframes move {
+        from {
+            width: 100px;
+        }
+        to {
+            width: 200px;
+        }
+    }
 }
 "#
         );

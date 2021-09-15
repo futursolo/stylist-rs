@@ -42,25 +42,25 @@ fn main() {
     let style = stylist::Style::new(sheet).unwrap();
     let expected_result = format!(
         r#".{cls} {{
-border: medium dashed green;
+    border: medium dashed green;
 }}
 .{cls}:checked+label {{
-color: #9799a7;
+    color: #9799a7;
 }}
 .{cls}:nth-child(-n+4)~nav {{
-max-height: 500px;
+    max-height: 500px;
 }}
 .{cls}::first-letter {{
-box-shadow: 3px 3px red,-1rem 0 0.4rem olive;
+    box-shadow: 3px 3px red,-1rem 0 0.4rem olive;
 }}
 .{cls} article span {{
-box-shadow: inset 0 1px 2px rgba(0.32,0,0,15%);
+    box-shadow: inset 0 1px 2px rgba(0.32,0,0,15%);
 }}
 .{cls} a[href *="login"], .{cls} a[href^="https://"], .{cls} a[rel~="tag"], .{cls} a[lang|="en"] {{
-background-image: url("images/pdf.png");
+    background-image: url("images/pdf.png");
 }}
 .{cls} #content::after {{
-content: " (" attr(x) ")";
+    content: " (" attr(x) ")";
 }}
 "#,
         cls = style.get_class_name()
