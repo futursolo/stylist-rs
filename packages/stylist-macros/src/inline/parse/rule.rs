@@ -23,7 +23,7 @@ pub enum CssAtRuleContent {
 
 #[derive(Debug)]
 pub struct CssAtRule {
-    at: token::At,
+    _at: token::At,
     name: CssIdent,
     prelude: Vec<ComponentValue>,
     contents: CssAtRuleContent,
@@ -65,7 +65,7 @@ impl Parse for CssAtRule {
         };
 
         Ok(Self {
-            at,
+            _at: at,
             name,
             prelude,
             contents,

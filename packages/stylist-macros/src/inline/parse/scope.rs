@@ -11,7 +11,7 @@ use crate::output::OutputRuleBlockContent;
 
 #[derive(Debug)]
 pub struct CssScope {
-    brace: token::Brace,
+    _brace: token::Brace,
     pub contents: Vec<CssScopeContent>,
 }
 
@@ -20,7 +20,10 @@ impl Parse for CssScope {
         let inner;
         let brace = braced!(inner in input);
         let contents = CssScopeContent::consume_list_of_rules(&inner)?;
-        Ok(Self { brace, contents })
+        Ok(Self {
+            _brace: brace,
+            contents,
+        })
     }
 }
 
