@@ -167,6 +167,7 @@ impl Parser {
                     is_not("${;}/\""),
                     recognize(Self::interpolation),
                     Self::string,
+                    recognize(preceded(tag("/"), none_of("${;}/\"*"))),
                 )))),
                 |m: &str| StringFragment {
                     inner: m.to_string().trim().to_string().into(),
@@ -1413,6 +1414,43 @@ mod tests {
                 .into(),
             }),
         ]);
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_slash_parsing() {
+        let test_str = r#"
+            grid-row: 1 / 3;
+            grid-row: 1/3;
+            grid-row: 1/ 3;
+            grid-row: 1 /3;
+        "#;
+
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![ScopeContent::Block(Block {
+            condition: vec![].into(),
+            content: vec![
+                RuleBlockContent::StyleAttr(StyleAttribute {
+                    key: "grid-row".into(),
+                    value: vec!["1 / 3".into()].into(),
+                }),
+                RuleBlockContent::StyleAttr(StyleAttribute {
+                    key: "grid-row".into(),
+                    value: vec!["1/3".into()].into(),
+                }),
+                RuleBlockContent::StyleAttr(StyleAttribute {
+                    key: "grid-row".into(),
+                    value: vec!["1/ 3".into()].into(),
+                }),
+                RuleBlockContent::StyleAttr(StyleAttribute {
+                    key: "grid-row".into(),
+                    value: vec!["1 /3".into()].into(),
+                }),
+            ]
+            .into(),
+        })]);
 
         assert_eq!(parsed, expected);
     }
