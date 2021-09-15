@@ -1,4 +1,5 @@
 mod comment;
+mod error;
 mod ident;
 mod input;
 mod location;
@@ -7,6 +8,8 @@ mod spacing;
 mod token;
 mod token_stream;
 mod tokenize;
+
+pub use error::{ITokenizeResult, TokenizeError, TokenizeResult};
 
 pub use comment::Comment;
 pub use ident::Ident;

@@ -1,6 +1,9 @@
 use arcstr::Substr;
 
-use super::{InputStr, Location, RTokenize, Token, TokenStream, TokenTree, Tokenize};
+use super::{
+    InputStr, Location, RTokenize, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
+    TokenizeResult,
+};
 
 #[derive(Debug, Clone)]
 pub struct Comment {
@@ -68,7 +71,7 @@ impl Comment {
 }
 
 impl Tokenize<InputStr> for Comment {
-    fn tokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
+    fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
         let chars = input.chars();
 
         let len = Self::find_comment_len(chars);
@@ -78,13 +81,13 @@ impl Tokenize<InputStr> for Comment {
 
             Ok((TokenTree::Comment(Self { inner, location }).into(), rest))
         } else {
-            Err(input)
+            Err(TokenizeError::NotTokenized(input))
         }
     }
 }
 
 impl RTokenize<InputStr> for Comment {
-    fn rtokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
+    fn rtokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
         let chars = input.chars().rev();
 
         let len = Self::find_comment_len(chars);
@@ -95,7 +98,7 @@ impl RTokenize<InputStr> for Comment {
 
             Ok((TokenTree::Comment(Self { inner, location }).into(), rest))
         } else {
-            Err(input)
+            Err(TokenizeError::NotTokenized(input))
         }
     }
 }

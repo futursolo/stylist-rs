@@ -1,6 +1,9 @@
 use arcstr::Substr;
 
-use super::{InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize};
+use super::{
+    InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
+    TokenizeResult,
+};
 
 #[derive(Debug, Clone)]
 pub struct Punct {
@@ -24,7 +27,7 @@ impl Token for Punct {
 }
 
 impl Tokenize<InputStr> for Punct {
-    fn tokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
+    fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
         let valid_char = |c: &char| "#+,-.:;<@\\".contains(*c);
 
         if input.chars().next().filter(valid_char).is_some() {
@@ -32,13 +35,13 @@ impl Tokenize<InputStr> for Punct {
 
             Ok((TokenTree::Punct(Punct { inner, location }).into(), rest))
         } else {
-            Err(input)
+            Err(TokenizeError::NotTokenized(input))
         }
     }
 }
 
 impl Tokenize<InputTokens> for Punct {
-    fn tokenize(mut input: InputTokens) -> Result<(TokenStream, InputTokens), InputTokens> {
+    fn tokenize(mut input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
         use super::rtokens::*;
 
         if let Some(m) = input.get(0).cloned() {
@@ -59,6 +62,6 @@ impl Tokenize<InputTokens> for Punct {
             }
         }
 
-        Err(input)
+        Err(TokenizeError::NotTokenized(input))
     }
 }

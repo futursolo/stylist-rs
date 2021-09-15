@@ -5,7 +5,7 @@ use nom::branch::{alt, Alt};
 use nom::bytes::complete::{is_not, tag, take_while1};
 use nom::character::complete::{alpha1, alphanumeric1, anychar, char, none_of};
 use nom::combinator::{fail, map, not, opt, recognize};
-use nom::error::{convert_error, ErrorKind, ParseError, VerboseError};
+use nom::error::{convert_error, ErrorKind, ParseError as NomParseError, VerboseError};
 use nom::multi::{many0, many1, separated_list1};
 use nom::sequence::{delimited, pair, preceded, separated_pair, terminated};
 use nom::IResult;
@@ -14,6 +14,9 @@ use crate::ast::{
     Block, Rule, RuleBlockContent, ScopeContent, Selector, Sheet, StringFragment, StyleAttribute,
 };
 use crate::{Error, Result};
+
+mod error;
+pub use error::ParseError;
 
 #[cfg(test)]
 use log::trace;
@@ -67,11 +70,11 @@ fn expect_non_empty<'a, O, F>(
     mut p: impl nom::Parser<&'a str, O, F>,
 ) -> impl FnMut(&'a str) -> IResult<&'a str, O, F>
 where
-    F: nom::error::ParseError<&'a str>,
+    F: NomParseError<&'a str>,
 {
     move |i| {
         if i.is_empty() {
-            Err(nom::Err::Error(ParseError::from_error_kind(
+            Err(nom::Err::Error(NomParseError::from_error_kind(
                 i,
                 ErrorKind::LengthValue,
             )))

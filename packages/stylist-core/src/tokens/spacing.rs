@@ -1,6 +1,9 @@
 use arcstr::Substr;
 
-use super::{InputStr, Location, RTokenize, Token, TokenStream, TokenTree, Tokenize};
+use super::{
+    InputStr, Location, RTokenize, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
+    TokenizeResult,
+};
 
 #[derive(Debug, Clone)]
 pub struct Spacing {
@@ -24,7 +27,7 @@ impl PartialEq for Spacing {
 }
 
 impl Tokenize<InputStr> for Spacing {
-    fn tokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
+    fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
         let chars = input.chars();
 
         let len = chars.take_while(|c| " \t\r\n".contains(*c)).count();
@@ -34,13 +37,13 @@ impl Tokenize<InputStr> for Spacing {
 
             Ok((TokenTree::Spacing(Spacing { inner, location }).into(), rest))
         } else {
-            Err(input)
+            Err(TokenizeError::NotTokenized(input))
         }
     }
 }
 
 impl RTokenize<InputStr> for Spacing {
-    fn rtokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
+    fn rtokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
         let chars = input.chars().rev();
         let len = chars.take_while(|c| " \t\r\n".contains(*c)).count();
 
@@ -50,7 +53,7 @@ impl RTokenize<InputStr> for Spacing {
 
             Ok((TokenTree::Spacing(Spacing { inner, location }).into(), rest))
         } else {
-            Err(input)
+            Err(TokenizeError::NotTokenized(input))
         }
     }
 }

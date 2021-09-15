@@ -2,7 +2,10 @@ use std::iter::FromIterator;
 
 use arcstr::Substr;
 
-use super::{InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize};
+use super::{
+    InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
+    TokenizeResult,
+};
 
 #[derive(Debug, Clone)]
 pub struct Ident {
@@ -26,7 +29,7 @@ impl Token for Ident {
 }
 
 impl Tokenize<InputStr> for Ident {
-    fn tokenize(input: InputStr) -> Result<(TokenStream, InputStr), InputStr> {
+    fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
         let valid_first_char =
             |c: char| c.is_ascii_alphabetic() || c == '-' || c == '_' || !c.is_ascii();
         let valid_rest_char =
@@ -35,7 +38,7 @@ impl Tokenize<InputStr> for Ident {
         let mut chars = input.chars();
 
         if !chars.next().map(valid_first_char).unwrap_or(false) {
-            return Err(input);
+            return Err(TokenizeError::NotTokenized(input));
         }
 
         let len = 1 + chars.take_while(valid_rest_char).count();
@@ -46,7 +49,7 @@ impl Tokenize<InputStr> for Ident {
 }
 
 impl Tokenize<InputTokens> for Ident {
-    fn tokenize(mut input: InputTokens) -> Result<(TokenStream, InputTokens), InputTokens> {
+    fn tokenize(mut input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
         use super::rtokens::*;
 
         let mut tokens = Vec::new();
@@ -75,7 +78,7 @@ impl Tokenize<InputTokens> for Ident {
             .join("");
 
         if tokens.is_empty() {
-            Err(input)
+            Err(TokenizeError::NotTokenized(input))
         } else {
             let location = Location::Span(RTokenStream::from_iter(tokens));
             let ident = Self {
