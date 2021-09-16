@@ -36,8 +36,8 @@ enum SheetSource {
 ///
 /// let s: StyleSource = "color: red;".into();
 ///
-/// let rendered = html! {<div class=s.clone() />};
-/// let global_rendered = html! {<Global css=s />};
+/// let rendered = html! {<div class={s.clone()} />};
+/// let global_rendered = html! {<Global css={s} />};
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct StyleSource<'a> {

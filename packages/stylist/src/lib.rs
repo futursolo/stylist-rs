@@ -20,29 +20,11 @@
 //! use std::borrow::Cow;
 //!
 //! use yew::prelude::*;
-//! use stylist::css;
+//! use stylist::yew::styled_component;
 //!
-//! struct MyStyledComponent {}
-//!
-//! impl Component for MyStyledComponent {
-//!     type Message = ();
-//!     type Properties = ();
-//!
-//!     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-//!         Self {}
-//!     }
-//!
-//!     fn change(&mut self, _: Self::Properties) -> ShouldRender {
-//!         false
-//!     }
-//!
-//!     fn update(&mut self, _: Self::Message) -> ShouldRender {
-//!         false
-//!     }
-//!
-//!     fn view(&self) -> Html {
-//!         html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
-//!     }
+//! #[styled_component(MyStyledComponent)]
+//! fn my_styled_component() -> Html {
+//!     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
 //! }
 //! ```
 //!
@@ -237,8 +219,8 @@ pub use stylist_macros::global_style;
 /// use stylist::yew::Global;
 /// use yew::prelude::*;
 ///
-/// let rendered = html! {<div class=css!("color: red;") />};
-/// let rendered_global = html! {<Global css=css!("color: red;") />};
+/// let rendered = html! {<div class={css!("color: red;")} />};
+/// let rendered_global = html! {<Global css={css!("color: red;")} />};
 /// ```
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
