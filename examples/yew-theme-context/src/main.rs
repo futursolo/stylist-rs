@@ -5,23 +5,23 @@ use log::Level;
 
 mod contexts;
 
-use contexts::{ThemeContext, ThemeKind};
+use contexts::{use_theme, ThemeKind, ThemeProvider};
 
 #[styled_component(Inside)]
 pub fn inside() -> Html {
-    let theme_ctx = use_context::<ThemeContext>().unwrap();
+    let theme = use_theme();
 
-    let theme_str = match *theme_ctx {
+    let theme_str = match theme.kind() {
         ThemeKind::Light => "Dark Theme",
         ThemeKind::Dark => "Light Theme",
     };
 
-    let other_theme = match *theme_ctx {
+    let other_theme = match theme.kind() {
         ThemeKind::Light => ThemeKind::Dark,
         ThemeKind::Dark => ThemeKind::Light,
     };
 
-    let switch_theme = Callback::from(move |_| theme_ctx.set(other_theme.clone()));
+    let switch_theme = Callback::from(move |_| theme.set(other_theme.clone()));
 
     html! {
         <div>
@@ -39,17 +39,15 @@ pub fn inside() -> Html {
 
 #[styled_component(App)]
 pub fn app() -> Html {
-    let theme_kind = use_state(|| ThemeKind::Light);
+    let theme = use_theme();
 
-    let theme_str = match *theme_kind {
+    let theme_str = match theme.kind() {
         ThemeKind::Light => "light theme",
         ThemeKind::Dark => "dark theme",
     };
 
-    let theme_ctx = ThemeContext::new(theme_kind.clone());
-
     html! {
-        <ContextProvider<ThemeContext> context={theme_ctx}>
+        <>
             // Global Styles can be applied with <Global /> component.
             <Global css={css!(
                 r#"
@@ -69,8 +67,8 @@ pub fn app() -> Html {
                         color: ${ft_color};
                     }
                 "#,
-                bg = theme_kind.current().background_color.clone(),
-                ft_color = theme_kind.current().font_color.clone(),
+                bg = theme.background_color.clone(),
+                ft_color = theme.font_color.clone(),
             )} />
             <h1>{"Yew Theming w/ Context"}</h1>
             <div class={css!(
@@ -90,18 +88,27 @@ pub fn app() -> Html {
                     flex-direction: column;
                     background-color: ${bg};
                 "#,
-                bg = theme_kind.current().paper_color.clone()
+                bg = theme.paper_color.clone()
             )} id="yew-sample-content">
                 {"You are now using the "}{theme_str}{"!"}
                 <Inside />
             </div>
-        </ContextProvider<ThemeContext>>
+        </>
+    }
+}
+
+#[styled_component(Root)]
+pub fn root() -> Html {
+    html! {
+        <ThemeProvider>
+            <App />
+        </ThemeProvider>
     }
 }
 
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
-    yew::start_app::<App>();
+    yew::start_app::<Root>();
 }
 
 #[cfg(test)]
