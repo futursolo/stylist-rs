@@ -5,10 +5,8 @@ members = [
     "packages/stylist-macros",
 
     "examples/benchmarks",
-    "examples/proc-macros",
     "examples/yew-integration",
     "examples/yew-shadow",
-    "examples/yew-theme-agent",
-    "examples/yew-theme-yewdux",
+    "examples/yew-theme-context",
 ]
 resolver = "2"

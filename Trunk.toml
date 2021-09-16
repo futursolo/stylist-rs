@@ -9,8 +9,7 @@ ignore = [
 
   "examples/benchmarks/target/",
   "examples/yew-integration/target/",
-  "examples/yew-theme-agent/target/",
-  "examples/yew-theme-yewdux/target/",
+  "examples/yew-theme-context/target/",
 ]
 
 [tools]

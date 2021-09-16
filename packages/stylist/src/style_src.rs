@@ -4,6 +4,7 @@ use std::borrow::Cow;
 use std::marker::PhantomData;
 
 use crate::ast::Sheet;
+use crate::manager::StyleManager;
 use crate::Result;
 #[cfg(feature = "yew_integration")]
 use crate::Style;
@@ -47,6 +48,8 @@ pub struct StyleSource<'a> {
     inner: SheetSource,
     #[cfg(not(feature = "parser"))]
     _marker: PhantomData<&'a ()>,
+
+    manager: Option<StyleManager>,
 }
 
 impl StyleSource<'_> {
@@ -61,7 +64,15 @@ impl StyleSource<'_> {
     #[cfg(feature = "yew_integration")]
     pub(crate) fn to_style(&self) -> Style {
         use stylist_core::ResultDisplay;
-        Style::new(self.clone()).expect_display("Failed to create style")
+        Style::new_with_manager(self.clone(), self.manager.clone().unwrap_or_default())
+            .expect_display("Failed to create style")
+    }
+
+    #[doc(hidden)]
+    pub fn with_manager(mut self, manager: StyleManager) -> Self {
+        self.manager = Some(manager);
+
+        self
     }
 }
 
@@ -71,6 +82,7 @@ impl From<Sheet> for StyleSource<'_> {
             inner: SheetSource::Sheet(other),
             #[cfg(not(feature = "parser"))]
             _marker: PhantomData,
+            manager: None,
         }
     }
 }
@@ -84,6 +96,7 @@ mod feat_parser {
         fn from(other: String) -> StyleSource<'static> {
             StyleSource {
                 inner: SheetSource::String(other.into()),
+                manager: None,
             }
         }
     }
@@ -92,6 +105,7 @@ mod feat_parser {
         fn from(other: &'a str) -> StyleSource<'a> {
             StyleSource {
                 inner: SheetSource::String(other.into()),
+                manager: None,
             }
         }
     }
@@ -100,6 +114,7 @@ mod feat_parser {
         fn from(other: Cow<'a, str>) -> StyleSource<'a> {
             StyleSource {
                 inner: SheetSource::String(other),
+                manager: None,
             }
         }
     }

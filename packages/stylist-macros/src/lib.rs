@@ -13,11 +13,13 @@ mod inline;
 mod literal;
 
 mod css;
+mod css_yew_impl;
 mod global_style;
 mod output;
 mod sheet;
 mod spacing_iterator;
 mod style;
+mod styled_component;
 
 #[proc_macro]
 #[proc_macro_error]
@@ -41,4 +43,15 @@ pub fn global_style(input: TokenStream) -> TokenStream {
 #[proc_macro_error]
 pub fn css(input: TokenStream) -> TokenStream {
     css::macro_fn(input.into()).into()
+}
+
+#[proc_macro]
+#[proc_macro_error]
+pub fn __css_yew_impl(input: TokenStream) -> TokenStream {
+    css_yew_impl::macro_fn(input.into()).into()
+}
+
+#[proc_macro_attribute]
+pub fn styled_component(attr: TokenStream, item: TokenStream) -> TokenStream {
+    styled_component::macro_fn(attr, item)
 }

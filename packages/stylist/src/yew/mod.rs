@@ -3,8 +3,17 @@
 use yew::html::Classes;
 use yew::html::IntoPropValue;
 
+#[doc(hidden)]
+pub use stylist_macros::__css_yew_impl;
+pub use stylist_macros::styled_component;
+
 use crate::ast::Sheet;
+use crate::manager::StyleManager;
 use crate::{Style, StyleSource};
+
+use yew::html::ImplicitClone;
+
+impl ImplicitClone for StyleManager {}
 
 mod global;
 
