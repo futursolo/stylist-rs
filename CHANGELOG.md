@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.10.0
+
+### Other Changes:
+- Added an API to style Yew Function Component.
+
 ## v0.9.2
 
 ### Other Changes:

@@ -66,8 +66,6 @@ pub fn styled_component_impl(
 
             #block
         }
-
-
     };
 
     Ok(quoted)
