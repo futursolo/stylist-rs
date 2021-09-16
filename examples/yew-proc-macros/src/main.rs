@@ -30,21 +30,21 @@ pub fn app() -> Html {
         <>
             // Global Styles can be applied with <Global /> component.
             <Global css={css!(r#"
-                    html, body {
-                        font-family: sans-serif;
+                html, body {
+                    font-family: sans-serif;
 
-                        padding: 0;
-                        margin: 0;
+                    padding: 0;
+                    margin: 0;
 
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        min-height: 100vh;
-                        flex-direction: column;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    flex-direction: column;
 
-                        background-color: rgb(237, 244, 255);
-                    }
-                "#)} />
+                    background-color: rgb(237, 244, 255);
+                }
+            "#)} />
             <h1>{"Yew Procedural Macros Example"}</h1>
             <div class={css!(r#"
                 box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
