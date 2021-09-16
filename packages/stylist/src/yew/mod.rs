@@ -32,6 +32,86 @@ pub use stylist_macros::__css_yew_impl;
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component;
 
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __use_stylist_item {
+    ($mgr:ident, use css as $i:ident) => {
+        macro_rules! $i {
+            ($args:tt) => {
+                $crate::css!($args).with_manager($mgr.clone())
+            };
+        }
+    };
+    ($mgr:ident, use style as $i:ident) => {
+        macro_rules! $i {
+            ($args:tt) => {
+                $crate::style!($args).with_manager($mgr.clone())
+            };
+        }
+    };
+    ($mgr:ident, use global_style as $i:ident) => {
+        macro_rules! $i {
+            ($args:tt) => {
+                $crate::global_style!($args).with_manager($mgr.clone())
+            };
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __use_stylist_item_dispatch {
+    ($mgr:ident, use css as $i:ident) => {
+        $crate::__use_stylist_item!($mgr, use css as $i)
+    };
+    ($mgr:ident, use css) => {
+        $crate::__use_stylist_item!($mgr, use css as css)
+    };
+    ($mgr:ident, use style as $i:ident) => {
+        $crate::__use_stylist_item!($mgr, use style as $i)
+    };
+    ($mgr:ident, use style) => {
+        $crate::__use_stylist_item!($mgr, use style as style)
+    };
+    ($mgr:ident, use global_style as $i:ident) => {
+        $crate::__use_stylist_item!($mgr, use global_style as $i)
+    };
+    ($mgr:ident, use global_style) => {
+        $crate::__use_stylist_item!($mgr, use global_style as global_style)
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __use_stylist {
+    ($($l:ident$( as $i:ident)?),+) => {
+        let __stylist_style_manager__ =
+            ::yew::functional::use_context::<::stylist::manager::StyleManager>()
+                .unwrap_or_default();
+        $($crate::__use_stylist_item_dispatch!(__stylist_style_manager__, use $l$( as $i)?));*
+    };
+}
+
+/// A procedural macro to style a functional Yew component. This introduces context
+/// sensitive versions of stylist macros that respect the [`StyleManager`] scoped to
+/// the component.
+/// The arguments are the comma separated names of the macros you want to use, optionally
+/// followed by `as <ident>`.
+///
+/// # Example:
+///
+/// ```rust
+/// use yew::prelude::*;
+/// use stylist::yew::use_stylist;
+///
+/// #[function_component(MyStyledComponent)]
+/// fn my_styled_component() -> Html {
+///     use_stylist!(css, style as sstyle, global_style);
+///     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
+/// }
+/// ```
+pub use __use_stylist as use_stylist;
+
 use crate::ast::Sheet;
 use crate::manager::StyleManager;
 use crate::{Style, StyleSource};

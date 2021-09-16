@@ -1,10 +1,11 @@
-use stylist::yew::{styled_component, Global};
+use stylist::yew::{use_stylist, Global};
 use yew::prelude::*;
 
 use log::Level;
 
-#[styled_component(Inside)]
+#[function_component(Inside)]
 pub fn inside() -> Html {
+    use_stylist!(css);
     html! {
         <div class={css!(r#"
             width: 200px;
@@ -24,8 +25,9 @@ pub fn inside() -> Html {
     }
 }
 
-#[styled_component(App)]
+#[function_component(App)]
 pub fn app() -> Html {
+    use_stylist!(css);
     html! {
         <>
             // Global Styles can be applied with <Global /> component.
