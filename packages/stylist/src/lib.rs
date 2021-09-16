@@ -20,10 +20,11 @@
 //! use std::borrow::Cow;
 //!
 //! use yew::prelude::*;
-//! use stylist::yew::styled_component;
+//! use stylist::yew::use_stylist;
 //!
-//! #[styled_component(MyStyledComponent)]
+//! #[function_component(MyStyledComponent)]
 //! fn my_styled_component() -> Html {
+//!     use_stylist!(css);
 //!     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
 //! }
 //! ```

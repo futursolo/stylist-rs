@@ -1,7 +1,6 @@
 use std::ops::Deref;
 
 use once_cell::sync::Lazy;
-use stylist::yew::styled_component;
 use yew::html::ImplicitClone;
 use yew::prelude::*;
 
@@ -80,7 +79,7 @@ pub(crate) struct ThemeProviderProps {
     pub children: Children,
 }
 
-#[styled_component(ThemeProvider)]
+#[function_component(ThemeProvider)]
 pub(crate) fn theme_provider(props: &ThemeProviderProps) -> Html {
     let theme_kind = use_state(|| ThemeKind::Light);
 

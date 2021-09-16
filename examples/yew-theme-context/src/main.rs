@@ -1,4 +1,4 @@
-use stylist::yew::{styled_component, Global};
+use stylist::yew::{use_stylist, Global};
 use yew::prelude::*;
 
 use log::Level;
@@ -7,8 +7,9 @@ mod contexts;
 
 use contexts::{use_theme, ThemeKind, ThemeProvider};
 
-#[styled_component(Inside)]
+#[function_component(Inside)]
 pub fn inside() -> Html {
+    use_stylist!(css);
     let theme = use_theme();
 
     let theme_str = match theme.kind() {
@@ -37,8 +38,9 @@ pub fn inside() -> Html {
     }
 }
 
-#[styled_component(App)]
+#[function_component(App)]
 pub fn app() -> Html {
+    use_stylist!(css);
     let theme = use_theme();
 
     let theme_str = match theme.kind() {
@@ -97,7 +99,7 @@ pub fn app() -> Html {
     }
 }
 
-#[styled_component(Root)]
+#[function_component(Root)]
 pub fn root() -> Html {
     html! {
         <ThemeProvider>

@@ -4,55 +4,26 @@ use yew::html::Classes;
 use yew::html::IntoPropValue;
 
 #[doc(hidden)]
-#[cfg(feature = "macros")]
-pub use stylist_macros::__css_yew_impl;
-
-/// A procedural macro to style Yew component.
-///
-/// # Example:
-///
-/// ```rust
-/// use std::borrow::Cow;
-///
-/// use yew::prelude::*;
-/// use stylist::yew::styled_component;
-///
-/// #[styled_component(MyStyledComponent)]
-/// fn my_styled_component() -> Html {
-///     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
-/// }
-/// ```
-///
-/// # Note:
-///
-/// You don't need to import [`css!`](crate::css) inside of a `styled_component`.
-///
-/// This macro imports a special version of [`css!`](crate::css) macro that is aware of the current style manager.
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::styled_component;
-
-#[doc(hidden)]
 #[macro_export]
 macro_rules! __use_stylist_item {
-    ($mgr:ident, use css as $i:ident) => {
+    (($dol:tt) , $mgr:ident, use css as $i:ident) => {
         macro_rules! $i {
-            ($args:tt) => {
-                $crate::css!($args).with_manager($mgr.clone())
+            ($dol( $dol args:tt )*) => {
+                $crate::css!($dol( $dol args )*).with_manager($mgr.clone())
             };
         }
     };
-    ($mgr:ident, use style as $i:ident) => {
+    (($dol:tt) , $mgr:ident, use style as $i:ident) => {
         macro_rules! $i {
-            ($args:tt) => {
-                $crate::style!($args).with_manager($mgr.clone())
+            ($dol( $dol args:tt )*) => {
+                $crate::style!($dol( $dol args )*).with_manager($mgr.clone())
             };
         }
     };
-    ($mgr:ident, use global_style as $i:ident) => {
+    (($dol:tt) , $mgr:ident, use global_style as $i:ident) => {
         macro_rules! $i {
-            ($args:tt) => {
-                $crate::global_style!($args).with_manager($mgr.clone())
+            ($dol( $dol args:tt )*) => {
+                $crate::global_style!($dol( $dol args )*).with_manager($mgr.clone())
             };
         }
     };
@@ -62,22 +33,22 @@ macro_rules! __use_stylist_item {
 #[macro_export]
 macro_rules! __use_stylist_item_dispatch {
     ($mgr:ident, use css as $i:ident) => {
-        $crate::__use_stylist_item!($mgr, use css as $i)
+        $crate::__use_stylist_item!(($) , $mgr, use css as $i)
     };
     ($mgr:ident, use css) => {
-        $crate::__use_stylist_item!($mgr, use css as css)
+        $crate::__use_stylist_item!(($) , $mgr, use css as css)
     };
     ($mgr:ident, use style as $i:ident) => {
-        $crate::__use_stylist_item!($mgr, use style as $i)
+        $crate::__use_stylist_item!(($) , $mgr, use style as $i)
     };
     ($mgr:ident, use style) => {
-        $crate::__use_stylist_item!($mgr, use style as style)
+        $crate::__use_stylist_item!(($) , $mgr, use style as style)
     };
     ($mgr:ident, use global_style as $i:ident) => {
-        $crate::__use_stylist_item!($mgr, use global_style as $i)
+        $crate::__use_stylist_item!(($) , $mgr, use global_style as $i)
     };
     ($mgr:ident, use global_style) => {
-        $crate::__use_stylist_item!($mgr, use global_style as global_style)
+        $crate::__use_stylist_item!(($) , $mgr, use global_style as global_style)
     };
 }
 
