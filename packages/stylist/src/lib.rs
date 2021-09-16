@@ -137,9 +137,8 @@
 //!
 //! ### Theming
 //!
-//! There're theming examples using
-//! [Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
-//! and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
+//! There's theming example using
+//! [Yew Context API](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-context).
 //!
 //! ## Features Flags
 //!
