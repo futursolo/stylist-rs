@@ -1,5 +1,5 @@
 [package]
-name = "stylist-benchmarks"
+name = "example-yew-theme-context"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2018"
@@ -8,9 +8,21 @@ edition = "2018"
 log = "0.4.14"
 console_log = { version = "0.2.0", features = ["color"] }
 yew = { git = "https://github.com/yewstack/yew" }
+yewtil = "0.4.0"
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
-web-sys = { version = "0.3.54", features = [
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.27"
+wasm-bindgen = "0.2.77"
+
+[dev-dependencies.web-sys]
+version = "0.3.54"
+features = [
     "Window",
-    "Performance",
-] }
-gloo = "0.3.0"
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlHeadElement",
+    "HtmlStyleElement",
+    "CssStyleDeclaration",
+]

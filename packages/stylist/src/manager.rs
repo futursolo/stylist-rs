@@ -39,6 +39,11 @@ impl Default for StyleManagerBuilder {
         }
     }
 }
+impl PartialEq for StyleManager {
+    fn eq(&self, other: &Self) -> bool {
+        Rc::ptr_eq(&self.inner, &other.inner)
+    }
+}
 
 impl StyleManagerBuilder {
     /// Creates a builder for to build StyleManager.

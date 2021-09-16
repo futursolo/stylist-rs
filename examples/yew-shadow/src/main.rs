@@ -14,13 +14,13 @@ impl Component for ShadowRoot {
     type Message = ();
     type Properties = ();
 
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self {
             root_ref: NodeRef::default(),
         }
     }
 
-    fn rendered(&mut self, first_render: bool) {
+    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
         if first_render {
             if let Some(m) = self.root_ref.cast::<Element>() {
                 if let Ok(root) = m.attach_shadow(&ShadowRootInit::new(ShadowRootMode::Open)) {
@@ -66,17 +66,9 @@ impl Component for ShadowRoot {
         }
     }
 
-    fn update(&mut self, _: Self::Message) -> ShouldRender {
-        false
-    }
-
-    fn change(&mut self, _: Self::Properties) -> ShouldRender {
-        false
-    }
-
-    fn view(&self) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
-            <div ref=self.root_ref.clone() />
+            <div ref={self.root_ref.clone()} />
         }
     }
 }
@@ -87,19 +79,11 @@ impl Component for App {
     type Message = ();
     type Properties = ();
 
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         Self
     }
 
-    fn update(&mut self, _: Self::Message) -> ShouldRender {
-        false
-    }
-
-    fn change(&mut self, _: Self::Properties) -> ShouldRender {
-        false
-    }
-
-    fn view(&self) -> Html {
+    fn view(&self, _ctx: &Context<Self>) -> Html {
         html! {
             <>
                 <Global css=r#"
@@ -123,7 +107,7 @@ impl Component for App {
                     }
                 "# />
                 <h1>{"Yew Shadow DOM Example"}</h1>
-                <div class=self.style()>
+                <div class={self.style()}>
                     <span>{"Outside of Shadow DOM."}</span>
                     <ShadowRoot />
                 </div>

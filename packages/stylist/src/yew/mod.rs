@@ -3,8 +3,42 @@
 use yew::html::Classes;
 use yew::html::IntoPropValue;
 
+#[doc(hidden)]
+#[cfg(feature = "macros")]
+pub use stylist_macros::__css_yew_impl;
+
+/// A procedural macro to style Yew component.
+///
+/// # Example:
+///
+/// ```rust
+/// use std::borrow::Cow;
+///
+/// use yew::prelude::*;
+/// use stylist::yew::styled_component;
+///
+/// #[styled_component(MyStyledComponent)]
+/// fn my_styled_component() -> Html {
+///     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
+/// }
+/// ```
+///
+/// # Note:
+///
+/// You don't need to import [`css!`](crate::css) inside of a `styled_component`.
+///
+/// This macro imports a special version of [`css!`](crate::css) macro that is aware of the current style manager.
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::styled_component;
+
 use crate::ast::Sheet;
+use crate::manager::StyleManager;
 use crate::{Style, StyleSource};
+
+use yew::html::ImplicitClone;
+
+impl ImplicitClone for StyleManager {}
 
 mod global;
 

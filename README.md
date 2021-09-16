@@ -21,34 +21,17 @@ stylist = "0.9"
 For detailed usage, please see
 [documentation](https://docs.rs/stylist/).
 
-## Yew Integration
+### Yew Integration
 
-To style your yew component, you can use `css!` macro:
+To style your component, you can use `styled_component` attribute with `css!`
+macro.
 
 ```rust
-use stylist::css;
+use stylist::yew::styled_component;
 
-struct MyStyledComponent {}
-
-impl Component for MyStyledComponent {
-    type Message = ();
-    type Properties = ();
-
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        Self {}
-    }
-
-    fn change(&mut self, _: Self::Properties) -> ShouldRender {
-        false
-    }
-
-    fn update(&mut self, _: Self::Message) -> ShouldRender {
-        false
-    }
-
-    fn view(&self) -> Html {
-        html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
-    }
+#[styled_component(MyStyledComponent)]
+fn my_styled_component() -> Html {
+    html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
 }
 ```
 
