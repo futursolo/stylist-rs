@@ -5,8 +5,13 @@ members = [
     "packages/stylist-macros",
 
     "examples/benchmarks",
+    "examples/yew-proc-macros",
     "examples/yew-integration",
     "examples/yew-shadow",
     "examples/yew-theme-context",
 ]
 resolver = "2"
+
+[profile.release]
+opt-level = 'z'
+lto = true
