@@ -3,6 +3,7 @@ members = [
     "packages/stylist",
     "packages/stylist-core",
     "packages/stylist-macros",
+    "packages/stylist-yew-macros",
 
     "examples/benchmarks",
     "examples/yew-proc-macros",

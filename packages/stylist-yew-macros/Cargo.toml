@@ -1,0 +1,21 @@
+[package]
+name = "stylist-yew-macros"
+version = "0.1.0"
+edition = "2018"
+license = "MIT"
+repository = "https://github.com/futursolo/stylist-rs"
+authors = [
+    "Kaede Hoshiakwa <futursolo@icloud.com>",
+    "Martin Molzer <ga65guy@mytum.de>",
+]
+description = "Stylist is a CSS-in-Rust styling solution for WebAssembly Applications."
+keywords = [
+    "CSS",
+    "web",
+    "css-in-rust",
+    "yew"
+]
+categories = ["wasm", "web-programming"]
+readme = "README.md"
+homepage = "https://github.com/futursolo/stylist-rs"
+resolver = "2"
