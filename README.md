@@ -27,6 +27,7 @@ To style your component, you can use `styled_component` attribute with `css!`
 macro.
 
 ```rust
+use yew::prelude::*;
 use stylist::yew::styled_component;
 
 #[styled_component(MyStyledComponent)]

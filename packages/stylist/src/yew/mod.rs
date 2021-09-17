@@ -41,8 +41,10 @@ use yew::html::ImplicitClone;
 impl ImplicitClone for StyleManager {}
 
 mod global;
+mod provider;
 
 pub use global::{Global, GlobalProps};
+pub use provider::{ManagerProvider, ManagerProviderProps};
 
 impl From<Style> for Classes {
     fn from(style: Style) -> Self {

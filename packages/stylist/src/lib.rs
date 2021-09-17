@@ -17,8 +17,6 @@
 //! You can create a style and use it with yew like this:
 //!
 //! ```rust
-//! use std::borrow::Cow;
-//!
 //! use yew::prelude::*;
 //! use stylist::yew::styled_component;
 //!

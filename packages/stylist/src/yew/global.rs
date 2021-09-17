@@ -12,7 +12,7 @@ pub struct GlobalProps {
 
 /// A Global Style that will be applied to `<html />` tag, inspired by [emotion](https://emotion.sh).
 ///
-/// The `css` attribute accepts anything that implements
+/// The `css` attribute accepts type that implements
 /// [`IntoPropValue<StyleSource>`](yew::html::IntoPropValue) and
 /// panics if the string failed to be parsed into a stylesheet.
 ///
