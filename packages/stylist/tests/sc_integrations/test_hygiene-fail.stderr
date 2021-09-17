@@ -1,0 +1,5 @@
+error[E0425]: cannot find value `__stylist_style_manager__` in this scope
+ --> $DIR/test_hygiene-fail.rs:6:15
+  |
+6 |     let mgr = __stylist_style_manager__.clone();
+  |               ^^^^^^^^^^^^^^^^^^^^^^^^^ not found in this scope

@@ -3,10 +3,6 @@
 use yew::html::Classes;
 use yew::html::IntoPropValue;
 
-#[doc(hidden)]
-#[cfg(feature = "macros")]
-pub use stylist_macros::__css_yew_impl;
-
 /// A procedural macro to style Yew component.
 ///
 /// # Example:
