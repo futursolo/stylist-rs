@@ -49,6 +49,10 @@ pub use stylist_macros::styled_component;
 #[cfg(feature = "yew_use_style")]
 pub use stylist_macros::use_style;
 
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::styled_component_base;
+
 use crate::ast::Sheet;
 use crate::manager::StyleManager;
 use crate::{Style, StyleSource};
