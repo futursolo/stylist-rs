@@ -3,25 +3,28 @@
 #[macro_export]
 macro_rules! __use_stylist_item {
     (($dol:tt) , $mgr:ident, use css as $i:ident) => {
-        macro_rules! $i {
-            ($dol( $dol args:tt )*) => {
-                ::stylist::css!($dol( $dol args )*).with_manager($mgr.clone())
-            };
-        }
+        macro_rules! $i
+                {
+                    ($dol( $dol args:tt )*) => {
+                        ::stylist::css!($dol( $dol args )*).with_manager($mgr.clone())
+                    };
+                }
     };
     (($dol:tt) , $mgr:ident, use style as $i:ident) => {
-        macro_rules! $i {
-            ($dol( $dol args:tt )*) => {
-                ::stylist::style!($dol( $dol args )*).with_manager($mgr.clone())
-            };
-        }
+        macro_rules! $i
+                {
+                    ($dol( $dol args:tt )*) => {
+                        ::stylist::style!($dol( $dol args )*).with_manager($mgr.clone())
+                    };
+                }
     };
     (($dol:tt) , $mgr:ident, use global_style as $i:ident) => {
-        macro_rules! $i {
-            ($dol( $dol args:tt )*) => {
-                ::stylist::global_style!($dol( $dol args )*).with_manager($mgr.clone())
-            };
-        }
+        macro_rules! $i
+                {
+                    ($dol( $dol args:tt )*) => {
+                        ::stylist::global_style!($dol( $dol args )*).with_manager($mgr.clone())
+                    };
+                }
     };
 }
 
