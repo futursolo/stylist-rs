@@ -50,6 +50,7 @@ enum State {
     Excl,
 }
 
+// affix a .with_manager(__stylist_style_manager__) when after `css!` (or other macro name).
 pub fn affix_manager(macro_name: &str, input: TokenStream, mgr_ident: Ident) -> TokenStream {
     let tokens = input.into_iter();
 
@@ -91,7 +92,7 @@ pub fn affix_manager(macro_name: &str, input: TokenStream, mgr_ident: Ident) -> 
                 if state == State::Excl {
                     completed.extend(quote! {
                         .with_manager({
-                            #![allow(clippy::redundant_clone)]
+                            #[allow(clippy::redundant_clone)]
                             #mgr_ident.clone()
                         })
                     });
@@ -127,8 +128,8 @@ pub fn styled_component_impl(
     let justified_tokens = affix_manager("css", block_tokens, mgr_ident.clone());
 
     let quoted = quote! {
-        #(#attrs)*
         #[::yew::functional::function_component(#component_name)]
+        #(#attrs)*
         #vis #sig {
             let #mgr_ident = ::yew::functional::use_context::<::stylist::manager::StyleManager>().unwrap_or_default();
             #[allow(unused_imports)]
