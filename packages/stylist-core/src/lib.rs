@@ -9,6 +9,7 @@
 mod error;
 pub use error::{Error, Result, ResultDisplay};
 pub mod ast;
+pub mod bow;
 
 #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
 #[cfg(feature = "parser")]
@@ -41,8 +42,11 @@ mod tests {
                     border: 1px solid black;
 
                     @supports (max-width: 500px) {
+                        max-width: 500px;
+
                         @media screen and (max-width: 500px) {
                             display: flex;
+                            flex-direction: row;
                         }
                     }
                 }
@@ -72,9 +76,15 @@ mod tests {
     border: 1px solid black;
 }
 @supports (max-width: 500px) {
+    .test-style-cls header, .test-style-cls footer {
+        max-width: 500px;
+    }
+}
+@supports (max-width: 500px) {
     @media screen and (max-width: 500px) {
         .test-style-cls header, .test-style-cls footer {
             display: flex;
+            flex-direction: row;
         }
     }
 }

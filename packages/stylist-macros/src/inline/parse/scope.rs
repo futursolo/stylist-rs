@@ -1,3 +1,5 @@
+use std::mem;
+
 use syn::{
     braced,
     parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
@@ -9,7 +11,7 @@ use crate::output::OutputRuleBlockContent;
 
 #[derive(Debug)]
 pub struct CssScope {
-    brace: token::Brace,
+    _brace: token::Brace,
     pub contents: Vec<CssScopeContent>,
 }
 
@@ -18,7 +20,10 @@ impl Parse for CssScope {
         let inner;
         let brace = braced!(inner in input);
         let contents = CssScopeContent::consume_list_of_rules(&inner)?;
-        Ok(Self { brace, contents })
+        Ok(Self {
+            _brace: brace,
+            contents,
+        })
     }
 }
 
@@ -27,12 +32,12 @@ impl CssScope {
         let mut attrs = Vec::new();
         let mut contents = Vec::new();
 
-        let collect_attrs = |attrs: &mut Vec<CssAttribute>,
-                             contents: &mut Vec<OutputRuleBlockContent>,
-                             ctx: &mut IntoOutputContext| {
+        let flush_attrs = |attrs: &mut Vec<CssAttribute>,
+                           contents: &mut Vec<OutputRuleBlockContent>,
+                           ctx: &mut IntoOutputContext| {
             if !attrs.is_empty() {
                 contents.push(OutputRuleBlockContent::Block(Box::new(
-                    CssQualifiedRule::into_dangling_output(attrs.drain(0..).collect(), ctx),
+                    CssQualifiedRule::into_dangling_output(mem::take(attrs), ctx),
                 )));
             }
         };
@@ -41,19 +46,19 @@ impl CssScope {
             match scope {
                 CssScopeContent::Attribute(m) => attrs.push(m),
                 CssScopeContent::AtRule(m) => {
-                    collect_attrs(&mut attrs, &mut contents, ctx);
+                    flush_attrs(&mut attrs, &mut contents, ctx);
                     contents.push(OutputRuleBlockContent::Rule(Box::new(
                         m.into_rule_output(ctx),
                     )));
                 }
                 CssScopeContent::Nested(m) => {
-                    collect_attrs(&mut attrs, &mut contents, ctx);
+                    flush_attrs(&mut attrs, &mut contents, ctx);
                     contents.push(OutputRuleBlockContent::Block(Box::new(m.into_output(ctx))));
                 }
             }
         }
 
-        collect_attrs(&mut attrs, &mut contents, ctx);
+        flush_attrs(&mut attrs, &mut contents, ctx);
 
         contents
     }

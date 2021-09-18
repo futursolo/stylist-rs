@@ -1,4 +1,5 @@
 use proc_macro2::TokenStream;
+use syn::parse::Error as ParseError;
 
 use crate::output::OutputFragment;
 
@@ -20,7 +21,7 @@ pub use scope_content::CssScopeContent;
 
 #[derive(Debug, Default)]
 pub struct IntoOutputContext {
-    errors: Vec<syn::parse::Error>,
+    errors: Vec<ParseError>,
 }
 
 impl IntoOutputContext {
@@ -30,12 +31,12 @@ impl IntoOutputContext {
 
     pub fn extend_errors<I>(&mut self, errors: I)
     where
-        I: IntoIterator<Item = syn::parse::Error>,
+        I: IntoIterator<Item = ParseError>,
     {
         self.errors.extend(errors);
     }
 
-    pub fn push_error(&mut self, error: syn::parse::Error) {
+    pub fn push_error(&mut self, error: ParseError) {
         self.errors.push(error);
     }
 
@@ -65,13 +66,10 @@ impl IntoOutputContext {
 pub fn fragment_spacing(l: &OutputFragment, r: &OutputFragment) -> Option<OutputFragment> {
     use super::component_value::PreservedToken::*;
     use OutputFragment::*;
-    let needs_spacing = matches!(
-        (l, r),
-        (Delimiter(_, false), Token(Ident(_)))
-            | (
-                Token(Ident(_)) | Token(Literal(_)),
-                Token(Ident(_)) | Token(Literal(_))
-            )
-    );
+    let left_ends_compound = matches!(l, Delimiter(_, false) | Token(Ident(_)) | Token(Literal(_)))
+        || matches!(l, Token(Punct(ref p)) if p.as_char() == '*');
+    let right_starts_compound = matches!(r, Token(Ident(_)) | Token(Literal(_)))
+        || matches!(r, Token(Punct(ref p)) if "*#".contains(p.as_char()));
+    let needs_spacing = left_ends_compound && right_starts_compound;
     needs_spacing.then(|| ' '.into())
 }

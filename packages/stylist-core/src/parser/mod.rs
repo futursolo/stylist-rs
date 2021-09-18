@@ -13,6 +13,7 @@ use nom::IResult;
 use crate::ast::{
     Block, Rule, RuleBlockContent, ScopeContent, Selector, Sheet, StringFragment, StyleAttribute,
 };
+use crate::bow::Bow;
 use crate::{Error, Result};
 
 mod error;
@@ -169,6 +170,7 @@ impl Parser {
                     is_not("${;}/\""),
                     recognize(Self::interpolation),
                     Self::string,
+                    recognize(preceded(tag("/"), none_of("${;}/\"*"))),
                 )))),
                 |m: &str| StringFragment {
                     inner: m.to_string().trim().to_string().into(),
@@ -181,7 +183,7 @@ impl Parser {
     fn attribute(i: &str) -> IResult<&str, StyleAttribute, VerboseError<&str>> {
         traced_context(
             "StyleAttribute",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 separated_pair(
                     // Key
                     Self::style_attr_key,
@@ -211,7 +213,7 @@ impl Parser {
 
         traced_context(
             "StyleAttributes",
-            expect_non_empty(Self::trimmed(terminated(
+            Self::trimmed(expect_non_empty(terminated(
                 separated_list1(tag(";"), Self::attribute),
                 preceded(opt(Self::sp), final_semicolon),
             ))),
@@ -229,7 +231,7 @@ impl Parser {
             terminated(many0(alt((is_not(r#"\""#), escaped_char))), tag("\"")),
         ));
 
-        traced_context("String", expect_non_empty(Self::trimmed(parse_str)))(i)
+        traced_context("String", Self::trimmed(expect_non_empty(parse_str)))(i)
     }
 
     /// Parse a string interpolation.
@@ -238,7 +240,7 @@ impl Parser {
     fn interpolation(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         traced_context(
             "Interpolation",
-            expect_non_empty(Self::trimmed(delimited(
+            Self::trimmed(expect_non_empty(delimited(
                 tag("${"),
                 Self::trimmed(recognize(preceded(
                     alpha1,
@@ -255,7 +257,7 @@ impl Parser {
     fn selector(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
         traced_context(
             "Selector",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 recognize(many1(alt((
                     recognize(preceded(none_of("$,}@{\""), opt(is_not("$,\"{")))),
                     Self::string,
@@ -270,7 +272,7 @@ impl Parser {
     fn condition(i: &str) -> IResult<&str, Vec<Selector>, VerboseError<&str>> {
         traced_context(
             "Condition",
-            expect_non_empty(Self::trimmed(many1(terminated(
+            Self::trimmed(expect_non_empty(many1(terminated(
                 Self::selector,
                 opt(tag(",")),
             )))),
@@ -280,7 +282,7 @@ impl Parser {
     fn block_contents(i: &str) -> IResult<&str, Vec<RuleBlockContent>, VerboseError<&str>> {
         traced_context(
             "BlockContents",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 many0(alt((
                     // Either Style Attributes
                     map(
@@ -290,7 +292,7 @@ impl Parser {
                     // Or an at rule
                     map(
                         |i| Parser::rule_block(i, RuleBlockKind::Other),
-                        |m| vec![RuleBlockContent::Rule(Box::new(m))],
+                        |m| vec![RuleBlockContent::Rule(Bow::Boxed(Box::new(m)))],
                     ),
                 ))),
                 |m: Vec<Vec<RuleBlockContent>>| m.into_iter().flatten().collect(),
@@ -301,12 +303,11 @@ impl Parser {
     /// Parse a [`Block`].
     fn block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         traced_context(
-            "StyleBlock",
-            expect_non_empty(Self::trimmed(map(
-                separated_pair(
+            "Block",
+            Self::trimmed(expect_non_empty(map(
+                pair(
                     Self::condition,
-                    tag("{"),
-                    terminated(Self::trimmed(Self::block_contents), tag("}")),
+                    delimited(tag("{"), Self::trimmed(Self::block_contents), tag("}")),
                 ),
                 |p: (Vec<Selector>, Vec<RuleBlockContent>)| {
                     ScopeContent::Block(Block {
@@ -333,7 +334,7 @@ impl Parser {
                     // Or an at rule
                     map(
                         |i| Parser::rule_block(i, RuleBlockKind::Other),
-                        |m: Rule| vec![RuleBlockContent::Rule(Box::new(m))],
+                        |m: Rule| vec![RuleBlockContent::Rule(Bow::Boxed(Box::new(m)))],
                     ),
                 )))),
             ),
@@ -352,7 +353,7 @@ impl Parser {
 
         traced_context(
             "RuleBlock",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 separated_pair(
                     // Collect at Rules.
                     cond,
@@ -373,7 +374,7 @@ impl Parser {
     fn dangling_block(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         traced_context(
             "DanglingBlock",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 |i| Self::attributes(i, true),
                 |attr: Vec<StyleAttribute>| {
                     ScopeContent::Block(Block {
@@ -393,7 +394,7 @@ impl Parser {
     fn scope(i: &str) -> IResult<&str, Vec<ScopeContent>, VerboseError<&str>> {
         traced_context(
             "Scope",
-            expect_non_empty(Self::trimmed(Parser::scope_contents)),
+            Self::trimmed(expect_non_empty(Parser::scope_contents)),
         )(i)
     }
 
@@ -408,7 +409,7 @@ impl Parser {
 
         traced_context(
             "AtRuleCondition",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 pair(
                     tags,
                     map(
@@ -450,7 +451,7 @@ impl Parser {
                     content: p
                         .1
                         .into_iter()
-                        .map(|m| RuleBlockContent::Rule(Box::new(m)))
+                        .map(|m| RuleBlockContent::Rule(Bow::Boxed(Box::new(m))))
                         .collect(),
                 },
             )),
@@ -461,7 +462,7 @@ impl Parser {
     fn at_rule(i: &str) -> IResult<&str, ScopeContent, VerboseError<&str>> {
         traced_context(
             "AtRule",
-            expect_non_empty(Self::trimmed(map(
+            Self::trimmed(expect_non_empty(map(
                 separated_pair(
                     // Collect at Rules.
                     |i| Self::at_rule_condition(i, (tag("@supports"), tag("@media"))),
@@ -477,8 +478,12 @@ impl Parser {
                             .1
                             .into_iter()
                             .map(|m| match m {
-                                ScopeContent::Block(m) => RuleBlockContent::Block(Box::new(m)),
-                                ScopeContent::Rule(m) => RuleBlockContent::Rule(Box::new(m)),
+                                ScopeContent::Block(m) => {
+                                    RuleBlockContent::Block(Bow::Boxed(Box::new(m)))
+                                }
+                                ScopeContent::Rule(m) => {
+                                    RuleBlockContent::Rule(Bow::Boxed(Box::new(m)))
+                                }
                             })
                             .collect(),
                     })
@@ -491,7 +496,7 @@ impl Parser {
     fn scope_contents(i: &str) -> IResult<&str, Vec<ScopeContent>, VerboseError<&str>> {
         traced_context(
             "ScopeContents",
-            expect_non_empty(Self::trimmed(many0(alt((
+            Self::trimmed(expect_non_empty(many0(alt((
                 // Either a dangling block
                 Parser::dangling_block,
                 // Or a Block
@@ -732,28 +737,34 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()].into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![StyleAttribute {
-                        key: "background-color".into(),
-                        value: vec!["red".into()].into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "background-color".into(),
+                            value: vec!["red".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and (max-width: 200px)".into()].into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![StyleAttribute {
-                        key: "color".into(),
-                        value: vec!["yellow".into()].into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "color".into(),
+                            value: vec!["yellow".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
         ]);
@@ -782,15 +793,18 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()].into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![StyleAttribute {
-                        key: "background-color".into(),
-                        value: vec!["red".into()].into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "background-color".into(),
+                            value: vec!["red".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
             ScopeContent::Block(Block {
@@ -876,27 +890,30 @@ mod tests {
                     "(backdrop-filter: blur(2px)) or (-webkit-backdrop-filter: blur(2px))".into(),
                 ]
                 .into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![
-                        StyleAttribute {
-                            key: "backdrop-filter".into(),
-                            value: vec!["blur(2px)".into()].into(),
-                        }
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![
+                            StyleAttribute {
+                                key: "backdrop-filter".into(),
+                                value: vec!["blur(2px)".into()].into(),
+                            }
+                            .into(),
+                            StyleAttribute {
+                                key: "-webkit-backdrop-filter".into(),
+                                value: vec!["blur(2px)".into()].into(),
+                            }
+                            .into(),
+                            StyleAttribute {
+                                key: "background-color".into(),
+                                value: vec!["rgb(0, 0, 0, 0.7)".into()].into(),
+                            }
+                            .into(),
+                        ]
                         .into(),
-                        StyleAttribute {
-                            key: "-webkit-backdrop-filter".into(),
-                            value: vec!["blur(2px)".into()].into(),
-                        }
-                        .into(),
-                        StyleAttribute {
-                            key: "background-color".into(),
-                            value: vec!["rgb(0, 0, 0, 0.7)".into()].into(),
-                        }
-                        .into(),
-                    ]
+                    }
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
             ScopeContent::Rule(Rule {
@@ -906,15 +923,18 @@ mod tests {
                         .into(),
                 ]
                 .into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![StyleAttribute {
-                        key: "background-color".into(),
-                        value: vec!["rgb(25, 25, 25)".into()].into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "background-color".into(),
+                            value: vec!["rgb(25, 25, 25)".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
         ]);
@@ -1005,24 +1025,30 @@ mod tests {
         let expected = Sheet::from(vec![ScopeContent::Rule(Rule {
             condition: vec!["@media ".into(), "print".into()].into(),
             content: vec![
-                RuleBlockContent::Block(Box::new(Block {
-                    condition: vec![].into(),
-                    content: vec![StyleAttribute {
-                        key: "color".into(),
-                        value: vec!["black".into()].into(),
+                RuleBlockContent::Block(
+                    Block {
+                        condition: vec![].into(),
+                        content: vec![StyleAttribute {
+                            key: "color".into(),
+                            value: vec!["black".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                })),
-                RuleBlockContent::Block(Box::new(Block {
-                    condition: vec![vec![".nested".into()].into()].into(),
-                    content: vec![StyleAttribute {
-                        key: "cursor".into(),
-                        value: vec!["none".into()].into(),
+                ),
+                RuleBlockContent::Block(
+                    Block {
+                        condition: vec![vec![".nested".into()].into()].into(),
+                        content: vec![StyleAttribute {
+                            key: "cursor".into(),
+                            value: vec!["none".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                })),
+                ),
             ]
             .into(),
         })]);
@@ -1143,15 +1169,18 @@ mod tests {
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![StyleAttribute {
-                        key: "display".into(),
-                        value: vec!["flex".into()].into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "display".into(),
+                            value: vec!["flex".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
         ]);
@@ -1215,15 +1244,18 @@ mod tests {
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![StyleAttribute {
-                        key: "display".into(),
-                        value: vec!["flex".into()].into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "display".into(),
+                            value: vec!["flex".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
         ]);
@@ -1282,15 +1314,18 @@ mod tests {
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![StyleAttribute {
-                        key: "display".into(),
-                        value: vec!["flex".into()].into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "display".into(),
+                            value: vec!["flex".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
         ]);
@@ -1325,22 +1360,8 @@ mod tests {
         let expected = Sheet::from(vec![
             ScopeContent::Block(Block {
                 condition: vec![vec!["span".into()].into()].into(),
-                content: vec![RuleBlockContent::Rule(Box::new(Rule {
-                    condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()]
-                        .into(),
-                    content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
-                        key: "background-color".into(),
-                        value: vec!["blue".into()].into(),
-                    })]
-                    .into(),
-                }))]
-                .into(),
-            }),
-            ScopeContent::Block(Block {
-                condition: vec![vec!["div".into()].into()].into(),
-                content: vec![RuleBlockContent::Rule(Box::new(Rule {
-                    condition: vec!["@supports ".into(), "(max-width: 500px)".into()].into(),
-                    content: vec![RuleBlockContent::Rule(Box::new(Rule {
+                content: vec![RuleBlockContent::Rule(
+                    Rule {
                         condition: vec!["@media ".into(), "screen and (max-width: 500px)".into()]
                             .into(),
                         content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
@@ -1348,25 +1369,91 @@ mod tests {
                             value: vec!["blue".into()].into(),
                         })]
                         .into(),
-                    }))]
+                    }
                     .into(),
-                }))]
+                )]
+                .into(),
+            }),
+            ScopeContent::Block(Block {
+                condition: vec![vec!["div".into()].into()].into(),
+                content: vec![RuleBlockContent::Rule(
+                    Rule {
+                        condition: vec!["@supports ".into(), "(max-width: 500px)".into()].into(),
+                        content: vec![RuleBlockContent::Rule(
+                            Rule {
+                                condition: vec![
+                                    "@media ".into(),
+                                    "screen and (max-width: 500px)".into(),
+                                ]
+                                .into(),
+                                content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                                    key: "background-color".into(),
+                                    value: vec!["blue".into()].into(),
+                                })]
+                                .into(),
+                            }
+                            .into(),
+                        )]
+                        .into(),
+                    }
+                    .into(),
+                )]
                 .into(),
             }),
             ScopeContent::Rule(Rule {
                 condition: vec!["@media ".into(), "screen and ${breakpoint}".into()].into(),
-                content: vec![RuleBlockContent::Block(Box::new(Block {
-                    condition: Cow::Borrowed(&[]),
-                    content: vec![StyleAttribute {
-                        key: "display".into(),
-                        value: vec!["flex".into()].into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![StyleAttribute {
+                            key: "display".into(),
+                            value: vec!["flex".into()].into(),
+                        }
+                        .into()]
+                        .into(),
                     }
-                    .into()]
                     .into(),
-                }))]
+                )]
                 .into(),
             }),
         ]);
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_slash_parsing() {
+        let test_str = r#"
+            grid-row: 1 / 3;
+            grid-row: 1/3;
+            grid-row: 1/ 3;
+            grid-row: 1 /3;
+        "#;
+
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![ScopeContent::Block(Block {
+            condition: vec![].into(),
+            content: vec![
+                RuleBlockContent::StyleAttr(StyleAttribute {
+                    key: "grid-row".into(),
+                    value: vec!["1 / 3".into()].into(),
+                }),
+                RuleBlockContent::StyleAttr(StyleAttribute {
+                    key: "grid-row".into(),
+                    value: vec!["1/3".into()].into(),
+                }),
+                RuleBlockContent::StyleAttr(StyleAttribute {
+                    key: "grid-row".into(),
+                    value: vec!["1/ 3".into()].into(),
+                }),
+                RuleBlockContent::StyleAttr(StyleAttribute {
+                    key: "grid-row".into(),
+                    value: vec!["1 /3".into()].into(),
+                }),
+            ]
+            .into(),
+        })]);
 
         assert_eq!(parsed, expected);
     }

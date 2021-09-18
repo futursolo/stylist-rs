@@ -10,6 +10,22 @@
 //!
 //! ## Usage
 //!
+//! ### Yew Integration
+//!
+//! To enable yew integration. Enable feature `yew_integration` in `Cargo.toml`.
+//!
+//! You can create a style and use it with yew like this:
+//!
+//! ```rust
+//! use yew::prelude::*;
+//! use stylist::yew::styled_component;
+//!
+//! #[styled_component(MyStyledComponent)]
+//! fn my_styled_component() -> Html {
+//!     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
+//! }
+//! ```
+//!
 //! ### Procedural Macros
 //!
 //! To create a stylesheet, you can use [`style!`]:
@@ -26,7 +42,7 @@
 //!             width: 100px
 //!         }
 //!     "#
-//! );
+//! ).expect("Failed to mount style!");
 //! ```
 //!
 //! ### Style API
@@ -50,7 +66,7 @@
 //!
 //! ### YieldStyle API
 //!
-//! Alternatively, any struct that implements [`YieldStyle`] trait can call
+//! Any struct that implements [`YieldStyle`] trait can call
 //! [`self.style()`](YieldStyle::style) to get a [`Style`] instance.
 //!
 //! ```rust
@@ -117,47 +133,10 @@
 //! }
 //! ```
 //!
-//! ## Yew Integration
-//!
-//! To enable yew integration. Enable feature `yew_integration` in `Cargo.toml`.
-//!
-//! Then create a style and use it with yew like this:
-//!
-//! ```rust
-//! use std::borrow::Cow;
-//!
-//! use yew::prelude::*;
-//! use stylist::css;
-//!
-//! struct MyStyledComponent {}
-//!
-//! impl Component for MyStyledComponent {
-//!     type Message = ();
-//!     type Properties = ();
-//!
-//!     fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-//!         Self {}
-//!     }
-//!
-//!     fn change(&mut self, _: Self::Properties) -> ShouldRender {
-//!         false
-//!     }
-//!
-//!     fn update(&mut self, _: Self::Message) -> ShouldRender {
-//!         false
-//!     }
-//!
-//!     fn view(&self) -> Html {
-//!         html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
-//!     }
-//! }
-//! ```
-//!
 //! ### Theming
 //!
-//! There're theming examples using
-//! [Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
-//! and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
+//! There's theming example using
+//! [Yew Context API](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-context).
 //!
 //! ## Features Flags
 //!
@@ -167,8 +146,7 @@
 //! - `yew_integration`: This flag enables yew integration, which implements [`Classes`](::yew::html::Classes) for
 //!   [`Style`] and provides a [`Global`](yew::Global) component for applying global styles.
 
-#[cfg(target_arch = "wasm32")]
-#[path = "arch_wasm.rs"]
+#[cfg(any(feature = "yew_use_media_query", target_arch = "wasm32"))]
 mod arch;
 
 pub mod manager;
@@ -194,13 +172,55 @@ pub mod yew;
 #[cfg(feature = "macros")]
 pub mod macros;
 
+/// A procedural macro that parses a string literal or an inline stylesheet into a [`Style`].
+///
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
+///
+/// # Example
+///
+/// ```
+/// use stylist::style;
+///
+/// // Returns a Style instance.
+/// let style = style!("color: red;");
+/// ```
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
-#[doc(no_inline)]
-pub use macros::{css, global_style, style};
+pub use stylist_macros::style;
+
+/// A procedural macro that parses a string literal or an inline stylesheet into a [`GlobalStyle`].
+///
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
+///
+/// # Example
+///
+/// ```
+/// use stylist::global_style;
+///
+/// // Returns a GlobalStyle instance.
+/// let style = global_style!("color: red;");
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::global_style;
+
+/// A procedural macro that parses a string literal or an inline stylesheet into a [`StyleSource`].
+///
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
+///
+/// # Example
+///
+/// ```
+/// use stylist::css;
+/// use stylist::yew::Global;
+/// use yew::prelude::*;
+///
+/// let rendered = html! {<div class={css!("color: red;")} />};
+/// let rendered_global = html! {<Global css={css!("color: red;")} />};
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::css;
 
 #[doc(inline)]
 pub use stylist_core::{Error, Result};
-
-#[doc(hidden)]
-pub mod vendor;

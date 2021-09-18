@@ -13,7 +13,7 @@ This is a fork of [css-in-rust](https://github.com/lukidoescode/css-in-rust).
 Add the following to your `Cargo.toml`:
 
 ```toml
-stylist = "0.8"
+stylist = "0.9"
 ```
 
 ## Usage
@@ -21,34 +21,18 @@ stylist = "0.8"
 For detailed usage, please see
 [documentation](https://docs.rs/stylist/).
 
-## Yew Integration
+### Yew Integration
 
-To style your yew component, you can use `css!` macro:
+To style your component, you can use `styled_component` attribute with `css!`
+macro.
 
 ```rust
-use stylist::css;
+use yew::prelude::*;
+use stylist::yew::styled_component;
 
-struct MyStyledComponent {}
-
-impl Component for MyStyledComponent {
-    type Message = ();
-    type Properties = ();
-
-    fn create(_: Self::Properties, _: ComponentLink<Self>) -> Self {
-        Self {}
-    }
-
-    fn change(&mut self, _: Self::Properties) -> ShouldRender {
-        false
-    }
-
-    fn update(&mut self, _: Self::Message) -> ShouldRender {
-        false
-    }
-
-    fn view(&self) -> Html {
-        html! {<div class=css!("color: red;")>{"Hello World!"}</div>}
-    }
+#[styled_component(MyStyledComponent)]
+fn my_styled_component() -> Html {
+    html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
 }
 ```
 
@@ -99,6 +83,5 @@ println!("{}", style.get_class_name());
 
 ### Theming
 
-There're theming examples using
-[Yewdux](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-yewdux)
-and [yewtil::store](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-agent).
+There's theming example using
+[Yew Context API](https://github.com/futursolo/stylist-rs/tree/master/examples/yew-theme-context).

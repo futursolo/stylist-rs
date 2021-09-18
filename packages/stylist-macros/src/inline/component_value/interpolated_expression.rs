@@ -39,6 +39,6 @@ impl Parse for InterpolatedExpression {
 
 impl InterpolatedExpression {
     pub fn to_output_fragment(&self) -> OutputFragment {
-        (&*self.expr).into()
+        (*self.expr).clone().into()
     }
 }

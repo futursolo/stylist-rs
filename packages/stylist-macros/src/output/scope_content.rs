@@ -12,12 +12,12 @@ impl Reify for OutputScopeContent {
     fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
         match self {
             Self::Rule(rule) => {
-                let block_tokens = rule.into_token_stream(ctx);
-                quote! { ::stylist::ast::ScopeContent::Rule(#block_tokens) }
+                let tokens = rule.into_token_stream(ctx);
+                quote! { ::stylist::ast::ScopeContent::Rule(#tokens) }
             }
             Self::Block(block) => {
-                let block_tokens = block.into_token_stream(ctx);
-                quote! { ::stylist::ast::ScopeContent::Block(#block_tokens) }
+                let tokens = block.into_token_stream(ctx);
+                quote! { ::stylist::ast::ScopeContent::Block(#tokens) }
             }
         }
     }

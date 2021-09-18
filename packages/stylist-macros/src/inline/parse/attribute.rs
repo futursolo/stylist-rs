@@ -9,7 +9,7 @@ use crate::inline::component_value::{
     ComponentValue, ComponentValueStream, InterpolatedExpression, PreservedToken,
 };
 use crate::inline::css_ident::CssIdent;
-use crate::output::{OutputAttribute, OutputFragment};
+use crate::output::{OutputAttribute, OutputCowString};
 use crate::spacing_iterator::SpacedIterator;
 
 #[derive(Debug)]
@@ -27,9 +27,9 @@ pub struct CssAttributeValue {
 #[derive(Debug)]
 pub struct CssAttribute {
     name: CssAttributeName,
-    colon: token::Colon,
+    _colon: token::Colon,
     value: CssAttributeValue,
-    terminator: token::Semi,
+    _terminator: token::Semi,
 }
 
 impl Parse for CssAttribute {
@@ -52,9 +52,9 @@ impl Parse for CssAttribute {
         let terminator = input.parse()?;
         Ok(CssAttribute {
             name,
-            colon,
+            _colon: colon,
             value,
-            terminator,
+            _terminator: terminator,
         })
     }
 }
@@ -114,10 +114,11 @@ impl CssAttribute {
 }
 
 impl CssAttributeName {
-    fn into_output(self) -> OutputFragment {
+    fn into_output(self) -> OutputCowString {
         match self {
             Self::Identifier(name) => name.into(),
             Self::Expr(expr) => expr.to_output_fragment(),
         }
+        .into_inner()
     }
 }

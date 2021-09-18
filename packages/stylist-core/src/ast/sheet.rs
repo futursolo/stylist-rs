@@ -18,6 +18,7 @@ impl Deref for Sheet {
 }
 
 impl Sheet {
+    /// Creates an empty stylesheet.
     pub fn new() -> Self {
         Self(Arc::new(Cow::Borrowed(&[])))
     }

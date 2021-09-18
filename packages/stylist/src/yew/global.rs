@@ -1,17 +1,18 @@
 use yew::prelude::*;
 
+use crate::manager::StyleManager;
 use crate::{GlobalStyle, StyleSource};
 use stylist_core::ResultDisplay;
 
 /// The properties for [`Global`] Component, please see its documentation for usage.
-#[derive(Properties, Clone, Debug)]
+#[derive(Properties, Clone, Debug, PartialEq)]
 pub struct GlobalProps {
     pub css: StyleSource<'static>,
 }
 
 /// A Global Style that will be applied to `<html />` tag, inspired by [emotion](https://emotion.sh).
 ///
-/// The `css` attribute accepts anything that implements
+/// The `css` attribute accepts type that implements
 /// [`IntoPropValue<StyleSource>`](yew::html::IntoPropValue) and
 /// panics if the string failed to be parsed into a stylesheet.
 ///
@@ -27,19 +28,11 @@ pub struct GlobalProps {
 ///     type Message = ();
 ///     type Properties = ();
 ///
-///     fn create(_props: Self::Properties, _link: ComponentLink<Self>) -> Self {
+///     fn create(_ctx: &Context<Self>) -> Self {
 ///         Self
 ///     }
 ///
-///     fn update(&mut self, _msg: Self::Message) -> ShouldRender {
-///         false
-///     }
-///
-///     fn change(&mut self, _props: Self::Properties) -> ShouldRender {
-///         false
-///     }
-///
-///     fn view(&self) -> Html {
+///     fn view(&self, _ctx: &Context<Self>) -> Html {
 ///         html! {
 ///             <>
 ///                 <Global css="color: red;" />
@@ -49,55 +42,29 @@ pub struct GlobalProps {
 ///     }
 /// }
 /// ```
-#[derive(Debug)]
-pub struct Global {
-    props: GlobalProps,
+#[function_component(Global)]
+pub fn global(props: &GlobalProps) -> Html {
+    let mgr = use_context::<StyleManager>().unwrap_or_default();
 
-    global_style: Option<GlobalStyle>,
-}
-
-impl Component for Global {
-    type Message = ();
-    type Properties = GlobalProps;
-
-    fn create(props: Self::Properties, _link: ComponentLink<Self>) -> Self {
-        Self {
-            props,
-
-            global_style: None,
-        }
+    #[derive(Debug, PartialEq)]
+    struct GlobalDependents {
+        manager: StyleManager,
+        css: StyleSource<'static>,
     }
 
-    fn rendered(&mut self, first_render: bool) {
-        if first_render {
-            self.update_global_style();
-        }
-    }
+    use_effect_with_deps(
+        |deps| {
+            let global_style =
+                GlobalStyle::new_with_manager(deps.css.clone(), deps.manager.clone())
+                    .expect_display("Failed to create style.");
 
-    fn update(&mut self, _msg: Self::Message) -> ShouldRender {
-        false
-    }
+            move || global_style.unregister()
+        },
+        GlobalDependents {
+            manager: mgr,
+            css: props.css.clone(),
+        },
+    );
 
-    fn change(&mut self, props: Self::Properties) -> ShouldRender {
-        self.props = props;
-
-        self.update_global_style();
-
-        false
-    }
-
-    fn view(&self) -> Html {
-        Html::default()
-    }
-}
-
-impl Global {
-    fn update_global_style(&mut self) {
-        if let Some(ref m) = self.global_style {
-            m.unregister();
-        }
-
-        self.global_style =
-            Some(GlobalStyle::new(self.props.css.clone()).expect_display("Failed to parse style."));
-    }
+    Html::default()
 }

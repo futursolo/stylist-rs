@@ -18,8 +18,6 @@ use super::{RuleBlockContent, StringFragment, StyleContext, ToStyleStr};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Rule {
     pub condition: Cow<'static, [StringFragment]>,
-    /// Note that not all At-Rules allow arbitrary other At-Rules to appear
-    /// inside them, or arbitrary blocks. No safeguards at this point!
     pub content: Cow<'static, [RuleBlockContent]>,
 }
 
@@ -31,8 +29,11 @@ impl ToStyleStr for Rule {
         }
 
         let mut rule_ctx = ctx.with_rule_condition(&cond);
-        if cond.starts_with("@keyframes") {
-            rule_ctx.start(w); // keyframes should always be printed.
+
+        // keyframes should always be printed as they contain a global name.
+        let always_print = cond.starts_with("@keyframes");
+        if always_print {
+            rule_ctx.start(w);
         }
 
         for i in self.content.iter() {

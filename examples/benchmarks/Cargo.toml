@@ -7,7 +7,7 @@ edition = "2018"
 [dependencies]
 log = "0.4.14"
 console_log = { version = "0.2.0", features = ["color"] }
-yew = "0.18.0"
+yew = { git = "https://github.com/yewstack/yew" }
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
 web-sys = { version = "0.3.54", features = [
     "Window",

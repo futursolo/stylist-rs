@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.10.0
+
+### Other Changes:
+- Added an API to style Yew Function Component.
+
+## v0.9.2
+
+### Other Changes:
+- Fixed a misconfiguration causing documentation fails to build on `docs.rs`.
+
+## v0.9.1
+
+### Other Changes:
+- Removed an unused import.
+
 ## v0.9
 
 ### Breaking Changes:
@@ -8,6 +23,8 @@
   `Into<StyleSource>` as a source for a stylesheet.
 - `style_str` method in `YieldStyle` renamed to `style_from`
   and returns a `StyleSource<'static>`.
+- Accepted at-rules are limited to `@keyframe`, `@supports` and
+  `@media`.
 
 ### Other Changes:
 - Added a Procedural Macro API that parses the Stylesheet at the compile
@@ -17,6 +34,10 @@
 - Updated `nom` to `v7`.
 - Runtime parser is now optional (disabling `parser` will make the bundle
   ~70K smaller).
+- Fixed comment handling.
+- Panic-based behaviour now displays the error with `{}`(`std::fmt::Display`)
+  in browser developer console.
+- `@supports` and `@media` can now appear in a `Block`.
 
 ## v0.8
 

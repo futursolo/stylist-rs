@@ -3,9 +3,8 @@ use std::borrow::Cow;
 #[cfg(not(feature = "parser"))]
 use std::marker::PhantomData;
 
-use stylist_core::ResultDisplay;
-
 use crate::ast::Sheet;
+use crate::manager::StyleManager;
 use crate::Result;
 #[cfg(feature = "yew_integration")]
 use crate::Style;
@@ -37,8 +36,8 @@ enum SheetSource {
 ///
 /// let s: StyleSource = "color: red;".into();
 ///
-/// let rendered = html! {<div class=s.clone() />};
-/// let global_rendered = html! {<Global css=s />};
+/// let rendered = html! {<div class={s.clone()} />};
+/// let global_rendered = html! {<Global css={s} />};
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct StyleSource<'a> {
@@ -49,10 +48,12 @@ pub struct StyleSource<'a> {
     inner: SheetSource,
     #[cfg(not(feature = "parser"))]
     _marker: PhantomData<&'a ()>,
+
+    manager: Option<StyleManager>,
 }
 
 impl StyleSource<'_> {
-    pub fn try_to_sheet(&self) -> Result<Sheet> {
+    pub(crate) fn try_to_sheet(&self) -> Result<Sheet> {
         match self.inner {
             SheetSource::Sheet(ref m) => Ok(m.clone()),
             #[cfg(feature = "parser")]
@@ -62,7 +63,16 @@ impl StyleSource<'_> {
 
     #[cfg(feature = "yew_integration")]
     pub(crate) fn to_style(&self) -> Style {
-        Style::new(self.clone()).expect_display("Failed to create style")
+        use stylist_core::ResultDisplay;
+        Style::new_with_manager(self.clone(), self.manager.clone().unwrap_or_default())
+            .expect_display("Failed to create style")
+    }
+
+    #[doc(hidden)]
+    pub fn with_manager(mut self, manager: StyleManager) -> Self {
+        self.manager = Some(manager);
+
+        self
     }
 }
 
@@ -72,6 +82,7 @@ impl From<Sheet> for StyleSource<'_> {
             inner: SheetSource::Sheet(other),
             #[cfg(not(feature = "parser"))]
             _marker: PhantomData,
+            manager: None,
         }
     }
 }
@@ -85,6 +96,7 @@ mod feat_parser {
         fn from(other: String) -> StyleSource<'static> {
             StyleSource {
                 inner: SheetSource::String(other.into()),
+                manager: None,
             }
         }
     }
@@ -93,6 +105,7 @@ mod feat_parser {
         fn from(other: &'a str) -> StyleSource<'a> {
             StyleSource {
                 inner: SheetSource::String(other.into()),
+                manager: None,
             }
         }
     }
@@ -101,6 +114,7 @@ mod feat_parser {
         fn from(other: Cow<'a, str>) -> StyleSource<'a> {
             StyleSource {
                 inner: SheetSource::String(other),
+                manager: None,
             }
         }
     }

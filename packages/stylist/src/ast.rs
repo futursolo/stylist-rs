@@ -1,35 +1,45 @@
 //! This module contains the semantic representation of a CSS StyleSheet.
 //!
 //! ```text
-//! struct Sheet
+//! Sheet
 //! └── Vec<enum ScopeContent>
-//!         ├── struct Block
-//!         │   ├── condition: Vec<Selector>
-//!         │   │                  └── fragments: Vec<StringFragment>
-//!         │   └── content: Vec<enum RuleBlockContent>
-//!         │                    ├── StyleAttr (*)
-//!         │                    │   ├── key: String
-//!         │                    │   └── value: Vec<StringFragment>
-//!         │                    ├── Block (*)
-//!         │                    └── Rule (*)
-//!         └── content: struct Rule
-//!                      ├── condition: Vec<StringFragment>
-//!                      └── Vec<enum RuleBlockContent>
+//!     ├── Block
+//!     │   ├── condition: Vec<Selector>
+//!     │   │   └── fragments: Vec<StringFragment>
+//!     │   └── content: Vec<enum RuleBlockContent>
+//!     │       ├── StyleAttr
+//!     │       │   ├── key: String
+//!     │       │   └── value: Vec<StringFragment>
+//!     │       ├── Block (*)
+//!     │       └── Rule (*)
+//!     └── Rule
+//!         ├── condition: Vec<StringFragment>
+//!         └── Vec<enum RuleBlockContent (*)>
 //! ```
 //!
-//! # Note
+//! # Warning
 //!
 //! This module is not stable at the moment and is exposed to be used by procedural macros.
 //! Its API may change at anytime.
 
-#[doc(inline)]
-pub use stylist_core::ast::*;
-
-/// A procedural macro that parses a string literal into a [`Sheet`].
+/// A procedural macro that parses a string literal or an inline stylesheet into a [`Sheet`].
 ///
-/// This macro supports string interpolation, please see documentation of [`css!`](crate::css) macro for
-/// usage.
-#[doc(inline)]
+/// Please consult the documentation of the [`macros`](crate::macros) module for the supported syntax of this macro.
+///
+/// # Warning
+///
+/// Use of this macro is discouraged.
+///
+/// Any place that accepts the output of this macro also accepts the output of [`css!`](crate::css).
+///
+/// Use [`css!`](crate::css) unless you know what you are doing.
+///
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::sheet;
+
+#[doc(inline)]
+pub use stylist_core::ast::*;
+
+#[doc(inline)]
+pub use stylist_core::bow::Bow;

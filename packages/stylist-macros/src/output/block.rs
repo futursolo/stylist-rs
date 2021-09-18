@@ -10,8 +10,12 @@ pub struct OutputBlock {
 
 impl Reify for OutputBlock {
     fn into_token_stream(self, ctx: &mut ReifyContext) -> TokenStream {
-        let condition = self.condition.into_cow_vec_tokens(ctx);
-        let content = self.content.into_cow_vec_tokens(ctx);
+        let condition = self
+            .condition
+            .into_cow_vec_tokens(quote! { ::stylist::ast::Selector }, ctx);
+        let content = self
+            .content
+            .into_cow_vec_tokens(quote! { ::stylist::ast::RuleBlockContent }, ctx);
 
         quote! {
             ::stylist::ast::Block {
