@@ -57,11 +57,11 @@ jobs:
           target: wasm32-unknown-unknown
           profile: minimal
 
-      - name: Run cargo build --all-features --all --target=wasm32-unknown-unknown
+      - name: Run cargo build --all --target=wasm32-unknown-unknown
         uses: actions-rs/cargo@v1
         with:
           command: build
-          args: --all-features --all --target=wasm32-unknown-unknown
+          args: --all --target=wasm32-unknown-unknown
         env:
           RUSTFLAGS: "--cfg releasing"
 

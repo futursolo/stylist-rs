@@ -146,8 +146,7 @@
 //! - `yew_integration`: This flag enables yew integration, which implements [`Classes`](::yew::html::Classes) for
 //!   [`Style`] and provides a [`Global`](yew::Global) component for applying global styles.
 
-#[cfg(target_arch = "wasm32")]
-#[path = "arch_wasm.rs"]
+#[cfg(any(feature = "yew_use_media_query", target_arch = "wasm32"))]
 mod arch;
 
 pub mod manager;

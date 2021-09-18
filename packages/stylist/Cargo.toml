@@ -31,6 +31,8 @@ once_cell = "1.8.0"
 rand = { version = "0.8.4", optional = true }
 wasm-bindgen = "0.2.77"
 yew = { git = "https://github.com/yewstack/yew", optional = true, default-features = false }
+# js-sys = { version = "0.3.55", optional = true }
+gloo-events = { version = "0.1", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 getrandom = { version = "0.2.3", features = ["js"], optional = true }
@@ -58,6 +60,7 @@ macros = ["stylist-macros"]
 parser = ["stylist-core/parser"]
 default = ["random", "macros", "parser"]
 yew_integration = ["yew"]
+yew_use_media_query = ["yew_integration", "web-sys/MediaQueryList", "gloo-events"]
 
 [package.metadata.docs.rs]
 all-features = true
