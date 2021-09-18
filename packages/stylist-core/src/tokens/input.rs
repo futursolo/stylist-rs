@@ -67,24 +67,24 @@ impl InputStr {
         )
     }
 
-    pub fn rsplit_at(self, mid: usize) -> (InputStr, Location, Substr) {
-        let left = self.inner.substr(0..mid);
-        let right = self.inner.substr(mid..);
+    // pub fn rsplit_at(self, mid: usize) -> (InputStr, Location, Substr) {
+    //     let left = self.inner.substr(0..mid);
+    //     let right = self.inner.substr(mid..);
 
-        let location = Location::Literal {
-            token: self.token.clone(),
-            range: right.range(),
-        };
+    //     let location = Location::Literal {
+    //         token: self.token.clone(),
+    //         range: right.range(),
+    //     };
 
-        (
-            Self {
-                inner: left,
-                token: self.token,
-            },
-            location,
-            right,
-        )
-    }
+    //     (
+    //         Self {
+    //             inner: left,
+    //             token: self.token,
+    //         },
+    //         location,
+    //         right,
+    //     )
+    // }
 
     pub fn token(&self) -> Option<RTokenStream> {
         self.token.clone()

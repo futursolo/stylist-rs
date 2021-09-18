@@ -1,9 +1,9 @@
 use arcstr::Substr;
 
 use super::{
-    InputStr, Location, RTokenize, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
-    TokenizeResult,
+    InputStr, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult,
 };
+use crate::parser::ParseError;
 
 #[derive(Debug, Clone)]
 pub struct Comment {
@@ -26,79 +26,46 @@ impl PartialEq for Comment {
     }
 }
 
-impl Comment {
-    fn find_comment_len<I>(mut chars: I) -> usize
-    where
-        I: Iterator<Item = char>,
-    {
-        if chars.next() != Some('/') {
-            return 0;
-        }
-
-        if chars.next() != Some('*') {
-            return 0;
-        }
-
-        let mut len = 2;
-
-        let mut ending = false;
-        let mut ended = false;
-        for c in chars {
-            if ending {
-                if c == '/' {
-                    len += 1;
-                    ended = true;
-                    break;
-                }
-            } else if c == '*' {
-                len += 1;
-                ending = true;
-                continue;
-            }
-
-            ending = false;
-            len += 1;
-        }
-
-        if !ended {
-            // Failed to find a */ to terminate the comment.
-            // Should be terminal when inplemented.
-            return 0;
-        }
-
-        len
-    }
+#[derive(Debug, PartialEq)]
+enum CommentState {
+    Reading,
+    Ending,
+    Ended,
 }
 
 impl Tokenize<InputStr> for Comment {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
-        let chars = input.chars();
-
-        let len = Self::find_comment_len(chars);
-
-        if len > 0 {
-            let (inner, location, rest) = input.split_at(len);
-
-            Ok((TokenTree::Comment(Self { inner, location }).into(), rest))
-        } else {
-            Err(TokenizeError::NotTokenized(input))
+        if !input.starts_with("/*") {
+            return Err(TokenizeError::NotTokenized(input));
         }
-    }
-}
 
-impl RTokenize<InputStr> for Comment {
-    fn rtokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
-        let chars = input.chars().rev();
+        let mut state = CommentState::Reading;
+        let mut len = 2;
 
-        let len = Self::find_comment_len(chars);
+        for c in input.chars().skip(2) {
+            len += 1;
 
-        if len > 0 {
-            let input_len = input.len();
-            let (rest, location, inner) = input.rsplit_at(input_len - len);
+            if state == CommentState::Ending && c == '/' {
+                state = CommentState::Ended;
+                break;
+            } else if state == CommentState::Reading && c == '*' {
+                state = CommentState::Ending;
+                continue;
+            }
 
-            Ok((TokenTree::Comment(Self { inner, location }).into(), rest))
-        } else {
-            Err(TokenizeError::NotTokenized(input))
+            state = CommentState::Reading;
         }
+
+        if state != CommentState::Ended {
+            let (_inner, location, _rest) = input.split_at(2);
+
+            return Err(TokenizeError::Terminal(ParseError::new(
+                "cannot find the end of this comment, expected '*/'",
+                location,
+            )));
+        }
+
+        let (inner, location, rest) = input.split_at(len);
+        Ok((TokenTree::Comment(Self { inner, location }).into(), rest))
     }
 }

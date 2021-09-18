@@ -19,7 +19,7 @@ pub use punct::Punct;
 pub use spacing::Spacing;
 pub use token::{Token, TokenTree};
 pub use token_stream::TokenStream;
-pub use tokenize::{RTokenize, Tokenize};
+pub use tokenize::Tokenize;
 
 mod rtokens {
     pub use proc_macro2::{

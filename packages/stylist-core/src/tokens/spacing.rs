@@ -1,8 +1,7 @@
 use arcstr::Substr;
 
 use super::{
-    InputStr, Location, RTokenize, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
-    TokenizeResult,
+    InputStr, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult,
 };
 
 #[derive(Debug, Clone)]
@@ -34,22 +33,6 @@ impl Tokenize<InputStr> for Spacing {
 
         if len > 0 {
             let (inner, location, rest) = input.split_at(len);
-
-            Ok((TokenTree::Spacing(Spacing { inner, location }).into(), rest))
-        } else {
-            Err(TokenizeError::NotTokenized(input))
-        }
-    }
-}
-
-impl RTokenize<InputStr> for Spacing {
-    fn rtokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
-        let chars = input.chars().rev();
-        let len = chars.take_while(|c| " \t\r\n".contains(*c)).count();
-
-        if len > 0 {
-            let input_len = input.len();
-            let (rest, location, inner) = input.rsplit_at(input_len - len);
 
             Ok((TokenTree::Spacing(Spacing { inner, location }).into(), rest))
         } else {
