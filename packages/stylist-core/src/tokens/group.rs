@@ -95,7 +95,7 @@ impl Token for Group {
 
 impl Tokenize<InputStr> for Group {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
-        let delim = match input.chars().next().and_then(|m| Delimiter::parse_open(m)) {
+        let delim = match input.chars().next().and_then(Delimiter::parse_open) {
             Some(m) => m,
             None => return Err(TokenizeError::NotTokenized(input)),
         };

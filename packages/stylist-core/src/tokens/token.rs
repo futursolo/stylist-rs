@@ -56,5 +56,6 @@ impl Tokenize<InputTokens> for TokenTree {
             // .terminal_or_else(Comment::tokenize)
             .terminal_or_else(Punct::tokenize)
             .terminal_or_else(Ident::tokenize)
+            .terminal_or_else(Group::tokenize)
     }
 }
