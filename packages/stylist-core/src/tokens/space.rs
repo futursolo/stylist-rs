@@ -1,8 +1,7 @@
 use arcstr::Substr;
 
-use super::{
-    InputStr, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult,
-};
+use super::{InputStr, Location, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult};
+use crate::__impl_token;
 
 #[derive(Debug, Clone)]
 pub struct Space {
@@ -10,14 +9,7 @@ pub struct Space {
     location: Location,
 }
 
-impl Token for Space {
-    fn as_str(&self) -> &str {
-        &self.inner
-    }
-    fn location(&self) -> &Location {
-        &self.location
-    }
-}
+__impl_token!(Space);
 
 impl PartialEq for Space {
     fn eq(&self, _other: &Self) -> bool {

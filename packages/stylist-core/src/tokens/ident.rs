@@ -3,9 +3,10 @@ use std::iter::FromIterator;
 use arcstr::Substr;
 
 use super::{
-    InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
+    InputStr, InputTokens, Location, TokenStream, TokenTree, Tokenize, TokenizeError,
     TokenizeResult,
 };
+use crate::{__impl_partial_eq, __impl_token};
 
 #[derive(Debug, Clone)]
 pub struct Ident {
@@ -13,20 +14,8 @@ pub struct Ident {
     location: Location,
 }
 
-impl PartialEq for Ident {
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner
-    }
-}
-
-impl Token for Ident {
-    fn as_str(&self) -> &str {
-        &self.inner
-    }
-    fn location(&self) -> &Location {
-        &self.location
-    }
-}
+__impl_partial_eq!(Ident, inner);
+__impl_token!(Ident);
 
 impl Tokenize<InputStr> for Ident {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {

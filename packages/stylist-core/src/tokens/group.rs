@@ -7,6 +7,7 @@ use super::{
     ITokenizeResult, InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize,
     TokenizeError, TokenizeResult,
 };
+use crate::__impl_partial_eq;
 use crate::parser::ParseError;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -84,11 +85,7 @@ impl Group {
     }
 }
 
-impl PartialEq for Group {
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner && self.delim == other.delim
-    }
-}
+__impl_partial_eq!(Group, inner, delim);
 
 impl Token for Group {
     fn as_str(&self) -> &str {

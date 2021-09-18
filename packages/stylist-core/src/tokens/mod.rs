@@ -29,3 +29,30 @@ mod rtokens {
         TokenTree as RTokenTree,
     };
 }
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __impl_partial_eq {
+    ($typ: ident, $($ident: ident),+) => {
+        impl PartialEq for $typ {
+            fn eq(&self, other: &Self) -> bool {
+                $(self.$ident == other.$ident) &&+
+            }
+        }
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __impl_token {
+    ($typ: ident) => {
+        impl crate::tokens::Token for $typ {
+            fn as_str(&self) -> &str {
+                &self.inner
+            }
+            fn location(&self) -> &crate::tokens::Location {
+                &self.location
+            }
+        }
+    };
+}

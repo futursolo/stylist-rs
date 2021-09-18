@@ -1,9 +1,8 @@
 use arcstr::Substr;
 
-use super::{
-    InputStr, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult,
-};
+use super::{InputStr, Location, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult};
 use crate::parser::ParseError;
+use crate::{__impl_partial_eq, __impl_token};
 
 #[derive(Debug, Clone)]
 pub struct Comment {
@@ -11,20 +10,8 @@ pub struct Comment {
     location: Location,
 }
 
-impl Token for Comment {
-    fn as_str(&self) -> &str {
-        &self.inner
-    }
-    fn location(&self) -> &Location {
-        &self.location
-    }
-}
-
-impl PartialEq for Comment {
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner
-    }
-}
+__impl_token!(Comment);
+__impl_partial_eq!(Comment, inner);
 
 impl Tokenize<InputStr> for Comment {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
@@ -44,3 +31,5 @@ impl Tokenize<InputStr> for Comment {
         Ok((TokenTree::Comment(Self { inner, location }).into(), rest))
     }
 }
+
+// It's not possible to read comments from proc_macro2::TokenStream at this moment.

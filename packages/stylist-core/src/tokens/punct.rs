@@ -1,9 +1,10 @@
 use arcstr::Substr;
 
 use super::{
-    InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
+    InputStr, InputTokens, Location, TokenStream, TokenTree, Tokenize, TokenizeError,
     TokenizeResult,
 };
+use crate::{__impl_partial_eq, __impl_token};
 
 #[derive(Debug, Clone)]
 pub struct Punct {
@@ -11,20 +12,8 @@ pub struct Punct {
     location: Location,
 }
 
-impl PartialEq for Punct {
-    fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner
-    }
-}
-
-impl Token for Punct {
-    fn as_str(&self) -> &str {
-        &self.inner
-    }
-    fn location(&self) -> &Location {
-        &self.location
-    }
-}
+__impl_partial_eq!(Punct, inner);
+__impl_token!(Punct);
 
 impl Tokenize<InputStr> for Punct {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
