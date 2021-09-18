@@ -3,7 +3,11 @@
 use yew::html::Classes;
 use yew::html::IntoPropValue;
 
-/// A procedural macro to style Yew component.
+/// A procedural macro to style a function component. Specifically this introduces a
+/// specialized [`css!`](crate::css) macro that is aware of the contextual style manager.
+///
+/// For detailed arguments and usage see also the underlying
+/// [`function_component`](::yew::function_component) attribute in Yew.
 ///
 /// # Example:
 ///
@@ -22,11 +26,27 @@ use yew::html::IntoPropValue;
 /// # Note:
 ///
 /// You don't need to import [`css!`](crate::css) inside of a `styled_component`.
-///
-/// This macro imports a special version of [`css!`](crate::css) macro that is aware of the current style manager.
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component;
+
+/// A procedural macro to use the specialized, contextual [`css!`](crate::css) macro
+/// accessible to [`styled_component`]s. Use this on functions that have access to
+/// [Hooks](https://yew.rs/next/concepts/function-components#hooks).
+///
+/// # Example:
+///
+/// ```rust
+/// use stylist::{StyleSource, yew::styled_component_base};
+///
+/// #[styled_component_base]
+/// fn use_styles() -> StyleSource<'static> {
+///     css!("color: red;")
+/// }
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::styled_component_base;
 
 /// A procedural macro hook that parses a string literal or an inline stylesheet to create auto updating [`Style`]s.
 ///
@@ -48,10 +68,6 @@ pub use stylist_macros::styled_component;
 #[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]
 #[cfg(feature = "yew_use_style")]
 pub use stylist_macros::use_style;
-
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::styled_component_base;
 
 use crate::ast::Sheet;
 use crate::manager::StyleManager;
