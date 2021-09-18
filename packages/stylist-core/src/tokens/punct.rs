@@ -49,7 +49,7 @@ impl Tokenize<InputTokens> for Punct {
                 input.pop_front();
 
                 let s = p.as_char().to_string();
-                let location = Location::Span(m.clone().into());
+                let location = Location::TokenStream(m.clone().into());
 
                 return Ok((
                     TokenTree::Punct(Punct {

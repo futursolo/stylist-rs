@@ -109,3 +109,11 @@ impl DerefMut for InputTokens {
         &mut self.inner
     }
 }
+
+impl From<RTokenStream> for InputTokens {
+    fn from(m: RTokenStream) -> Self {
+        Self {
+            inner: m.into_iter().collect(),
+        }
+    }
+}

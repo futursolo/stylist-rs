@@ -51,7 +51,7 @@ impl Default for Spacing {
 
         Self {
             inner: " ".into(),
-            location: Location::Span(RTokenTree::Literal(call_site_space).into()),
+            location: Location::TokenStream(RTokenTree::Literal(call_site_space).into()),
         }
     }
 }

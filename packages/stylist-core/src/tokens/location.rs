@@ -1,6 +1,6 @@
 use std::ops::Range;
 
-use super::rtokens::RTokenStream;
+use super::rtokens::{RSpan, RTokenStream};
 
 /// A struct that provides location information
 #[derive(Debug, Clone)]
@@ -11,5 +11,6 @@ pub enum Location {
         token: Option<RTokenStream>,
         range: Range<usize>,
     },
-    Span(RTokenStream),
+    Span(RSpan),
+    TokenStream(RTokenStream),
 }

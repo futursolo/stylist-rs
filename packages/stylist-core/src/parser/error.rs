@@ -19,4 +19,8 @@ impl ParseError {
             location,
         }
     }
+
+    pub fn unexpected_token(location: Location) -> Self {
+        Self::new("unexpected token", location)
+    }
 }

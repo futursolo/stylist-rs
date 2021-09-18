@@ -80,7 +80,7 @@ impl Tokenize<InputTokens> for Ident {
         if tokens.is_empty() {
             Err(TokenizeError::NotTokenized(input))
         } else {
-            let location = Location::Span(RTokenStream::from_iter(tokens));
+            let location = Location::TokenStream(RTokenStream::from_iter(tokens));
             let ident = Self {
                 inner: s.into(),
                 location,

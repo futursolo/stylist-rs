@@ -1,5 +1,6 @@
 mod comment;
 mod error;
+mod group;
 mod ident;
 mod input;
 mod location;
@@ -12,6 +13,7 @@ mod tokenize;
 pub use error::{ITokenizeResult, TokenizeError, TokenizeResult};
 
 pub use comment::Comment;
+pub use group::{Delimiter, Group};
 pub use ident::Ident;
 pub use input::{InputStr, InputTokens};
 pub use location::Location;
@@ -23,6 +25,7 @@ pub use tokenize::Tokenize;
 
 mod rtokens {
     pub use proc_macro2::{
-        Literal as RLiteral, Span as RSpan, TokenStream as RTokenStream, TokenTree as RTokenTree,
+        Delimiter as RDelimiter, Literal as RLiteral, Span as RSpan, TokenStream as RTokenStream,
+        TokenTree as RTokenTree,
     };
 }
