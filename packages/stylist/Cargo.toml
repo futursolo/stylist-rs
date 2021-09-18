@@ -61,6 +61,7 @@ parser = ["stylist-core/parser"]
 default = ["random", "macros", "parser"]
 yew_integration = ["yew"]
 yew_use_media_query = ["yew_integration", "web-sys/MediaQueryList", "gloo-events"]
+yew_use_style = ["yew_integration"]
 
 [package.metadata.docs.rs]
 all-features = true

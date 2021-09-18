@@ -28,6 +28,27 @@ use yew::html::IntoPropValue;
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component;
 
+/// A procedural macro hook that parses a string literal or an inline stylesheet to create auto updating [`Style`]s.
+///
+/// Please consult the documentation of the [`macros`](crate::macros) module for the supported syntax of this macro.
+///
+/// # Example
+///
+/// ```
+/// use yew::prelude::*;
+/// use stylist::yew::use_style;
+///
+/// #[function_component(Comp)]
+/// fn comp() -> Html {
+///     // Returns a Style instance.
+///     let style = use_style!("color: red;");
+///     html!{<div class={style}>{"Hello world!"}</div>}
+/// }
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]
+#[cfg(feature = "yew_use_style")]
+pub use stylist_macros::use_style;
+
 use crate::ast::Sheet;
 use crate::manager::StyleManager;
 use crate::{Style, StyleSource};

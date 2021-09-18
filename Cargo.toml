@@ -9,6 +9,7 @@ members = [
     "examples/yew-integration",
     "examples/yew-shadow",
     "examples/yew-theme-context",
+    "examples/yew-theme-hooks",
     "examples/use-media-query",
 ]
 resolver = "2"
