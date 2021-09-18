@@ -26,16 +26,6 @@ pub fn use_style<'a, Css: Into<StyleSource<'a>>>(css: Css) -> Style {
     let mgr = use_context::<StyleManager>().unwrap_or_default();
     let css = css.into();
 
-    let created_style: Style =
-        Style::new_with_manager(css.clone(), mgr).expect_display("failed to create style");
-
-    let style = use_state(|| created_style.clone());
-
-    if style.id() != created_style.id() {
-        style.set(created_style);
-    }
-
     // It does not make sense to unmount a scoped style.
-
-    (*style).clone()
+    Style::new_with_manager(css, mgr).expect_display("failed to create style")
 }
