@@ -41,27 +41,20 @@ impl Tokenize<InputStr> for Punct {
 }
 
 impl Tokenize<InputTokens> for Punct {
-    fn tokenize(mut input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
+    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
         use super::rtokens::*;
 
-        if let Some(m) = input.get(0).cloned() {
-            if let RTokenTree::Punct(ref p) = m {
-                input.pop_front();
+        let (punct, rest) = input.pop_by(|m| match m {
+            RTokenTree::Punct(ref p) => Some(TokenStream::from(TokenTree::Punct(Punct {
+                inner: p.as_char().to_string().into(),
+                location: Location::TokenStream(m.clone().into()),
+            }))),
+            _ => None,
+        });
 
-                let s = p.as_char().to_string();
-                let location = Location::TokenStream(m.clone().into());
-
-                return Ok((
-                    TokenTree::Punct(Punct {
-                        inner: s.into(),
-                        location,
-                    })
-                    .into(),
-                    input,
-                ));
-            }
+        match punct {
+            Some(m) => Ok((m, rest)),
+            None => Err(TokenizeError::NotTokenized(rest)),
         }
-
-        Err(TokenizeError::NotTokenized(input))
     }
 }

@@ -26,46 +26,21 @@ impl PartialEq for Comment {
     }
 }
 
-#[derive(Debug, PartialEq)]
-enum CommentState {
-    Reading,
-    Ending,
-    Ended,
-}
-
 impl Tokenize<InputStr> for Comment {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
         if !input.starts_with("/*") {
             return Err(TokenizeError::NotTokenized(input));
         }
 
-        let mut state = CommentState::Reading;
-        let mut len = 2;
-
-        for c in input.chars().skip(2) {
-            len += 1;
-
-            if state == CommentState::Ending && c == '/' {
-                state = CommentState::Ended;
-                break;
-            } else if state == CommentState::Reading && c == '*' {
-                state = CommentState::Ending;
-                continue;
-            }
-
-            state = CommentState::Reading;
-        }
-
-        if state != CommentState::Ended {
-            let (_inner, location, _rest) = input.split_at(2);
-
-            return Err(TokenizeError::Terminal(ParseError::new(
+        let len = input.find("*/").ok_or_else(|| {
+            let (_inner, location, _rest) = input.clone().split_at(2);
+            ParseError::new(
                 "cannot find the end of this comment, expected '*/'",
                 location,
-            )));
-        }
+            )
+        })?;
 
-        let (inner, location, rest) = input.split_at(len);
+        let (inner, location, rest) = input.split_at(len + 2);
         Ok((TokenTree::Comment(Self { inner, location }).into(), rest))
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 use std::convert::TryFrom;
-use std::ops::{Deref, DerefMut};
+use std::ops::Deref;
 
 use arcstr::Substr;
 use litrs::StringLit;
@@ -67,25 +67,6 @@ impl InputStr {
         )
     }
 
-    // pub fn rsplit_at(self, mid: usize) -> (InputStr, Location, Substr) {
-    //     let left = self.inner.substr(0..mid);
-    //     let right = self.inner.substr(mid..);
-
-    //     let location = Location::Literal {
-    //         token: self.token.clone(),
-    //         range: right.range(),
-    //     };
-
-    //     (
-    //         Self {
-    //             inner: left,
-    //             token: self.token,
-    //         },
-    //         location,
-    //         right,
-    //     )
-    // }
-
     pub fn token(&self) -> Option<RTokenStream> {
         self.token.clone()
     }
@@ -96,17 +77,37 @@ pub struct InputTokens {
     inner: VecDeque<RTokenTree>,
 }
 
+impl InputTokens {
+    pub fn pop_front(mut self) -> (Option<RTokenTree>, InputTokens) {
+        let token = self.inner.pop_front();
+
+        (token, self)
+    }
+
+    pub fn peek(&self) -> Option<&RTokenTree> {
+        self.get(0)
+    }
+
+    // Pop if op returns Some(T).
+    pub fn pop_by<O, T>(self, op: O) -> (Option<T>, InputTokens)
+    where
+        O: Fn(RTokenTree) -> Option<T>,
+    {
+        match self.get(0).cloned().and_then(op) {
+            Some(m) => {
+                let (_, tokens) = self.pop_front();
+                (Some(m), tokens)
+            }
+            None => (None, self),
+        }
+    }
+}
+
 impl Deref for InputTokens {
     type Target = VecDeque<RTokenTree>;
 
     fn deref(&self) -> &Self::Target {
         &self.inner
-    }
-}
-
-impl DerefMut for InputTokens {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.inner
     }
 }
 

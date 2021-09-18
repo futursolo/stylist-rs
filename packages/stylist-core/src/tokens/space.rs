@@ -5,12 +5,12 @@ use super::{
 };
 
 #[derive(Debug, Clone)]
-pub struct Spacing {
+pub struct Space {
     inner: Substr,
     location: Location,
 }
 
-impl Token for Spacing {
+impl Token for Space {
     fn as_str(&self) -> &str {
         &self.inner
     }
@@ -19,22 +19,20 @@ impl Token for Spacing {
     }
 }
 
-impl PartialEq for Spacing {
+impl PartialEq for Space {
     fn eq(&self, _other: &Self) -> bool {
         true
     }
 }
 
-impl Tokenize<InputStr> for Spacing {
+impl Tokenize<InputStr> for Space {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
-        let chars = input.chars();
-
-        let len = chars.take_while(|c| " \t\r\n".contains(*c)).count();
+        let len = input.chars().take_while(|c| " \t\r\n".contains(*c)).count();
 
         if len > 0 {
             let (inner, location, rest) = input.split_at(len);
 
-            Ok((TokenTree::Spacing(Spacing { inner, location }).into(), rest))
+            Ok((TokenTree::Space(Self { inner, location }).into(), rest))
         } else {
             Err(TokenizeError::NotTokenized(input))
         }
@@ -42,16 +40,15 @@ impl Tokenize<InputStr> for Spacing {
 }
 
 // Inferred Space for tokens.
-impl Default for Spacing {
+impl Default for Space {
     fn default() -> Self {
         use super::rtokens::*;
 
-        let mut call_site_space = RLiteral::string(" ");
-        call_site_space.set_span(RSpan::call_site());
+        let space = RLiteral::string(" ");
 
         Self {
             inner: " ".into(),
-            location: Location::TokenStream(RTokenTree::Literal(call_site_space).into()),
+            location: Location::TokenStream(RTokenTree::Literal(space).into()),
         }
     }
 }
