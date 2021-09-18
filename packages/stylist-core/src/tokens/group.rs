@@ -10,14 +10,26 @@ use super::{
 use crate::__impl_partial_eq;
 use crate::parser::ParseError;
 
+/// The delimiter of a [`Group`].
 #[derive(Debug, Clone, PartialEq)]
 pub enum Delimiter {
+    /// `(...)`
     Paren,
+    /// `[...]`
     Bracket,
+    /// `{...}`
     Brace,
 }
 
 impl Delimiter {
+    fn char_pair(&self) -> (char, char) {
+        match self {
+            Self::Paren => ('(', ')'),
+            Self::Bracket => ('[', ']'),
+            Self::Brace => ('{', '}'),
+        }
+    }
+
     fn parse_open(c: char) -> Option<Self> {
         match c {
             '(' => Some(Self::Paren),
@@ -28,27 +40,17 @@ impl Delimiter {
     }
 
     fn match_close(&self, c: char) -> bool {
-        match self {
-            Self::Paren => ')' == c,
-            Self::Bracket => ']' == c,
-            Self::Brace => '}' == c,
-        }
+        self.close_char() == c
     }
 
+    /// Returns the opening delimiter as char.
     pub fn open_char(&self) -> char {
-        match self {
-            Self::Paren => '(',
-            Self::Bracket => '[',
-            Self::Brace => '{',
-        }
+        self.char_pair().0
     }
 
+    /// Returns the closing delimiter as char.
     pub fn close_char(&self) -> char {
-        match self {
-            Self::Paren => ')',
-            Self::Bracket => ']',
-            Self::Brace => '}',
-        }
+        self.char_pair().1
     }
 }
 
@@ -65,6 +67,7 @@ impl TryFrom<RDelimiter> for Delimiter {
     }
 }
 
+/// A token that represents a Group (Block) surrounded by a [`Delimiter`].
 #[derive(Debug, Clone)]
 pub struct Group {
     delim: Delimiter,
@@ -80,8 +83,24 @@ pub struct Group {
 }
 
 impl Group {
+    /// Returns the [`TokenStream`] of tokens that are delimited in this [`Group`].
     pub fn stream(&self) -> TokenStream {
         self.inner.clone()
+    }
+
+    /// Returns the [`Delimiter`] of the current group.
+    pub fn delimiter(&self) -> Delimiter {
+        self.delim.clone()
+    }
+
+    /// Returns the location of the opening delimiter.
+    pub fn open_location(&self) -> &Location {
+        &self.location
+    }
+
+    /// Returns the location of the closing delimiter.
+    pub fn close_location(&self) -> &Location {
+        &self.location
     }
 }
 

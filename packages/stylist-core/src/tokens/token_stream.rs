@@ -2,16 +2,22 @@ use std::iter::{FromIterator, IntoIterator};
 
 use super::TokenTree;
 
+/// An abstract stream of tokens
+///
+/// This type can be created by passing an input to
+/// [`TokenTree::tokenize_until_error`](super::Tokenize::tokenize_until_error).
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct TokenStream {
     inner: Vec<TokenTree>,
 }
 
 impl TokenStream {
+    /// Creates a new empty [`TokenStream`].
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// Returns `true` if the token stream is empty.
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }

@@ -8,6 +8,7 @@ use super::{
 };
 use crate::{__impl_partial_eq, __impl_token};
 
+/// A token that represents a CSS ident.
 #[derive(Debug, Clone)]
 pub struct Ident {
     inner: Substr,

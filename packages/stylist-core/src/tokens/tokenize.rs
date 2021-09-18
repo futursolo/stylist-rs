@@ -2,19 +2,19 @@ use super::TokenStream;
 
 use super::{TokenizeError, TokenizeResult};
 
-/// Tokenise a value from input
+/// Tokenise a value from input.
 pub trait Tokenize<T> {
-    /// Tokenise a value from input(`T`)
+    /// Tokenise a value from input(`T`).
     ///
-    /// Returns [`Ok(TokenStream, T)`] if successful with `T` being
+    /// Returns [`Ok((TokenStream, T))`] if successful with `T` being
     /// the remaining part of the input.
     ///
-    /// Returns [`Err(T)`] if failed to tokenise
+    /// Returns [`Err(TokenizeError)`] if failed to tokenise
     fn tokenize(input: T) -> TokenizeResult<T, TokenStream>;
 
-    /// Call [`tokenize`] until an error is returned.
+    /// Call [`tokenize`](Tokenize::tokenize) until an error is returned.
     ///
-    /// Returns `Ok()` if at least 1 token is successful and final error is not terminal.
+    /// Returns `Ok()` if at least 1 token is successful and the final error is not terminal.
     fn tokenize_until_error(input: T) -> TokenizeResult<T, TokenStream> {
         let mut tokens = TokenStream::new();
         let mut rest = input;

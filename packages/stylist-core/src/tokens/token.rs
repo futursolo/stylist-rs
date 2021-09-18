@@ -12,8 +12,12 @@ pub enum TokenTree {
     Group(Group),
 }
 
+/// A trait that represents a token.
 pub trait Token {
+    /// Returns the [`Location`] of current token.
     fn location(&self) -> &Location;
+
+    /// Returns the token content in the form of a string.
     fn as_str(&self) -> &str;
 }
 

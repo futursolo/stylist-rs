@@ -2,6 +2,7 @@ use thiserror::Error;
 
 use crate::tokens::Location;
 
+/// An error returned when the parser / tokeniser encountered an error.
 #[derive(Debug, Error)]
 #[error("{}", .msg)]
 pub struct ParseError {
@@ -10,10 +11,7 @@ pub struct ParseError {
 }
 
 impl ParseError {
-    pub fn new<S>(msg: S, location: Location) -> Self
-    where
-        S: Into<String>,
-    {
+    pub fn new<S: Into<String>>(msg: S, location: Location) -> Self {
         Self {
             msg: msg.into(),
             location,

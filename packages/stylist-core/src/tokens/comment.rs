@@ -4,6 +4,9 @@ use super::{InputStr, Location, TokenStream, TokenTree, Tokenize, TokenizeError,
 use crate::parser::ParseError;
 use crate::{__impl_partial_eq, __impl_token};
 
+/// A token that represents a comment.
+///
+/// `/* ... */`
 #[derive(Debug, Clone)]
 pub struct Comment {
     inner: Substr,

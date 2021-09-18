@@ -3,6 +3,7 @@ use arcstr::Substr;
 use super::{InputStr, Location, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult};
 use crate::__impl_token;
 
+/// A token that represents a whitespace.
 #[derive(Debug, Clone)]
 pub struct Space {
     inner: Substr,

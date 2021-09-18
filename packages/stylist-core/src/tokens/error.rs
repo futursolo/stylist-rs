@@ -24,6 +24,7 @@ pub trait ITokenizeResult<I, T> {
     where
         O: FnOnce(I) -> TokenizeResult<I, T>;
 
+    /// Returns `OK()` unless the error is terminal.
     fn terminal_or_ok(self) -> std::result::Result<(T, I), ParseError>;
 }
 

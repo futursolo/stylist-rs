@@ -6,10 +6,20 @@ use super::{
 };
 use crate::{__impl_partial_eq, __impl_token};
 
+/// A token that represents a punctuation mark.
+///
+/// It is a single punctuation character like +, - or #.
 #[derive(Debug, Clone)]
 pub struct Punct {
     inner: Substr,
     location: Location,
+}
+
+impl Punct {
+    /// Returns the value of this punctuation as [`char`].
+    pub fn as_char(&self) -> char {
+        self.inner.chars().next().unwrap()
+    }
 }
 
 __impl_partial_eq!(Punct, inner);
