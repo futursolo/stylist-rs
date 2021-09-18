@@ -27,11 +27,11 @@ pub fn use_style<'a, Css: Into<StyleSource<'a>>>(css: Css) -> Style {
     let css = css.into();
 
     let created_style: Style =
-        Style::new_with_manager(css.clone(), mgr.clone()).expect_display("failed to create style");
+        Style::new_with_manager(css.clone(), mgr).expect_display("failed to create style");
 
     let style = use_state(|| created_style.clone());
 
-    if style.key() != created_style.key() {
+    if style.id() != created_style.id() {
         style.set(created_style);
     }
 
