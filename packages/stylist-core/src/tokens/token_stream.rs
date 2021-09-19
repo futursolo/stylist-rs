@@ -59,9 +59,3 @@ impl Extend<TokenTree> for TokenStream {
         self.inner.extend(iter);
     }
 }
-
-// impl TokenStream {
-//     fn push(&mut self, item: TokenTree) {
-//         self.inner.push(item);
-//     }
-// }

@@ -1,9 +1,8 @@
 use arcstr::Substr;
+#[cfg(feature = "proc_macro_support")]
+use typed_builder::TypedBuilder;
 
-use super::{
-    InputStr, InputTokens, Location, TokenStream, TokenTree, Tokenize, TokenizeError,
-    TokenizeResult,
-};
+use super::{InputStr, Location, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult};
 use crate::parser::ParseError;
 use crate::{__impl_partial_eq, __impl_token};
 
@@ -19,6 +18,7 @@ enum LiteralState {
     Ended,
 }
 
+#[cfg_attr(feature = "proc_macro_support", derive(TypedBuilder))]
 #[derive(Debug, Clone)]
 pub struct Literal {
     // We don't care about the content of a literal, so we store everything as string.
@@ -123,25 +123,6 @@ impl Tokenize<InputStr> for Literal {
             }
 
             None => Err(TokenizeError::NotTokenized(input)),
-        }
-    }
-}
-
-impl Tokenize<InputTokens> for Literal {
-    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
-        use super::rtokens::*;
-
-        let (punct, rest) = input.pop_by(|m| match m {
-            RTokenTree::Literal(ref p) => Some(TokenStream::from(TokenTree::Literal(Literal {
-                inner: p.to_string().into(),
-                location: Location::TokenStream(m.clone().into()),
-            }))),
-            _ => None,
-        });
-
-        match punct {
-            Some(m) => Ok((m, rest)),
-            None => Err(TokenizeError::NotTokenized(rest)),
         }
     }
 }

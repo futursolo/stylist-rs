@@ -17,7 +17,7 @@ pub use error::{ITokenizeResult, TokenizeError, TokenizeResult};
 pub use comment::Comment;
 pub use group::{Delimiter, Group};
 pub use ident::Ident;
-pub use input::{Input, InputStr, InputTokens};
+pub use input::{Input, InputStr};
 pub use interpolation::Interpolation;
 pub use literal::Literal;
 pub use location::Location;
@@ -26,13 +26,6 @@ pub use space::Space;
 pub use token::{Token, TokenTree};
 pub use token_stream::TokenStream;
 pub use tokenize::Tokenize;
-
-mod rtokens {
-    pub use proc_macro2::{
-        Delimiter as RDelimiter, Literal as RLiteral, Span as RSpan, TokenStream as RTokenStream,
-        TokenTree as RTokenTree,
-    };
-}
 
 #[doc(hidden)]
 #[macro_export]

@@ -33,22 +33,16 @@ impl Tokenize<InputStr> for Space {
 }
 
 // Inferred Space for tokens.
+#[cfg(feature = "proc_macro_support")]
 impl Default for Space {
     fn default() -> Self {
-        use super::rtokens::*;
+        use proc_macro2 as r;
 
-        let space = RLiteral::string(" ");
+        let space = r::Literal::string(" ");
 
         Self {
             inner: " ".into(),
-            location: Location::TokenStream(RTokenTree::Literal(space).into()),
+            location: Location::TokenStream(r::TokenTree::Literal(space).into()),
         }
     }
 }
-
-// Spacing is not parsed for TokenStream, but rather inferred after TokenStream is generated.
-// impl Tokenize<InputTokens> for Spacing {
-//     fn tokenize(mut input: InputTokens) -> Result<(TokenStream, InputTokens), InputTokens> {
-//         unimplemented!();
-//     }
-// }

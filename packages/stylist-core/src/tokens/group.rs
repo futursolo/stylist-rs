@@ -1,11 +1,10 @@
-use std::convert::TryFrom;
-
 use once_cell::sync::OnceCell;
+#[cfg(feature = "proc_macro_support")]
+use typed_builder::TypedBuilder;
 
-use super::rtokens::RDelimiter;
 use super::{
-    ITokenizeResult, InputStr, InputTokens, Location, Token, TokenStream, TokenTree, Tokenize,
-    TokenizeError, TokenizeResult,
+    ITokenizeResult, InputStr, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
+    TokenizeResult,
 };
 use crate::__impl_partial_eq;
 use crate::parser::ParseError;
@@ -54,20 +53,8 @@ impl Delimiter {
     }
 }
 
-impl TryFrom<RDelimiter> for Delimiter {
-    type Error = ();
-
-    fn try_from(m: RDelimiter) -> std::result::Result<Self, Self::Error> {
-        match m {
-            RDelimiter::Parenthesis => Ok(Delimiter::Paren),
-            RDelimiter::Brace => Ok(Delimiter::Brace),
-            RDelimiter::Bracket => Ok(Delimiter::Bracket),
-            _ => Err(()),
-        }
-    }
-}
-
 /// A token that represents a Group (Block) surrounded by a [`Delimiter`].
+#[cfg_attr(feature = "proc_macro_support", derive(TypedBuilder))]
 #[derive(Debug, Clone)]
 pub struct Group {
     delim: Delimiter,
@@ -133,7 +120,9 @@ impl Tokenize<InputStr> for Group {
             .and_then(Delimiter::parse_open)
             .ok_or_else(|| TokenizeError::NotTokenized(input.clone()))?;
 
+        #[cfg(feature = "proc_macro_support")]
         let input_token = input.token();
+
         let (open_char, open_loc, rest) = input.split_at(1);
 
         let (inner, rest) = TokenTree::tokenize_until_error(rest).terminal_or_ok()?;
@@ -159,6 +148,7 @@ impl Tokenize<InputStr> for Group {
 
         let range = open_char.range().start..end_char.range().end;
         let location = Location::Literal {
+            #[cfg(feature = "proc_macro_support")]
             token: input_token,
             range,
         };
@@ -182,45 +172,22 @@ impl Tokenize<InputStr> for Group {
     }
 }
 
-impl Tokenize<InputTokens> for Group {
-    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
-        use super::rtokens::*;
+#[cfg(feature = "proc_macro_support")]
+mod feat_proc_macro {
+    use super::*;
+    use proc_macro2 as r;
+    use std::convert::TryFrom;
 
-        let (result, rest) = input.pop_by(|m| match m.clone() {
-            RTokenTree::Group(group) => {
-                let delim = Delimiter::try_from(group.delimiter()).ok()?;
-                Some((m, group, delim))
+    impl TryFrom<r::Delimiter> for Delimiter {
+        type Error = ();
+
+        fn try_from(m: r::Delimiter) -> std::result::Result<Self, Self::Error> {
+            match m {
+                r::Delimiter::Parenthesis => Ok(Delimiter::Paren),
+                r::Delimiter::Brace => Ok(Delimiter::Brace),
+                r::Delimiter::Bracket => Ok(Delimiter::Bracket),
+                _ => Err(()),
             }
-            _ => None,
-        });
-
-        let (group_token, group, delim) =
-            result.ok_or_else(|| TokenizeError::NotTokenized(rest.clone()))?;
-
-        let open_loc = Location::Span(group.span_open());
-        let close_loc = Location::Span(group.span_close());
-
-        let inner = TokenTree::tokenize_until_error(InputTokens::from(group.stream()))
-            .empty_or_terminal() // MUST consume all.
-            .map(|(m, _)| m)?;
-
-        let location = Location::TokenStream(group_token.into());
-
-        Ok((
-            TokenTree::Group(Self {
-                delim,
-
-                open_loc,
-                close_loc,
-
-                inner,
-
-                self_str: OnceCell::new(),
-
-                location,
-            })
-            .into(),
-            rest,
-        ))
+        }
     }
 }

@@ -1,14 +1,12 @@
-use std::iter::FromIterator;
-
 use arcstr::Substr;
+#[cfg(feature = "proc_macro_support")]
+use typed_builder::TypedBuilder;
 
-use super::{
-    InputStr, InputTokens, Location, TokenStream, TokenTree, Tokenize, TokenizeError,
-    TokenizeResult,
-};
+use super::{InputStr, Location, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult};
 use crate::{__impl_partial_eq, __impl_token};
 
 /// A token that represents a CSS ident.
+#[cfg_attr(feature = "proc_macro_support", derive(TypedBuilder))]
 #[derive(Debug, Clone)]
 pub struct Ident {
     inner: Substr,
@@ -34,48 +32,5 @@ impl Tokenize<InputStr> for Ident {
         let (inner, location, rest) = input.split_at(len);
 
         Ok((TokenTree::Ident(Ident { inner, location }).into(), rest))
-    }
-}
-
-impl Tokenize<InputTokens> for Ident {
-    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
-        use super::rtokens::*;
-
-        let mut tokens = Vec::new();
-        let mut token_s = "".to_string();
-
-        let is_valid = |m: &RTokenTree, last_is_ident: bool| match m {
-            // You cannot have 2 consecutive idents without whitespaces
-            RTokenTree::Ident(_) => !last_is_ident,
-            RTokenTree::Punct(c) => c.as_char() == '-',
-            _ => false,
-        };
-
-        let mut rest = input;
-        let rest = loop {
-            let last_is_ident = !matches!(tokens.last(), Some(RTokenTree::Ident(_)));
-
-            match rest.pop_by(|m| is_valid(&m, last_is_ident).then(|| m)) {
-                (Some(m), r) => {
-                    token_s.push_str(&m.to_string());
-                    tokens.push(m);
-                    rest = r;
-                }
-                (None, rest) => {
-                    break rest;
-                }
-            }
-        };
-
-        if tokens.is_empty() {
-            Err(TokenizeError::NotTokenized(rest))
-        } else {
-            let location = Location::TokenStream(RTokenStream::from_iter(tokens));
-            let ident = Self {
-                inner: token_s.into(),
-                location,
-            };
-            Ok((TokenTree::Ident(ident).into(), rest))
-        }
     }
 }

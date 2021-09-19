@@ -1,14 +1,14 @@
 use arcstr::Substr;
+#[cfg(feature = "proc_macro_support")]
+use typed_builder::TypedBuilder;
 
-use super::{
-    InputStr, InputTokens, Location, TokenStream, TokenTree, Tokenize, TokenizeError,
-    TokenizeResult,
-};
+use super::{InputStr, Location, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult};
 use crate::{__impl_partial_eq, __impl_token};
 
 /// A token that represents a punctuation mark.
 ///
 /// It is a single punctuation character like +, - or #.
+#[cfg_attr(feature = "proc_macro_support", derive(TypedBuilder))]
 #[derive(Debug, Clone)]
 pub struct Punct {
     inner: Substr,
@@ -35,25 +35,6 @@ impl Tokenize<InputStr> for Punct {
             Ok((TokenTree::Punct(Punct { inner, location }).into(), rest))
         } else {
             Err(TokenizeError::NotTokenized(input))
-        }
-    }
-}
-
-impl Tokenize<InputTokens> for Punct {
-    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
-        use super::rtokens::*;
-
-        let (punct, rest) = input.pop_by(|m| match m {
-            RTokenTree::Punct(ref p) => Some(TokenStream::from(TokenTree::Punct(Punct {
-                inner: p.as_char().to_string().into(),
-                location: Location::TokenStream(m.clone().into()),
-            }))),
-            _ => None,
-        });
-
-        match punct {
-            Some(m) => Ok((m, rest)),
-            None => Err(TokenizeError::NotTokenized(rest)),
         }
     }
 }

@@ -1,6 +1,6 @@
 use super::{
-    Comment, Group, ITokenizeResult, Ident, InputStr, InputTokens, Interpolation, Literal,
-    Location, Punct, Space, TokenStream, Tokenize, TokenizeResult,
+    Comment, Group, ITokenizeResult, Ident, InputStr, Interpolation, Literal, Location, Punct,
+    Space, TokenStream, Tokenize, TokenizeResult,
 };
 
 /// A single token or a delimited sequence of token trees (e.g., [1, (), ..]).
@@ -54,19 +54,6 @@ impl Tokenize<InputStr> for TokenTree {
         Ident::tokenize(input)
             .terminal_or_else(Space::tokenize)
             .terminal_or_else(Comment::tokenize)
-            .terminal_or_else(Punct::tokenize)
-            .terminal_or_else(Ident::tokenize)
-            .terminal_or_else(Group::tokenize)
-            .terminal_or_else(Literal::tokenize)
-    }
-}
-
-impl Tokenize<InputTokens> for TokenTree {
-    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
-        Ident::tokenize(input)
-            // Not Supported for inline.
-            // .terminal_or_else(Spacing::tokenize)
-            // .terminal_or_else(Comment::tokenize)
             .terminal_or_else(Punct::tokenize)
             .terminal_or_else(Ident::tokenize)
             .terminal_or_else(Group::tokenize)

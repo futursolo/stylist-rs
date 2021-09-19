@@ -34,5 +34,3 @@ impl Tokenize<InputStr> for Comment {
         Ok((TokenTree::Comment(Self { inner, location }).into(), rest))
     }
 }
-
-// It's not possible to read comments from proc_macro2::TokenStream at this moment.
