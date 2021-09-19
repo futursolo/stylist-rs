@@ -27,7 +27,7 @@ __impl_token!(Punct);
 
 impl Tokenize<InputStr> for Punct {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
-        let valid_char = |c: &char| "#+,-.:;<@\\".contains(*c);
+        let valid_char = |c: &char| "&#+,-.:;<@\\".contains(*c);
 
         if input.chars().next().filter(valid_char).is_some() {
             let (inner, location, rest) = input.split_at(1);

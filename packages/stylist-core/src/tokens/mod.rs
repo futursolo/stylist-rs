@@ -17,7 +17,7 @@ pub use error::{ITokenizeResult, TokenizeError, TokenizeResult};
 pub use comment::Comment;
 pub use group::{Delimiter, Group};
 pub use ident::Ident;
-pub use input::{InputStr, InputTokens};
+pub use input::{Input, InputStr, InputTokens};
 pub use interpolation::Interpolation;
 pub use literal::Literal;
 pub use location::Location;

@@ -201,16 +201,7 @@ impl Tokenize<InputTokens> for Group {
         let close_loc = Location::Span(group.span_close());
 
         let inner = TokenTree::tokenize_until_error(InputTokens::from(group.stream()))
-            .terminal_or_else(|e| // MUST consume all.
-                match e.peek() {
-                    Some(m) => {
-                        let location = Location::TokenStream(m.clone().into());
-                        Err(ParseError::unexpected_token(
-                            location,
-                        ).into())
-                    }
-                    None => Ok((TokenStream::new(), e)),
-                })
+            .empty_or_terminal() // MUST consume all.
             .map(|(m, _)| m)?;
 
         let location = Location::TokenStream(group_token.into());

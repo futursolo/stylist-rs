@@ -8,6 +8,16 @@ use litrs::StringLit;
 use super::rtokens::{RTokenStream, RTokenTree};
 use super::Location;
 
+pub trait Input {
+    /// Returns `true` if the input is empty.
+    fn is_empty(&self) -> bool;
+
+    /// Returns the `Location` of the first token in the input.
+    ///
+    /// Returns `None` if the input is empty.
+    fn first_token_location(&self) -> Option<Location>;
+}
+
 /// The input to be passed to [`tokenize`](super::Tokenize::tokenize) created from a string literal.
 #[derive(Debug, Clone)]
 pub struct InputStr {
@@ -20,6 +30,23 @@ impl From<String> for InputStr {
         Self {
             inner: m.into(),
             token: None,
+        }
+    }
+}
+
+impl Input for InputStr {
+    fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    fn first_token_location(&self) -> Option<Location> {
+        if self.is_empty() {
+            None
+        } else {
+            Some(Location::Literal {
+                token: self.token.clone(),
+                range: self.inner.substr(0..1).range(),
+            })
         }
     }
 }
@@ -83,6 +110,18 @@ impl InputStr {
 #[derive(Debug, Clone)]
 pub struct InputTokens {
     inner: VecDeque<RTokenTree>,
+}
+
+impl Input for InputTokens {
+    fn is_empty(&self) -> bool {
+        self.inner.is_empty()
+    }
+
+    fn first_token_location(&self) -> Option<Location> {
+        self.peek()
+            .cloned()
+            .map(|m| Location::TokenStream(m.into()))
+    }
 }
 
 impl InputTokens {
