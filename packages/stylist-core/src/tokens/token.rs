@@ -21,11 +21,7 @@ pub enum TokenTree {
 impl TokenTree {
     /// Returns `true` if current token is a whitespace or a comment.
     pub fn is_trimmable(&self) -> bool {
-        match self {
-            TokenTree::Space(_) => true,
-            TokenTree::Comment(_) => true,
-            _ => false,
-        }
+        matches!(self, TokenTree::Space(_) | TokenTree::Comment(_))
     }
 }
 
