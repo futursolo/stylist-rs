@@ -1,6 +1,6 @@
 use super::{
     Comment, Group, ITokenizeResult, Ident, InputStr, InputTokens, Interpolation, Literal,
-    Location, Punct, Space, TokenStream, Tokenize, TokenizeResult, Url,
+    Location, Punct, Space, TokenStream, Tokenize, TokenizeResult,
 };
 
 /// A single token or a delimited sequence of token trees (e.g., [1, (), ..]).
@@ -12,7 +12,6 @@ pub enum TokenTree {
     Comment(Comment),
     Group(Group),
     Literal(Literal),
-    Url(Url),
     Expr(Interpolation),
 }
 
@@ -34,7 +33,6 @@ impl Token for TokenTree {
             Self::Comment(m) => m.location(),
             Self::Group(m) => m.location(),
             Self::Literal(m) => m.location(),
-            Self::Url(m) => m.location(),
             Self::Expr(m) => m.location(),
         }
     }
@@ -46,7 +44,6 @@ impl Token for TokenTree {
             Self::Comment(m) => m.as_str(),
             Self::Group(m) => m.as_str(),
             Self::Literal(m) => m.as_str(),
-            Self::Url(m) => m.as_str(),
             Self::Expr(m) => m.as_str(),
         }
     }
@@ -60,6 +57,7 @@ impl Tokenize<InputStr> for TokenTree {
             .terminal_or_else(Punct::tokenize)
             .terminal_or_else(Ident::tokenize)
             .terminal_or_else(Group::tokenize)
+            .terminal_or_else(Literal::tokenize)
     }
 }
 
@@ -72,5 +70,6 @@ impl Tokenize<InputTokens> for TokenTree {
             .terminal_or_else(Punct::tokenize)
             .terminal_or_else(Ident::tokenize)
             .terminal_or_else(Group::tokenize)
+            .terminal_or_else(Literal::tokenize)
     }
 }

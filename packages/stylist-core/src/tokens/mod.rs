@@ -11,7 +11,6 @@ mod space;
 mod token;
 mod token_stream;
 mod tokenize;
-mod url;
 
 pub use error::{ITokenizeResult, TokenizeError, TokenizeResult};
 
@@ -27,7 +26,6 @@ pub use space::Space;
 pub use token::{Token, TokenTree};
 pub use token_stream::TokenStream;
 pub use tokenize::Tokenize;
-pub use url::Url;
 
 mod rtokens {
     pub use proc_macro2::{
