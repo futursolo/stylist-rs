@@ -3,8 +3,9 @@ use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::parse_macro_input;
+use syn::{Item, ItemFn};
 
-use super::styled_component_base::{styled_component_base_impl, StyledComponent};
+use super::styled_component_impl::{styled_component_impl_impl, HookLike};
 
 #[derive(Debug)]
 pub struct StyledComponentName {
@@ -23,13 +24,31 @@ impl Parse for StyledComponentName {
     }
 }
 
+#[derive(Debug)]
+pub struct StyledComponent {
+    func: ItemFn,
+}
+
+impl Parse for StyledComponent {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        match input.parse()? {
+            Item::Fn(func) => Ok(Self { func }),
+            item => Err(syn::Error::new_spanned(
+                item,
+                "`styled_component` attribute can only be applied to functions",
+            )),
+        }
+    }
+}
+
 pub fn styled_component_impl(
     name: StyledComponentName,
     component: StyledComponent,
 ) -> syn::Result<TokenStream> {
     let StyledComponentName { component_name } = name;
+    let StyledComponent { func } = component;
 
-    let inner_tokens = styled_component_base_impl(component)?;
+    let inner_tokens = styled_component_impl_impl(HookLike { func })?;
 
     Ok(quote! {
         #[::yew::functional::function_component(#component_name)]

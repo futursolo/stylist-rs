@@ -1,24 +1,22 @@
 // This file is borrowed from yew-macro/src/function_component.rs
 use proc_macro2::{Span, TokenStream};
-use quote::{quote, ToTokens};
+use quote::quote;
 use syn::parse::{Parse, ParseStream};
 use syn::parse_macro_input;
 use syn::{Ident, Item, ItemFn};
 
 #[derive(Debug)]
-pub struct StyledComponent {
-    func: ItemFn,
+pub struct HookLike {
+    pub func: ItemFn,
 }
 
-impl Parse for StyledComponent {
+impl Parse for HookLike {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let parsed: Item = input.parse()?;
-
-        match parsed {
+        match input.parse()? {
             Item::Fn(func) => Ok(Self { func }),
             item => Err(syn::Error::new_spanned(
                 item,
-                "`styled_component` attribute can only be applied to functions",
+                "`styled_component_impl` attribute can only be applied to functions",
             )),
         }
     }
@@ -30,14 +28,14 @@ pub struct StyledComponentBaseArgs;
 impl Parse for StyledComponentBaseArgs {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         if !input.is_empty() {
-            return Err(input.error("unexpected arguments to styled_component_base"));
+            return Err(input.error("unexpected arguments to styled_component_impl"));
         }
         Ok(StyledComponentBaseArgs)
     }
 }
 
-pub fn styled_component_base_impl(component: StyledComponent) -> syn::Result<TokenStream> {
-    let StyledComponent { func } = component;
+pub fn styled_component_impl_impl(item: HookLike) -> syn::Result<TokenStream> {
+    let HookLike { func } = item;
 
     let ItemFn {
         attrs,
@@ -57,7 +55,6 @@ pub fn styled_component_base_impl(component: StyledComponent) -> syn::Result<Tok
             }
         }
     };
-    let block_tokens = block.to_token_stream();
 
     let quoted = quote! {
         #(#attrs)*
@@ -65,7 +62,7 @@ pub fn styled_component_base_impl(component: StyledComponent) -> syn::Result<Tok
             let #mgr_ident = ::yew::functional::use_context::<::stylist::manager::StyleManager>().unwrap_or_default();
             #macro_tokens
 
-            #block_tokens
+            #block
         }
     };
 
@@ -76,10 +73,10 @@ pub fn macro_fn(
     attr: proc_macro::TokenStream,
     item: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
-    let item = parse_macro_input!(item as StyledComponent);
-    let StyledComponentBaseArgs = parse_macro_input!(attr as StyledComponentBaseArgs);
+    let item = parse_macro_input!(item as HookLike);
+    let _ = parse_macro_input!(attr as StyledComponentBaseArgs);
 
-    styled_component_base_impl(item)
+    styled_component_impl_impl(item)
         .unwrap_or_else(|err| err.to_compile_error())
         .into()
 }

@@ -19,7 +19,7 @@ mod sheet;
 mod spacing_iterator;
 mod style;
 mod styled_component;
-mod styled_component_base;
+mod styled_component_impl;
 mod use_style;
 
 #[proc_macro]
@@ -58,6 +58,6 @@ pub fn styled_component(attr: TokenStream, item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_attribute]
-pub fn styled_component_base(attr: TokenStream, item: TokenStream) -> TokenStream {
-    styled_component_base::macro_fn(attr, item)
+pub fn styled_component_impl(attr: TokenStream, item: TokenStream) -> TokenStream {
+    styled_component_impl::macro_fn(attr, item)
 }
