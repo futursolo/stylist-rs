@@ -21,6 +21,10 @@ impl TokenStream {
     pub fn is_empty(&self) -> bool {
         self.inner.is_empty()
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = &TokenTree> {
+        self.inner.iter()
+    }
 }
 
 impl IntoIterator for TokenStream {

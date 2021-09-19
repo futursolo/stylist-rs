@@ -4,7 +4,7 @@ use crate::tokens::{TokenStream, TokenTree};
 
 #[derive(Debug, Clone)]
 pub struct ParseStream {
-    inner: Arc<Vec<TokenTree>>,
+    inner: Arc<TokenStream>,
     cursor: usize,
 }
 
@@ -29,7 +29,7 @@ impl ParseStream {
 impl From<TokenStream> for ParseStream {
     fn from(m: TokenStream) -> Self {
         Self {
-            inner: m.into_iter().collect::<Vec<TokenTree>>().into(),
+            inner: m.into(),
             cursor: 0,
         }
     }
