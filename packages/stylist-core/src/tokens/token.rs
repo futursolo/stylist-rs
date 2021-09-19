@@ -1,6 +1,8 @@
+#[cfg(feature = "proc_macro_support")]
+use super::Interpolation;
 use super::{
-    Comment, Group, ITokenizeResult, Ident, InputStr, Interpolation, Literal, Location, Punct,
-    Space, TokenStream, Tokenize, TokenizeResult,
+    Comment, Group, ITokenizeResult, Ident, InputStr, Literal, Location, Punct, Space, TokenStream,
+    Tokenize, TokenizeResult,
 };
 
 /// A single token or a delimited sequence of token trees (e.g., [1, (), ..]).
@@ -12,7 +14,19 @@ pub enum TokenTree {
     Comment(Comment),
     Group(Group),
     Literal(Literal),
+    #[cfg(feature = "proc_macro_support")]
     Expr(Interpolation),
+}
+
+impl TokenTree {
+    /// Returns `true` if current token is a whitespace or a comment.
+    pub fn is_trimmable(&self) -> bool {
+        match self {
+            TokenTree::Space(_) => true,
+            TokenTree::Comment(_) => true,
+            _ => false,
+        }
+    }
 }
 
 /// A trait that represents a token.
@@ -33,6 +47,7 @@ impl Token for TokenTree {
             Self::Comment(m) => m.location(),
             Self::Group(m) => m.location(),
             Self::Literal(m) => m.location(),
+            #[cfg(feature = "proc_macro_support")]
             Self::Expr(m) => m.location(),
         }
     }
@@ -44,6 +59,7 @@ impl Token for TokenTree {
             Self::Comment(m) => m.as_str(),
             Self::Group(m) => m.as_str(),
             Self::Literal(m) => m.as_str(),
+            #[cfg(feature = "proc_macro_support")]
             Self::Expr(m) => m.as_str(),
         }
     }

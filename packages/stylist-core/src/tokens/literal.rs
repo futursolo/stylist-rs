@@ -32,6 +32,7 @@ __impl_token!(Literal);
 impl Literal {
     // https://www.w3.org/TR/css-syntax-3/#consume-numeric-token
     fn parse_number(input: InputStr) -> Result<Option<usize>, ParseError> {
+        // + and - are handled as Punct.
         let is_digit = |m: &char| m.is_ascii_digit();
 
         let mut len = input.chars().take_while(is_digit).count();

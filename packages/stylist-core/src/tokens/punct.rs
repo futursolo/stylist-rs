@@ -7,7 +7,7 @@ use crate::{__impl_partial_eq, __impl_token};
 
 /// A token that represents a punctuation mark.
 ///
-/// It is a single punctuation character like +, - or #.
+/// It is a single punctuation character like `+`, `-` or `#`.
 #[cfg_attr(feature = "proc_macro_support", derive(TypedBuilder))]
 #[derive(Debug, Clone)]
 pub struct Punct {

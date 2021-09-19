@@ -17,7 +17,12 @@ use crate::bow::Bow;
 use crate::{Error, Result};
 
 mod error;
-pub use error::ParseError;
+mod parse;
+mod parse_stream;
+
+pub use error::{ParseError, ParseResult};
+pub use parse::Parse;
+pub use parse_stream::ParseStream;
 
 #[cfg(test)]
 use log::trace;

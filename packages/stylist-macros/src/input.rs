@@ -16,7 +16,7 @@ impl Input for InputTokens {
     }
 
     fn first_token_location(&self) -> Option<Location> {
-        self.peek()
+        self.first()
             .cloned()
             .map(|m| Location::TokenStream(m.into()))
     }
@@ -30,8 +30,8 @@ impl InputTokens {
         (token, self)
     }
 
-    /// Peeks the next token without removing it from the input.
-    pub fn peek(&self) -> Option<&r::TokenTree> {
+    /// Get a reference of the next token without removing it from the input.
+    pub fn first(&self) -> Option<&r::TokenTree> {
         self.inner.get(0)
     }
 
@@ -42,7 +42,7 @@ impl InputTokens {
     where
         O: Fn(r::TokenTree) -> Option<T>,
     {
-        match self.peek().cloned().and_then(op) {
+        match self.first().cloned().and_then(op) {
             Some(m) => {
                 let (_, tokens) = self.pop_front();
                 (Some(m), tokens)

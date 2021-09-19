@@ -22,3 +22,5 @@ impl ParseError {
         Self::new("unexpected token", location)
     }
 }
+
+pub type ParseResult<T> = std::result::Result<T, ParseError>;

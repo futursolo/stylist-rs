@@ -3,6 +3,7 @@ mod error;
 mod group;
 mod ident;
 mod input;
+#[cfg(feature = "proc_macro_support")]
 mod interpolation;
 mod literal;
 mod location;
@@ -18,6 +19,7 @@ pub use comment::Comment;
 pub use group::{Delimiter, Group};
 pub use ident::Ident;
 pub use input::{Input, InputStr};
+#[cfg(feature = "proc_macro_support")]
 pub use interpolation::Interpolation;
 pub use literal::Literal;
 pub use location::Location;
