@@ -57,7 +57,7 @@ impl GlobalStyle {
 
         let new_style = Self {
             inner: StyleContent {
-                is_global: true,
+                _is_global: true,
                 id: StyleId(format!("{}-{}", key.prefix, get_entropy())),
                 style_str,
                 manager,

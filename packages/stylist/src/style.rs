@@ -34,7 +34,7 @@ impl fmt::Display for StyleId {
 
 #[derive(Debug)]
 pub(crate) struct StyleContent {
-    pub is_global: bool,
+    pub _is_global: bool,
 
     pub id: StyleId,
 
@@ -187,7 +187,7 @@ impl Style {
 
         let new_style = Self {
             inner: StyleContent {
-                is_global: false,
+                _is_global: false,
                 id,
                 style_str,
                 manager,

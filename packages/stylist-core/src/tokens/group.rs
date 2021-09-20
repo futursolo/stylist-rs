@@ -82,12 +82,12 @@ impl Group {
 
     /// Returns the location of the opening delimiter.
     pub fn open_location(&self) -> &Location {
-        &self.location
+        &self.open_loc
     }
 
     /// Returns the location of the closing delimiter.
     pub fn close_location(&self) -> &Location {
-        &self.location
+        &self.close_loc
     }
 }
 
