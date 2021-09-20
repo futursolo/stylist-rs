@@ -40,9 +40,9 @@ impl InputTokens {
     /// Returns the value in form of `T`
     pub fn pop_by<O, T>(self, op: O) -> (Option<T>, InputTokens)
     where
-        O: Fn(r::TokenTree) -> Option<T>,
+        O: Fn(&r::TokenTree) -> Option<T>,
     {
-        match self.first().cloned().and_then(op) {
+        match self.first().and_then(op) {
             Some(m) => {
                 let (_, tokens) = self.pop_front();
                 (Some(m), tokens)

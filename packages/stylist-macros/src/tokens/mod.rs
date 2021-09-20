@@ -4,11 +4,11 @@ use std::iter::FromIterator;
 use once_cell::sync::OnceCell;
 use proc_macro2 as r;
 
-use crate::input::InputTokens;
-use stylist_core::tokens::{
-    Delimiter, Group, ITokenizeResult, Ident, Literal, Location, Punct, TokenStream, TokenTree,
-    Tokenize, TokenizeError, TokenizeResult,
-};
+pub use stylist_core::tokens::*;
+
+mod input;
+
+pub use input::InputTokens;
 
 impl Tokenize<InputTokens> for Ident {
     fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
@@ -26,7 +26,7 @@ impl Tokenize<InputTokens> for Ident {
         let rest = loop {
             let last_is_ident = !matches!(tokens.last(), Some(r::TokenTree::Ident(_)));
 
-            match rest.pop_by(|m| is_valid(&m, last_is_ident).then(|| m)) {
+            match rest.pop_by(|m| is_valid(m, last_is_ident).then(|| m.to_owned())) {
                 (Some(m), r) => {
                     token_s.push_str(&m.to_string());
                     tokens.push(m);
@@ -53,10 +53,10 @@ impl Tokenize<InputTokens> for Ident {
 
 impl Tokenize<InputTokens> for Group {
     fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
-        let (result, rest) = input.pop_by(|m| match m.clone() {
-            r::TokenTree::Group(group) => {
+        let (result, rest) = input.pop_by(|m| match m {
+            r::TokenTree::Group(ref group) => {
                 let delim = Delimiter::try_from(group.delimiter()).ok()?;
-                Some((m, group, delim))
+                Some((m.to_owned(), group.to_owned(), delim))
             }
             _ => None,
         });
@@ -105,19 +105,6 @@ impl Tokenize<InputTokens> for Punct {
     }
 }
 
-impl Tokenize<InputTokens> for TokenTree {
-    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
-        Ident::tokenize(input)
-            // Comment are Spacing are not supported for inline.
-            // .terminal_or_else(Spacing::tokenize)
-            // .terminal_or_else(Comment::tokenize)
-            .terminal_or_else(Punct::tokenize)
-            .terminal_or_else(Ident::tokenize)
-            .terminal_or_else(Group::tokenize)
-            .terminal_or_else(Literal::tokenize)
-    }
-}
-
 impl Tokenize<InputTokens> for Literal {
     fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
         let (punct, rest) = input.pop_by(|m| match m {
@@ -134,5 +121,18 @@ impl Tokenize<InputTokens> for Literal {
             Some(m) => Ok((m, rest)),
             None => Err(TokenizeError::NotTokenized(rest)),
         }
+    }
+}
+
+impl Tokenize<InputTokens> for TokenTree {
+    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
+        Ident::tokenize(input)
+            // Comment are Spacing are not supported for inline.
+            // .terminal_or_else(Spacing::tokenize)
+            // .terminal_or_else(Comment::tokenize)
+            .terminal_or_else(Punct::tokenize)
+            .terminal_or_else(Ident::tokenize)
+            .terminal_or_else(Group::tokenize)
+            .terminal_or_else(Literal::tokenize)
     }
 }

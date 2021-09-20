@@ -17,12 +17,41 @@ impl ParseStream {
         self.inner.iter().skip(self.cursor)
     }
 
-    pub fn trim_start(&self) -> Self {
-        let mut self_ = self.clone();
+    pub fn trim_start(mut self) -> Self {
+        self.advance(self.iter().take_while(|m| m.is_trimmable()).count());
 
-        self_.advance(self.iter().take_while(|m| m.is_trimmable()).count());
+        self
+    }
 
-        self_
+    /// Get a reference of the next token without removing it from the input.
+    pub fn first(&self) -> Option<&TokenTree> {
+        self.inner.iter().next()
+    }
+
+    pub fn pop_front(mut self) -> (Option<TokenTree>, Self) {
+        let token = self.first().cloned();
+
+        if token.is_some() {
+            self.advance(1);
+        }
+
+        (token, self)
+    }
+
+    /// Pops the next token if op returns `Some(T)`.
+    ///
+    /// Returns the value in form of `T`
+    pub fn pop_by<O, T>(mut self, op: O) -> (Option<T>, Self)
+    where
+        O: Fn(&TokenTree) -> Option<T>,
+    {
+        match self.first().and_then(op) {
+            Some(m) => {
+                self.advance(1);
+                (Some(m), self)
+            }
+            None => (None, self),
+        }
     }
 }
 
