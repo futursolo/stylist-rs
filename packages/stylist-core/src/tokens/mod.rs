@@ -29,6 +29,9 @@ pub use token::{Token, TokenTree};
 pub use token_stream::TokenStream;
 pub use tokenize::Tokenize;
 
+#[cfg(feature = "proc_macro_support")]
+pub use input::{Argument, Arguments};
+
 #[doc(hidden)]
 #[macro_export]
 macro_rules! __impl_partial_eq {

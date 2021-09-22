@@ -22,6 +22,8 @@ pub struct InputStr {
     inner: Substr,
     #[cfg(feature = "proc_macro_support")]
     token: Option<r::TokenStream>,
+    #[cfg(feature = "proc_macro_support")]
+    args: std::sync::Arc<Arguments>,
 }
 
 impl From<String> for InputStr {
@@ -30,6 +32,8 @@ impl From<String> for InputStr {
             inner: m.into(),
             #[cfg(feature = "proc_macro_support")]
             token: None,
+            #[cfg(feature = "proc_macro_support")]
+            args: Default::default(),
         }
     }
 }
@@ -82,15 +86,10 @@ impl InputStr {
                 inner: right,
                 #[cfg(feature = "proc_macro_support")]
                 token: self.token,
+                #[cfg(feature = "proc_macro_support")]
+                args: self.args,
             },
         )
-    }
-
-    /// Returns the underlying [`TokenStream`](proc_macro2::TokenStream) of the string literal,
-    /// unavailable if the input is created from a runtime string.
-    #[cfg(feature = "proc_macro_support")]
-    pub fn token(&self) -> Option<r::TokenStream> {
-        self.token.clone()
     }
 }
 
@@ -98,7 +97,30 @@ impl InputStr {
 mod feat_proc_macro {
     use super::*;
     use litrs::StringLit;
+    use std::collections::{HashMap, HashSet};
     use std::convert::TryFrom;
+    use std::sync::{Arc, Mutex};
+
+    impl InputStr {
+        /// Returns the underlying [`TokenStream`](proc_macro2::TokenStream) of the string literal,
+        /// unavailable if the input is created from a runtime string.
+        #[cfg(feature = "proc_macro_support")]
+        pub fn token(&self) -> Option<r::TokenStream> {
+            self.token.clone()
+        }
+
+        pub fn args(&self) -> Arc<Arguments> {
+            self.args.clone()
+        }
+
+        pub fn with_args(self, args: Arguments) -> Self {
+            Self {
+                inner: self.inner,
+                token: self.token,
+                args: args.into(),
+            }
+        }
+    }
 
     impl TryFrom<r::TokenTree> for InputStr {
         type Error = r::TokenStream;
@@ -112,7 +134,57 @@ mod feat_proc_macro {
             Ok(Self {
                 inner: s.to_string().into(),
                 token: Some(value.into()),
+                args: Default::default(),
             })
         }
     }
+
+    #[derive(Debug, Clone)]
+    pub struct Argument {
+        pub name: String,
+        pub name_token: r::Ident,
+        pub tokens: r::TokenStream,
+    }
+
+    #[derive(Debug, Default)]
+    pub struct Arguments {
+        args: HashMap<String, Argument>,
+        args_used: Mutex<HashSet<String>>,
+    }
+
+    impl From<HashMap<String, Argument>> for Arguments {
+        fn from(value: HashMap<String, Argument>) -> Self {
+            Self {
+                args: value,
+                ..Default::default()
+            }
+        }
+    }
+
+    impl Arguments {
+        pub fn get<S: AsRef<str>>(&self, name: S) -> Option<Argument> {
+            let name = name.as_ref();
+
+            self.args.get(name).cloned().map(|m| {
+                let mut used = self.args_used.lock().unwrap();
+
+                used.insert(name.to_owned());
+
+                m
+            })
+        }
+
+        pub fn get_unused_args(&self) -> Vec<Argument> {
+            let used = self.args_used.lock().unwrap();
+
+            self.args
+                .iter()
+                .filter_map(|(key, value)| (!used.contains(key)).then(|| value))
+                .cloned()
+                .collect()
+        }
+    }
 }
+
+#[cfg(feature = "proc_macro_support")]
+pub use feat_proc_macro::{Argument, Arguments};
