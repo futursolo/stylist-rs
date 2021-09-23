@@ -4,6 +4,7 @@ use std::iter::FromIterator;
 use once_cell::sync::OnceCell;
 use proc_macro2 as r;
 
+pub use stylist_core::arc_ref::ArcRef;
 pub use stylist_core::tokens::*;
 
 mod input;
@@ -77,7 +78,7 @@ impl Tokenize<InputTokens> for Group {
             .delim(delim)
             .open_loc(open_loc)
             .close_loc(close_loc)
-            .inner(inner)
+            .inner(ArcRef::from(inner))
             .self_str(OnceCell::new())
             .location(location)
             .build();

@@ -8,6 +8,7 @@
 
 mod error;
 pub use error::{Error, Result, ResultDisplay};
+pub mod arc_ref;
 pub mod ast;
 pub mod bow;
 

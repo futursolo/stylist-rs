@@ -7,6 +7,7 @@ use super::{
     TokenizeResult,
 };
 use crate::__impl_partial_eq;
+use crate::arc_ref::ArcRef;
 use crate::parser::ParseError;
 
 /// The delimiter of a [`Group`].
@@ -62,7 +63,7 @@ pub struct Group {
     open_loc: Location,
     close_loc: Location,
 
-    inner: TokenStream,
+    inner: ArcRef<'static, TokenStream>,
 
     self_str: OnceCell<String>,
 
@@ -71,7 +72,7 @@ pub struct Group {
 
 impl Group {
     /// Returns the [`TokenStream`] of tokens that are delimited in this [`Group`].
-    pub fn stream(&self) -> TokenStream {
+    pub fn stream(&self) -> ArcRef<'_, TokenStream> {
         self.inner.clone()
     }
 
@@ -98,7 +99,7 @@ impl Token for Group {
         self.self_str.get_or_init(|| {
             let mut s = self.delim.open_char().to_string();
 
-            for token in self.stream().into_iter() {
+            for token in self.stream().iter() {
                 s.push_str(token.as_str());
             }
 
@@ -160,7 +161,7 @@ impl Tokenize<InputStr> for Group {
                 open_loc,
                 close_loc,
 
-                inner,
+                inner: ArcRef::from(inner),
 
                 self_str: OnceCell::new(),
 

@@ -1,14 +1,13 @@
-use std::sync::Arc;
-
+use crate::arc_ref::ArcRef;
 use crate::tokens::{TokenStream, TokenTree};
 
 #[derive(Debug, Clone)]
-pub struct ParseStream {
-    inner: Arc<TokenStream>,
+pub struct ParseStream<'a> {
+    inner: ArcRef<'a, TokenStream>,
     cursor: usize,
 }
 
-impl ParseStream {
+impl ParseStream<'_> {
     fn advance(&mut self, len: usize) {
         self.cursor += len;
     }
@@ -55,10 +54,10 @@ impl ParseStream {
     }
 }
 
-impl From<TokenStream> for ParseStream {
-    fn from(m: TokenStream) -> Self {
+impl<'a> From<ArcRef<'a, TokenStream>> for ParseStream<'a> {
+    fn from(m: ArcRef<'a, TokenStream>) -> Self {
         Self {
-            inner: m.into(),
+            inner: m,
             cursor: 0,
         }
     }
