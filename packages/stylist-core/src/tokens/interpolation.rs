@@ -1,25 +1,52 @@
-use arcstr::Substr;
 use proc_macro2 as r;
+#[cfg(feature = "proc_macro_support")]
+use typed_builder::TypedBuilder;
 
-use super::{InputStr, Location, TokenStream, TokenTree, Tokenize, TokenizeError, TokenizeResult};
+use super::{
+    Fragment, InputStr, Location, Token, TokenStream, TokenTree, Tokenize, TokenizeError,
+    TokenizeResult,
+};
 use crate::parser::ParseError;
-use crate::{__impl_partial_eq, __impl_token};
 
+#[cfg_attr(feature = "proc_macro_support", derive(TypedBuilder))]
 #[derive(Debug, Clone)]
 pub struct Interpolation {
-    inner: Substr,
     location: Location,
 
-    ident: Substr,
-    ident_loc: Location,
     expr: r::TokenStream,
-
-    open_loc: Location,
-    close_loc: Location,
+    // open_loc: Location,
+    // close_loc: Location,
 }
 
-__impl_partial_eq!(Interpolation, inner);
-__impl_token!(Interpolation);
+// impl Interpolation {
+//     /// Returns the location of the opening delimiter.
+//     pub fn open_location(&self) -> &Location {
+//         &self.open_loc
+//     }
+
+//     /// Returns the location of the closing delimiter.
+//     pub fn close_location(&self) -> &Location {
+//         &self.close_loc
+//     }
+// }
+
+impl PartialEq for Interpolation {
+    fn eq(&self, other: &Self) -> bool {
+        self.expr.to_string() == other.expr.to_string()
+    }
+}
+
+impl Token for Interpolation {
+    fn location(&self) -> &Location {
+        &self.location
+    }
+
+    // to_fragments for interpolation is special,
+    // it returns the actual expression instead of a literal with `${}`.
+    fn to_fragments(&self) -> Vec<Fragment> {
+        vec![Fragment::Expr(self.expr.clone())]
+    }
+}
 
 impl Tokenize<InputStr> for Interpolation {
     fn tokenize(input: InputStr) -> TokenizeResult<InputStr, TokenStream> {
@@ -46,9 +73,9 @@ impl Tokenize<InputStr> for Interpolation {
 
         let input_token = input.token();
 
-        let (open_token, open_loc, rest) = input.split_at(2);
+        let (open_token, _open_loc, rest) = input.split_at(2);
         let (ident, ident_loc, rest) = rest.split_at(len - 2);
-        let (close_token, close_loc, rest) = rest.split_at(1);
+        let (close_token, _close_loc, rest) = rest.split_at(1);
 
         let arg = match rest.args().get(&ident) {
             Some(m) => m,
@@ -67,13 +94,10 @@ impl Tokenize<InputStr> for Interpolation {
 
         Ok((
             TokenTree::Expr(Self {
-                inner: format!("${{{}}}", ident).into(),
-                ident,
-                ident_loc,
                 location,
                 expr: arg.tokens,
-                open_loc,
-                close_loc,
+                // open_loc,
+                // close_loc,
             })
             .into(),
             rest,

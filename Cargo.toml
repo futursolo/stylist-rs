@@ -12,7 +12,3 @@ members = [
     "examples/use-media-query",
 ]
 resolver = "2"
-
-[profile.release]
-opt-level = 'z'
-lto = true

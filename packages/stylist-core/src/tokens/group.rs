@@ -1,4 +1,3 @@
-use once_cell::sync::OnceCell;
 #[cfg(feature = "proc_macro_support")]
 use typed_builder::TypedBuilder;
 
@@ -9,6 +8,9 @@ use super::{
 use crate::__impl_partial_eq;
 use crate::arc_ref::ArcRef;
 use crate::parser::ParseError;
+
+#[cfg(feature = "proc_macro_support")]
+use super::Fragment;
 
 /// The delimiter of a [`Group`].
 #[derive(Debug, Clone, PartialEq)]
@@ -27,6 +29,14 @@ impl Delimiter {
             Self::Paren => ('(', ')'),
             Self::Bracket => ('[', ']'),
             Self::Brace => ('{', '}'),
+        }
+    }
+
+    fn str_pair(&self) -> (&str, &str) {
+        match self {
+            Self::Paren => ("(", ")"),
+            Self::Bracket => ("[", "]"),
+            Self::Brace => ("{", "}"),
         }
     }
 
@@ -52,6 +62,16 @@ impl Delimiter {
     pub fn close_char(&self) -> char {
         self.char_pair().1
     }
+
+    /// Returns the opening delimiter as `&str`.
+    pub fn open_str(&self) -> &str {
+        self.str_pair().0
+    }
+
+    /// Returns the closing delimiter as `&str`.
+    pub fn close_str(&self) -> &str {
+        self.str_pair().1
+    }
 }
 
 /// A token that represents a Group (Block) surrounded by a [`Delimiter`].
@@ -64,8 +84,6 @@ pub struct Group {
     close_loc: Location,
 
     inner: ArcRef<'static, TokenStream>,
-
-    self_str: OnceCell<String>,
 
     location: Location,
 }
@@ -95,19 +113,31 @@ impl Group {
 __impl_partial_eq!(Group, inner, delim);
 
 impl Token for Group {
-    fn as_str(&self) -> &str {
-        self.self_str.get_or_init(|| {
-            let mut s = self.delim.open_char().to_string();
+    #[cfg(not(feature = "proc_macro_support"))]
+    fn to_fragments(&self) -> Vec<&str> {
+        let fragments = vec![self.delimiter().open_str()];
 
-            for token in self.stream().iter() {
-                s.push_str(token.as_str());
-            }
+        for token in self.stream().iter() {
+            fragments.extend(token.as_fragments);
+        }
 
-            s.push(self.delim.close_char());
+        fragments.push(self.delimiter().close_str());
 
-            s
-        })
+        fragments
     }
+
+    fn to_fragments(&self) -> Vec<Fragment> {
+        let mut fragments = vec![Fragment::Literal(self.delimiter().open_char().to_string())];
+
+        for token in self.stream().iter() {
+            fragments.extend(token.to_fragments());
+        }
+
+        fragments.push(Fragment::Literal(self.delimiter().close_char().to_string()));
+
+        fragments
+    }
+
     fn location(&self) -> &Location {
         &self.location
     }
@@ -162,8 +192,6 @@ impl Tokenize<InputStr> for Group {
                 close_loc,
 
                 inner: ArcRef::from(inner),
-
-                self_str: OnceCell::new(),
 
                 location,
             })

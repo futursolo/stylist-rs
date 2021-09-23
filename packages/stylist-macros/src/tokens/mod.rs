@@ -1,7 +1,6 @@
 use std::convert::TryFrom;
 use std::iter::FromIterator;
 
-use once_cell::sync::OnceCell;
 use proc_macro2 as r;
 
 pub use stylist_core::arc_ref::ArcRef;
@@ -79,7 +78,6 @@ impl Tokenize<InputTokens> for Group {
             .open_loc(open_loc)
             .close_loc(close_loc)
             .inner(ArcRef::from(inner))
-            .self_str(OnceCell::new())
             .location(location)
             .build();
 
@@ -135,5 +133,50 @@ impl Tokenize<InputTokens> for TokenTree {
             .terminal_or_else(Ident::tokenize)
             .terminal_or_else(Group::tokenize)
             .terminal_or_else(Literal::tokenize)
+    }
+}
+
+impl Tokenize<InputTokens> for Interpolation {
+    fn tokenize(input: InputTokens) -> TokenizeResult<InputTokens, TokenStream> {
+        let (dollar, rest) = match input.clone().pop_by(|m| {
+            match m {
+                r::TokenTree::Punct(ref m) => m.as_char() == '$',
+                _ => false,
+            }
+            .then(|| m.to_owned())
+        }) {
+            (Some(m), rest) => (m, rest),
+            (None, input) => return Err(TokenizeError::NotTokenized(input)),
+        };
+
+        let (group, rest) = match rest.pop_by(|m| match m {
+            r::TokenTree::Group(ref m) => {
+                if m.delimiter() == r::Delimiter::Brace {
+                    Some(m.clone())
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        }) {
+            (Some(m), rest) => (m, rest),
+            (None, _) => return Err(TokenizeError::NotTokenized(input)),
+        };
+
+        let location = Location::TokenStream(r::TokenStream::from_iter(vec![
+            dollar,
+            r::TokenTree::Group(group.clone()),
+        ]));
+
+        Ok((
+            TokenTree::Expr(
+                Self::builder()
+                    .location(location)
+                    .expr(group.stream())
+                    .build(),
+            )
+            .into(),
+            rest,
+        ))
     }
 }
