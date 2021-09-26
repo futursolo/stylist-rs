@@ -4,7 +4,6 @@ members = [
     "packages/stylist-core",
     "packages/stylist-macros",
 
-    "examples/benchmarks",
     "examples/yew-proc-macros",
     "examples/yew-integration",
     "examples/yew-shadow",
@@ -12,6 +11,7 @@ members = [
     "examples/yew-theme-hooks",
     "examples/use-media-query",
 
+    "ci/benchmarks",
     "ci/codesize",
 ]
 resolver = "2"
