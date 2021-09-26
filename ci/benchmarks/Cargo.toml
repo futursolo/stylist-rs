@@ -1,0 +1,26 @@
+[package]
+name = "stylist-benchmarks"
+version = "0.1.0"
+authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
+edition = "2018"
+
+[dependencies]
+stylist = { path = "../../packages/stylist" }
+
+log = "0.4.14"
+console_log = { version = "0.2.0", features = ["color"] }
+web-sys = { version = "0.3.54", features = [
+    "Window",
+    "Performance",
+] }
+
+yew = { git = "https://github.com/yewstack/yew", optional = true }
+gloo = { version = "0.3.0", optional = true }
+
+[features]
+default = ["with_interface"]
+with_interface = ["stylist/yew_integration", "yew", "gloo"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.26"
+wasm-bindgen = "0.2"

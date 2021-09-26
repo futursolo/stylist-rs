@@ -72,6 +72,36 @@ jobs:
       - name: Run Browser Tests
         run: wasm-pack test --headless --chrome --firefox examples/yew-integration
 
+      - name: Run Browser Benchmarks
+        run: wasm-pack test --headless --chrome --firefox ci/benchmarks --release --no-default-features
+
+      - name: "Run Codesize Benchmark: Macros"
+        working-directory: ci/codesize
+        env:
+          TRUNK_BUILD_TARGET: index.macros.html
+        run: |
+          trunk build --release
+          gzip -r --best dist
+          gzip -r --list dist
+
+      - name: "Run Codesize Benchmark: Parser"
+        working-directory: ci/codesize
+        env:
+          TRUNK_BUILD_TARGET: index.parser.html
+        run: |
+          trunk build --release
+          gzip -r --best dist
+          gzip -r --list dist
+
+      - name: "Run Codesize Benchmark: Yew Integration"
+        working-directory: ci/codesize
+        env:
+          TRUNK_BUILD_TARGET: index.yew_integration.html
+        run: |
+          trunk build --release
+          gzip -r --best dist
+          gzip -r --list dist
+
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest

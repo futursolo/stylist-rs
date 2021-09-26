@@ -7,9 +7,11 @@ ignore = [
   "packages/stylist/target/",
   "packages/stylist-core/target/",
 
-  "examples/benchmarks/target/",
   "examples/yew-integration/target/",
   "examples/yew-theme-context/target/",
+
+  "ci/benchmarks/target/",
+  "ci/codesize/target/",
 ]
 
 [tools]
