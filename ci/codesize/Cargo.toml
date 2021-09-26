@@ -1,0 +1,15 @@
+[package]
+name = "stylist-codesize"
+version = "0.1.0"
+authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
+edition = "2018"
+
+[dependencies]
+stylist = { path = "../../packages/stylist", default-features = false }
+yew = { version = "0.18.0", optional = true }
+
+[features]
+default = []
+macros = ["stylist/macros"]
+yew_integration = ["stylist/yew_integration", "yew"]
+parser = ["stylist/parser"]
