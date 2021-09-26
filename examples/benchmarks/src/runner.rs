@@ -21,39 +21,39 @@ impl BenchmarkResults {
     pub fn step(&mut self) -> bool {
         if self.parse_simple.is_none() {
             self.parse_simple = Some(benchmarks::bench_parse_simple());
-            false
+            true
         } else if self.macro_simple.is_none() {
             self.macro_simple = Some(benchmarks::bench_macro_simple());
-            false
+            true
         } else if self.macro_inline_simple.is_none() {
             self.macro_inline_simple = Some(benchmarks::bench_macro_inline_simple());
-            false
+            true
         } else if self.parse_simple_no_cache.is_none() {
             self.parse_simple_no_cache = Some(benchmarks::bench_parse_simple_no_cache());
-            false
+            true
         } else if self.parse_complex.is_none() {
             self.parse_complex = Some(benchmarks::bench_parse_complex());
-            false
+            true
         } else if self.macro_complex.is_none() {
             self.macro_complex = Some(benchmarks::bench_macro_complex());
-            false
+            true
         } else if self.macro_inline_complex.is_none() {
             self.macro_inline_complex = Some(benchmarks::bench_macro_inline_complex());
-            false
+            true
         } else if self.parse_complex_no_cache.is_none() {
             self.parse_complex_no_cache = Some(benchmarks::bench_parse_complex_no_cache());
-            false
+            true
         } else if self.cached_lookup.is_none() {
             self.cached_lookup = Some(benchmarks::bench_cached_lookup());
-            false
+            true
         } else if self.cached_lookup_big_sheet.is_none() {
             self.cached_lookup_big_sheet = Some(benchmarks::bench_cached_lookup_big_sheet());
-            false
+            true
         } else if self.mounting.is_none() {
             self.mounting = Some(benchmarks::bench_mounting());
-            false
-        } else {
             true
+        } else {
+            false
         }
     }
 }
