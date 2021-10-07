@@ -1,4 +1,5 @@
-fn main() {
+#[test]
+fn test_complicated_attributes() {
     let _ = env_logger::builder().is_test(true).try_init();
     let sheet = stylist::ast::sheet! {
         border: medium dashed green;
