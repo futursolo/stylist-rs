@@ -13,7 +13,9 @@ impl Foo {
         "confused user impl".into()
     }
 }
-fn main() {
+
+#[test]
+fn test_display_impl() {
     let style = stylist::style! {
         display: ${Foo::Bar};
     }
