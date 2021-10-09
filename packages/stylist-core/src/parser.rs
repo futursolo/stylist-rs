@@ -167,7 +167,7 @@ impl Parser {
                     is_not("${;}/\""),
                     recognize(Self::interpolation),
                     Self::string,
-                    recognize(preceded(tag("/"), none_of("${;}/\"*"))),
+                    recognize(preceded(tag("/"), none_of("${;}\"*"))),
                 )))),
                 |m: &str| StringFragment {
                     inner: m.to_string().trim().to_string().into(),
@@ -1449,6 +1449,26 @@ mod tests {
                     value: vec!["1 /3".into()].into(),
                 }),
             ]
+            .into(),
+        })]);
+
+        assert_eq!(parsed, expected);
+    }
+
+    #[test]
+    fn test_url() {
+        let test_str = r#"
+            background-image: url(https://example.com/example.jpg);
+        "#;
+
+        let parsed = Parser::parse(test_str).expect("Failed to Parse Style");
+
+        let expected = Sheet::from(vec![ScopeContent::Block(Block {
+            condition: vec![].into(),
+            content: vec![RuleBlockContent::StyleAttr(StyleAttribute {
+                key: "background-image".into(),
+                value: vec!["url(https://example.com/example.jpg)".into()].into(),
+            })]
             .into(),
         })]);
 
