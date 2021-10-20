@@ -4,6 +4,7 @@
 
 ### Other Changes:
 - Added an API to style Yew Function Component.
+- `random` features is now provided with `fastrand`.
 
 ## v0.9.2
 
