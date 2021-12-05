@@ -34,6 +34,7 @@ impl fmt::Display for StyleId {
 
 #[derive(Debug)]
 pub(crate) struct StyleContent {
+    #[allow(dead_code)]
     pub is_global: bool,
 
     pub id: StyleId,
