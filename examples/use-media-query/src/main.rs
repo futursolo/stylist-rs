@@ -69,7 +69,7 @@ mod tests {
     #[wasm_bindgen_test]
     fn test_simple() {
         yew::start_app_in_element::<App>(
-            yew::utils::document().get_element_by_id("output").unwrap(),
+            gloo_utils::document().get_element_by_id("output").unwrap(),
         );
         let window = window().unwrap();
         let doc = window.document().unwrap();
