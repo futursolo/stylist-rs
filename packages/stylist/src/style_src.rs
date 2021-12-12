@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use crate::ast::Sheet;
 use crate::manager::StyleManager;
 use crate::Result;
-#[cfg(feature = "yew_integration")]
+#[cfg(feature = "yew")]
 use crate::Style;
 
 #[cfg(feature = "parser")]
@@ -61,7 +61,7 @@ impl StyleSource<'_> {
         }
     }
 
-    #[cfg(feature = "yew_integration")]
+    #[cfg(feature = "yew")]
     pub(crate) fn to_style(&self) -> Style {
         use stylist_core::ResultDisplay;
         Style::new_with_manager(self.clone(), self.manager.clone().unwrap_or_default())

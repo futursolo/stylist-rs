@@ -164,8 +164,8 @@ pub use style::Style;
 pub use style_src::StyleSource;
 pub use yield_style::YieldStyle;
 
-#[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
-#[cfg(feature = "yew_integration")]
+#[cfg_attr(documenting, doc(cfg(feature = "yew")))]
+#[cfg(feature = "yew")]
 pub mod yew;
 
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
