@@ -46,6 +46,7 @@ pub fn styled_component_impl_impl(item: HookLike) -> syn::Result<TokenStream> {
 
     let mgr_ident = Ident::new("__stylist_style_manager__", Span::mixed_site());
     let macro_tokens = quote! {
+        #[allow(unused_macros)]
         macro_rules! css {
             ($( $args:tt )*) => {
                 ::stylist::css!($($args)*).with_manager({

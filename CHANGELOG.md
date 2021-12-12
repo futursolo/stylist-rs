@@ -2,9 +2,14 @@
 
 ## v0.10.0
 
+### Breaking Changes:
+- Yew version is bumped to 0.19.
+
 ### Other Changes:
 - Added an API to style Yew Function Component.
 - `random` features is now provided with `fastrand`.
+- Added Yew hooks for Media Query.
+- Fixed a bug where URL might not be parsed properly.
 
 ## v0.9.2
 
