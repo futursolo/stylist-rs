@@ -1,4 +1,5 @@
-fn main() {
+#[test]
+fn test_whitespace_workaround() {
     let _ = env_logger::builder().is_test(true).try_init();
     let style = stylist::style! {
         &.class-a.class-b {
@@ -17,6 +18,8 @@ fn main() {
         &.class-a #content {
             color: white;
         }
+        & p { line-height: inherit; }
+        & *.leaving { opacity: 0; }
     }
     .unwrap();
     let expected_result = format!(
@@ -31,6 +34,12 @@ fn main() {
 }}
 .{cls}.class-a #content {{
     color: white;
+}}
+.{cls} p {{
+    line-height: inherit;
+}}
+.{cls} *.leaving {{
+    opacity: 0;
 }}
 "#,
         cls = style.get_class_name()

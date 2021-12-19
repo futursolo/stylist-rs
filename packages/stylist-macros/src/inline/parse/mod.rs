@@ -67,7 +67,7 @@ pub fn fragment_spacing(l: &OutputFragment, r: &OutputFragment) -> Option<Output
     use super::component_value::PreservedToken::*;
     use OutputFragment::*;
     let left_ends_compound = matches!(l, Delimiter(_, false) | Token(Ident(_)) | Token(Literal(_)))
-        || matches!(l, Token(Punct(ref p)) if p.as_char() == '*');
+        || matches!(l, Token(Punct(ref p)) if "&*".contains(p.as_char()));
     let right_starts_compound = matches!(r, Token(Ident(_)) | Token(Literal(_)))
         || matches!(r, Token(Punct(ref p)) if "*#".contains(p.as_char()));
     let needs_spacing = left_ends_compound && right_starts_compound;

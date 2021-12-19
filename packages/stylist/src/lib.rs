@@ -141,7 +141,7 @@
 //! ## Features Flags
 //!
 //! - `macros`: Enabled by default, this flag enables procedural macro support.
-//! - `random`: Enabled by default, this flag uses `rand` crate to generate a random
+//! - `random`: Enabled by default, this flag uses `fastrand` crate to generate a random
 //!   class name. Disabling this flag will opt for a class name that is counter-based.
 //! - `yew_integration`: This flag enables yew integration, which implements [`Classes`](::yew::html::Classes) for
 //!   [`Style`] and provides a [`Global`](yew::Global) component for applying global styles.
@@ -164,8 +164,8 @@ pub use style::Style;
 pub use style_src::StyleSource;
 pub use yield_style::YieldStyle;
 
-#[cfg_attr(documenting, doc(cfg(feature = "yew_integration")))]
-#[cfg(feature = "yew_integration")]
+#[cfg_attr(documenting, doc(cfg(feature = "yew")))]
+#[cfg(feature = "yew")]
 pub mod yew;
 
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]

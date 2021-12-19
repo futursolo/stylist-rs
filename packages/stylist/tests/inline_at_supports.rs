@@ -1,4 +1,5 @@
-fn main() {
+#[test]
+fn test_inline_at_support() {
     let _ = env_logger::builder().is_test(true).try_init();
     let style = stylist::style! {
         @supports (display: grid) {

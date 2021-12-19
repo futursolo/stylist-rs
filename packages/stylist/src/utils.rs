@@ -1,14 +1,8 @@
 #[cfg(feature = "random")]
-pub(crate) fn get_rand_str() -> String {
-    use rand::{distributions::Alphanumeric, thread_rng, Rng};
+fn get_rand_str() -> String {
+    use std::iter::repeat_with;
 
-    let mut rng = thread_rng();
-
-    (&mut rng)
-        .sample_iter(Alphanumeric)
-        .take(8)
-        .map(char::from)
-        .collect()
+    repeat_with(fastrand::alphanumeric).take(8).collect()
 }
 
 #[cfg(any(test, not(feature = "random")))]

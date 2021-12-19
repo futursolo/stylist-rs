@@ -8,12 +8,14 @@ impl Display for Foo {
     }
 }
 impl Foo {
-    #[allow(dead_code)]
+    #[allow(dead_code, clippy::inherent_to_string_shadow_display)]
     fn to_string(&self) -> String {
         "confused user impl".into()
     }
 }
-fn main() {
+
+#[test]
+fn test_display_impl() {
     let style = stylist::style! {
         display: ${Foo::Bar};
     }

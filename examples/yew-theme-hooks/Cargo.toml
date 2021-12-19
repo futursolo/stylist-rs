@@ -1,5 +1,5 @@
 [package]
-name = "example-use-media-query"
+name = "example-yew-theme-hooks"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2018"
@@ -10,8 +10,9 @@ console_log = { version = "0.2.0", features = ["color"] }
 yew = { version = "0.19" }
 stylist = { path = "../../packages/stylist", features = [
     "yew_integration",
-    "yew_use_media_query",
+    "yew_use_style",
 ] }
+once_cell = "1.8.0"
 
 [dev-dependencies]
 gloo-utils = "0.1"
