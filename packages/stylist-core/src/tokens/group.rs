@@ -220,3 +220,93 @@ mod feat_proc_macro {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tokens::{ITokenizeResult, Location, Token};
+
+    #[test]
+    fn test_group_empty() {
+        let input = InputStr::from("{}".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Group(m) => m,
+                _ => panic!(),
+            };
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert!(matches!(t.delimiter(), Delimiter::Brace));
+
+            assert!(t.stream().is_empty());
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 2);
+        }
+    }
+
+    #[test]
+    fn test_comment_some() {
+        let input = InputStr::from("{ }".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Group(m) => m,
+                _ => panic!(),
+            };
+
+            assert!(matches!(t.delimiter(), Delimiter::Brace));
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            for (index, token) in t.stream().into_owned().into_iter().enumerate() {
+                assert_eq!(index, 0);
+
+                assert!(matches!(token, TokenTree::Space(_)));
+            }
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 3);
+        }
+    }
+
+    #[test]
+    fn test_group_invalid() {
+        let input = InputStr::from("{ ".to_string());
+
+        let e = TokenTree::tokenize_until_error(input).unwrap_err();
+
+        let e = match e {
+            TokenizeError::Terminal(e) => e,
+            _ => panic!(),
+        };
+
+        let loc = match e.location() {
+            Location::Literal { range, .. } => range,
+            _ => panic!(),
+        };
+
+        assert_eq!(loc.start, 0);
+        assert_eq!(loc.end, 1);
+    }
+}

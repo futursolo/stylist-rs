@@ -63,7 +63,7 @@ impl Tokenize<InputStr> for Interpolation {
             let (_, location, _) = input.split_at(2).2.split_at(1);
             return Err(ParseError::unexpected_token(location).into());
         }
-
+        // ${ + first char = 3
         let len = 3 + chars.take_while(valid_rest_char).count();
 
         if !input.chars().nth(len).map(|m| m == '}').unwrap_or(false) {

@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 use super::Input;
-use crate::parser::ParseError;
+use crate::parser::{ParseError, ParseResult};
 
 #[derive(Debug, Error)]
 pub enum TokenizeError<I> {
@@ -25,13 +25,13 @@ pub trait ITokenizeResult<I, T> {
     where
         O: FnOnce(I) -> TokenizeResult<I, T>;
 
-    /// Returns `OK()` unless the error is terminal.
-    fn terminal_or_ok(self) -> std::result::Result<(T, I), ParseError>;
+    /// Returns `Ok()` unless the error is terminal.
+    fn terminal_or_ok(self) -> ParseResult<(T, I)>;
 
     /// Returns a terminal error unless the remaining input is empty.
     ///
     /// Returns `Ok()` if the remaining input is empty.
-    fn empty_or_terminal(self) -> std::result::Result<(T, I), ParseError>;
+    fn empty_or_terminal(self) -> ParseResult<T>;
 }
 
 impl<I: Input, T: Default> ITokenizeResult<I, T> for TokenizeResult<I, T> {
@@ -45,7 +45,7 @@ impl<I: Input, T: Default> ITokenizeResult<I, T> for TokenizeResult<I, T> {
         }
     }
 
-    fn terminal_or_ok(self) -> std::result::Result<(T, I), ParseError> {
+    fn terminal_or_ok(self) -> ParseResult<(T, I)> {
         match self {
             Ok(m) => Ok(m),
             Err(TokenizeError::NotTokenized(m)) => Ok((T::default(), m)),
@@ -53,13 +53,13 @@ impl<I: Input, T: Default> ITokenizeResult<I, T> for TokenizeResult<I, T> {
         }
     }
 
-    fn empty_or_terminal(self) -> std::result::Result<(T, I), ParseError> {
+    fn empty_or_terminal(self) -> ParseResult<T> {
         match self {
-            Ok(m) => Ok(m),
+            Ok(m) => Ok(m.0),
             Err(TokenizeError::NotTokenized(m)) => m
                 .first_token_location()
                 .map(|m| Err(ParseError::unexpected_token(m)))
-                .unwrap_or_else(|| Ok((T::default(), m))),
+                .unwrap_or_else(|| Ok(T::default())),
             Err(TokenizeError::Terminal(e)) => Err(e),
         }
     }

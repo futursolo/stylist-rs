@@ -127,3 +127,224 @@ impl Tokenize<InputStr> for Literal {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tokens::{ITokenizeResult, Location, Token};
+
+    #[test]
+    fn test_int() {
+        let input = InputStr::from("12345".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Literal(m) => m,
+                _ => panic!(),
+            };
+
+            assert_eq!(t.inner, "12345");
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 5);
+        }
+    }
+
+    #[test]
+    fn test_float() {
+        let input = InputStr::from("12345.6".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Literal(m) => m,
+                _ => panic!(),
+            };
+
+            assert_eq!(t.inner, "12345.6");
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 7);
+        }
+    }
+
+    #[test]
+    fn test_string_empty() {
+        let input = InputStr::from("\"\"".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Literal(m) => m,
+                _ => panic!(),
+            };
+
+            assert_eq!(t.inner, "\"\"");
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 2);
+        }
+    }
+
+    #[test]
+    fn test_string_some() {
+        let input = InputStr::from("\"somestr\"".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Literal(m) => m,
+                _ => panic!(),
+            };
+
+            assert_eq!(t.inner, "\"somestr\"");
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 9);
+        }
+    }
+    #[test]
+    fn test_string_mix() {
+        let input = InputStr::from("\"'\"".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Literal(m) => m,
+                _ => panic!(),
+            };
+
+            assert_eq!(t.inner, "\"'\"");
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 3);
+        }
+    }
+
+    #[test]
+    fn test_string_single() {
+        let input = InputStr::from("''".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Literal(m) => m,
+                _ => panic!(),
+            };
+
+            assert_eq!(t.inner, "''");
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 2);
+        }
+    }
+
+    #[test]
+    fn test_string_single_mix() {
+        let input = InputStr::from("'\"'".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Literal(m) => m,
+                _ => panic!(),
+            };
+
+            assert_eq!(t.inner, "'\"'");
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 3);
+        }
+    }
+
+    #[test]
+    fn test_string_invalid() {
+        let input = InputStr::from("'".to_string());
+
+        let e = TokenTree::tokenize_until_error(input).unwrap_err();
+
+        let e = match e {
+            TokenizeError::Terminal(e) => e,
+            _ => panic!(),
+        };
+
+        let loc = match e.location() {
+            Location::Literal { range, .. } => range,
+            _ => panic!(),
+        };
+
+        assert_eq!(loc.start, 0);
+        assert_eq!(loc.end, 1);
+    }
+}

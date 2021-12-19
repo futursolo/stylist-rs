@@ -21,6 +21,10 @@ impl ParseError {
     pub fn unexpected_token(location: Location) -> Self {
         Self::new("unexpected token", location)
     }
+
+    pub fn location(&self) -> &Location {
+        &self.location
+    }
 }
 
 pub type ParseResult<T> = std::result::Result<T, ParseError>;

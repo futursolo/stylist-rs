@@ -34,3 +34,51 @@ impl Tokenize<InputStr> for Ident {
         Ok((TokenTree::Ident(Ident { inner, location }).into(), rest))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tokens::{ITokenizeResult, Location, Token};
+
+    #[test]
+    fn test_ident_ok() {
+        let input = InputStr::from("ident-Ident_12345_".to_string());
+
+        let tokens = TokenTree::tokenize_until_error(input)
+            .empty_or_terminal()
+            .unwrap();
+
+        for (index, token) in tokens.into_iter().enumerate() {
+            assert_eq!(index, 0);
+
+            let t = match token {
+                TokenTree::Ident(m) => m,
+                _ => panic!(),
+            };
+
+            assert_eq!(t.inner, "ident-Ident_12345_");
+
+            let loc = match t.location() {
+                Location::Literal { range, .. } => range,
+                _ => panic!(),
+            };
+
+            assert_eq!(loc.start, 0);
+            assert_eq!(loc.end, 18);
+        }
+    }
+
+    #[test]
+    fn test_ident_not_ok() {
+        let input = InputStr::from("12345".to_string());
+
+        let e = Ident::tokenize_until_error(input).unwrap_err();
+
+        let i = match e {
+            TokenizeError::NotTokenized(i) => i,
+            _ => panic!(),
+        };
+
+        assert_eq!(&*i, "12345");
+    }
+}
