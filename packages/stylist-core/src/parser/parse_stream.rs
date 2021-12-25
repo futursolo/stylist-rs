@@ -12,21 +12,24 @@ impl ParseStream<'_> {
         self.cursor += len;
     }
 
+    /// Returns an `Iterator` over tokens.
     pub fn iter(&self) -> impl Iterator<Item = &TokenTree> {
         self.inner.iter().skip(self.cursor)
     }
 
+    /// Trim until next token is not space or comment.
     pub fn trim_start(mut self) -> Self {
         self.advance(self.iter().take_while(|m| m.is_trimmable()).count());
 
         self
     }
 
-    /// Get a reference of the next token without removing it from the input.
+    /// Returns a reference of the next token without removing it from the input.
     pub fn first(&self) -> Option<&TokenTree> {
         self.inner.iter().next()
     }
 
+    /// Pops the next token.
     pub fn pop_front(mut self) -> (Option<TokenTree>, Self) {
         let token = self.first().cloned();
 
@@ -51,6 +54,11 @@ impl ParseStream<'_> {
             }
             None => (None, self),
         }
+    }
+
+    /// Returns `true` if all tokens have been parsed.
+    pub fn is_empty(&self) -> bool {
+        self.iter().next().is_none()
     }
 }
 

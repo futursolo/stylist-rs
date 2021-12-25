@@ -16,6 +16,7 @@ use crate::ast::{
 use crate::bow::Bow;
 use crate::{Error, Result};
 
+mod ast;
 mod error;
 mod parse;
 mod parse_stream;
