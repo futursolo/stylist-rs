@@ -50,22 +50,37 @@ pub struct StyleSource<'a> {
     _marker: PhantomData<&'a ()>,
 
     manager: Option<StyleManager>,
+    #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+    pub(crate) location: String,
 }
 
 impl StyleSource<'_> {
-    pub(crate) fn try_to_sheet(&self) -> Result<Sheet> {
+    #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+    #[track_caller]
+    pub(crate) fn get_caller_location() -> String {
+        let caller_loc = std::panic::Location::caller();
+        // Who cares if this a valid css class name, it's debugging info
+        format!(
+            "{}:{}:{}",
+            caller_loc.file(),
+            caller_loc.line(),
+            caller_loc.column()
+        )
+    }
+
+    pub(crate) fn try_into_sheet(self) -> Result<Sheet> {
         match self.inner {
-            SheetSource::Sheet(ref m) => Ok(m.clone()),
+            SheetSource::Sheet(m) => Ok(m),
             #[cfg(feature = "parser")]
-            SheetSource::String(ref m) => m.parse::<Sheet>(),
+            SheetSource::String(m) => Ok(m.parse::<Sheet>()?),
         }
     }
 
     #[cfg(feature = "yew")]
-    pub(crate) fn to_style(&self) -> Style {
+    pub(crate) fn into_style(mut self) -> Style {
         use stylist_core::ResultDisplay;
-        Style::new_with_manager(self.clone(), self.manager.clone().unwrap_or_default())
-            .expect_display("Failed to create style")
+        let manager = self.manager.take().unwrap_or_default();
+        Style::new_with_manager(self, manager).expect_display("Failed to create style")
     }
 
     #[doc(hidden)]
@@ -77,12 +92,15 @@ impl StyleSource<'_> {
 }
 
 impl From<Sheet> for StyleSource<'_> {
+    #[cfg_attr(all(debug_assertions, feature = "debug_style_locations"), track_caller)]
     fn from(other: Sheet) -> StyleSource<'static> {
         StyleSource {
             inner: SheetSource::Sheet(other),
             #[cfg(not(feature = "parser"))]
             _marker: PhantomData,
             manager: None,
+            #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+            location: Self::get_caller_location(),
         }
     }
 }
@@ -93,28 +111,37 @@ mod feat_parser {
     use super::*;
 
     impl From<String> for StyleSource<'_> {
+        #[cfg_attr(all(debug_assertions, feature = "debug_style_locations"), track_caller)]
         fn from(other: String) -> StyleSource<'static> {
             StyleSource {
                 inner: SheetSource::String(other.into()),
                 manager: None,
+                #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+                location: Self::get_caller_location(),
             }
         }
     }
 
     impl<'a> From<&'a str> for StyleSource<'a> {
+        #[cfg_attr(all(debug_assertions, feature = "debug_style_locations"), track_caller)]
         fn from(other: &'a str) -> StyleSource<'a> {
             StyleSource {
                 inner: SheetSource::String(other.into()),
                 manager: None,
+                #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+                location: Self::get_caller_location(),
             }
         }
     }
 
     impl<'a> From<Cow<'a, str>> for StyleSource<'a> {
+        #[cfg_attr(all(debug_assertions, feature = "debug_style_locations"), track_caller)]
         fn from(other: Cow<'a, str>) -> StyleSource<'a> {
             StyleSource {
                 inner: SheetSource::String(other),
                 manager: None,
+                #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+                location: Self::get_caller_location(),
             }
         }
     }

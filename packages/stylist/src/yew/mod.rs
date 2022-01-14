@@ -1,7 +1,6 @@
 //! This module contains yew specific features.
 
-use yew::html::Classes;
-use yew::html::IntoPropValue;
+use yew::html::{Classes, IntoPropValue};
 
 /// A procedural macro to style a function component.
 ///
@@ -110,7 +109,12 @@ impl From<Style> for Classes {
 impl From<StyleSource<'_>> for Classes {
     fn from(style_src: StyleSource<'_>) -> Self {
         let mut classes = Self::new();
-        classes.push(style_src.to_style().get_class_name().to_string());
+        #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+        let location = style_src.location.clone();
+        let style = style_src.into_style();
+        classes.push(style.get_class_name().to_string());
+        #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+        classes.push(location);
         classes
     }
 }
