@@ -29,7 +29,7 @@ pub fn app() -> Html {
     html! {
         <>
             // Global Styles can be applied with <Global /> component.
-            <Global css=r#"
+            <Global css={css!(r#"
                     html, body {
                         font-family: sans-serif;
 
@@ -44,7 +44,7 @@ pub fn app() -> Html {
 
                         background-color: rgb(237, 244, 255);
                     }
-                "# />
+                "#)} />
             <h1>{"Yew Integration"}</h1>
             <div class={css!(r#"
                 box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);

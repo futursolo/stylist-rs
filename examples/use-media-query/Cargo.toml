@@ -8,10 +8,7 @@ edition = "2018"
 log = "0.4.14"
 console_log = { version = "0.2.0", features = ["color"] }
 yew = { version = "0.19" }
-stylist = { path = "../../packages/stylist", features = [
-    "yew_integration",
-    "yew_use_media_query",
-] }
+stylist = { path = "../../packages/stylist" }
 
 [dev-dependencies]
 gloo-utils = "0.1"

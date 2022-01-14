@@ -16,14 +16,20 @@ Add the following to your `Cargo.toml`:
 stylist = "0.10"
 ```
 
+By default, the `yew_integration` feature is enabled. If you want to use stylist outside of `yew`,
+use a variation of
+
+```toml
+stylist = { version = "0.10", default-features = false }
+```
+
 ## Usage
 
-For detailed usage, please see
-[documentation](https://docs.rs/stylist/).
+For detailed usage, please see [documentation](https://docs.rs/stylist/).
 
 ### Yew Integration
 
-To style your component, you can use `styled_component` attribute with `css!`
+To style your component, you can use the `styled_component` attribute which injects a `css!`
 macro.
 
 ```rust
@@ -61,7 +67,8 @@ println!("{}", style.get_class_name());
 
 ### Runtime Style
 
-If you want to parse a string into a style at runtime, you can use `Style::new`:
+If you want to parse a string into a style at runtime, you can use `Style::new`.
+You must also enable the optional `parser` feature.
 
 ```rust
 use stylist::Style;
