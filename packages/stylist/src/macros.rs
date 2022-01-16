@@ -80,10 +80,14 @@
 //!
 //! ## Known Limitations
 //!
+//! ### Dimensions
+//!
 //! Due to the tokenizer of the Rust complier, there are some quirks with literals. For example, `4em` would be
 //! tokenized as a floating point literal with a missing exponent and a suffix of `m`. To work around this issue, use
 //! string interpolation as in `${"4em"}`. Similarly, some color hash-tokens like `#44444e` as misinterpreted,
 //! use the same workaround here: `${"#44444e"}`.
+//!
+//! ### Descendant Selectors
 //!
 //! The stable Rust tokenizer also currently offers no way to inspect whitespace between tokens, as tracked in
 //! [the Span inspection API issue](https://github.com/rust-lang/rust/issues/54725). This means that, e.g. the two
@@ -98,6 +102,16 @@
 //! Be aware that the above is subject to change once the Span API is stabilized. To avoid future rewriting, use spacing
 //! in your source code that follows the same rules. Refer to the associated [bug report](https://github.com/futursolo/stylist-rs/issues/41)
 //! to discuss this limitation and offer additional suggestions
+//!
+//! ### Identifier (Edition 2021)
+//!
+//! In Rust edition 2021, you cannot have an identifier before `#`.
+//! In other words, a selector like `.class#id` will no longer compile in Rust edition 2021 (See: [Reserving
+//! Syntax](https://doc.rust-lang.org/edition-guide/rust-2021/reserving-syntax.html) in Rust
+//! 2021 Edition Guide).
+//!
+//! Stylist previously treats them as if there is a descendant selector in between (`.class#id` is
+//! interpreted as `.class #id`).
 //!
 //! ## Note
 //!

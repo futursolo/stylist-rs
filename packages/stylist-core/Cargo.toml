@@ -7,7 +7,7 @@ authors = [
     "Kaede Hoshiakwa <futursolo@icloud.com>",
     "Martin Molzer <ga65guy@mytum.de>",
 ]
-edition = "2018"
+edition = "2021"
 description = "Stylist is a CSS-in-Rust styling solution for WebAssembly Applications."
 keywords = [
     "CSS",
