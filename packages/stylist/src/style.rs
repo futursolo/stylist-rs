@@ -159,7 +159,7 @@ impl Style {
         #[cfg(all(debug_assertions, feature = "parser"))]
         use crate::ast::Sheet;
 
-        let css = css.try_to_sheet()?;
+        let css = css.try_into_sheet()?;
 
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {

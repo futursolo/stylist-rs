@@ -6,8 +6,7 @@ use stylist_core::ResultDisplay;
 use crate::ast::ToStyleStr;
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
-use crate::style::StyleContent;
-use crate::style::StyleId;
+use crate::style::{StyleContent, StyleId};
 use crate::utils::get_entropy;
 use crate::{Result, StyleSource};
 
@@ -30,7 +29,7 @@ impl GlobalStyle {
         use crate::ast::Sheet;
 
         let prefix = format!("{}-global", manager.prefix());
-        let css = css.try_to_sheet()?;
+        let css = css.try_into_sheet()?;
 
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
