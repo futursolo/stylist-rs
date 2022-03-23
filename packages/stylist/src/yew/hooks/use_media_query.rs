@@ -9,6 +9,7 @@ use crate::arch::window;
 /// changes.
 #[cfg_attr(documenting, doc(cfg(feature = "yew_use_media_query")))]
 #[cfg(feature = "yew_use_media_query")]
+#[hook]
 pub fn use_media_query(query: &str) -> bool {
     let match_media = || {
         window()

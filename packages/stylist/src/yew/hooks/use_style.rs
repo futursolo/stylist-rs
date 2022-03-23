@@ -22,6 +22,7 @@ use crate::{Style, StyleSource};
 /// ```
 #[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]
 #[cfg(feature = "yew_use_style")]
+#[hook]
 pub fn use_style<Css>(css: Css) -> Style
 where
     Css: TryInto<StyleSource>,

@@ -17,3 +17,7 @@ resolver = "2"
 [profile.release]
 opt-level = 'z'
 lto = true
+
+[patch.crates-io.yew]
+git = "https://github.com/yewstack/yew.git"
+rev = "bbb7ded83e89838b642d5e989f96ce1d19e39bdc"

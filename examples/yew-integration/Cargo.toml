@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 log = "0.4.14"
 console_log = { version = "0.2.0", features = ["color"] }
-yew = { version = "0.19" }
+yew = { version = "0.19", features = ["csr"] }
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
 
 [dev-dependencies]
