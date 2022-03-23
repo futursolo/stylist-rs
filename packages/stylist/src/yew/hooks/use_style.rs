@@ -21,6 +21,7 @@ use crate::{Style, StyleSource};
 /// }
 /// ```
 #[cfg(feature = "yew_use_style")]
+#[hook]
 pub fn use_style<Css>(css: Css) -> Style
 where
     Css: TryInto<StyleSource>,

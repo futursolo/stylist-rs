@@ -54,7 +54,7 @@ pub fn app() -> Html {
 
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
-    yew::start_app::<App>();
+    yew::Renderer::<App>::new().render();
 }
 
 #[cfg(test)]
@@ -68,9 +68,10 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_simple() {
-        yew::start_app_in_element::<App>(
+        yew::Renderer::<App>::with_root(
             gloo_utils::document().get_element_by_id("output").unwrap(),
-        );
+        )
+        .render();
         let window = window().unwrap();
         let doc = window.document().unwrap();
         let body = window.document().unwrap().body().unwrap();

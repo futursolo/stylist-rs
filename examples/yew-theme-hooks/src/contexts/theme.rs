@@ -93,6 +93,7 @@ pub(crate) fn theme_provider(props: &ThemeProviderProps) -> Html {
     }
 }
 
+#[hook]
 pub(crate) fn use_theme() -> ThemeContext {
     use_context::<ThemeContext>().unwrap()
 }

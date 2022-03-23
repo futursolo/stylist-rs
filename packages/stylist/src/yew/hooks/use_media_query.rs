@@ -8,6 +8,7 @@ use crate::arch::window;
 /// This hook will return the result of whether the provided query matches and updates when the
 /// result changes.
 #[cfg(feature = "yew_use_media_query")]
+#[hook]
 pub fn use_media_query(query: &str) -> bool {
     let match_media = || {
         window()
