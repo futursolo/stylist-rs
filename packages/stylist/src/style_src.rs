@@ -1,22 +1,11 @@
 #[cfg(feature = "parser")]
 use std::borrow::Cow;
-#[cfg(not(feature = "parser"))]
-use std::marker::PhantomData;
 
 use crate::ast::Sheet;
 use crate::manager::StyleManager;
-use crate::Result;
 #[cfg(feature = "yew")]
 use crate::Style;
 
-#[cfg(feature = "parser")]
-#[derive(Debug, Clone, PartialEq)]
-enum SheetSource<'a> {
-    String(Cow<'a, str>),
-    Sheet(Sheet),
-}
-
-#[cfg(not(feature = "parser"))]
 #[derive(Debug, Clone, PartialEq)]
 enum SheetSource {
     Sheet(Sheet),
@@ -30,31 +19,25 @@ enum SheetSource {
 /// You can also get a StyleSource instance from a string or a [`Sheet`] by calling `.into()`.
 ///
 /// ```rust
-/// use stylist::StyleSource;
 /// use yew::prelude::*;
-/// use stylist::yew::Global;
+/// use stylist::{css, StyleSource, yew::Global};
 ///
-/// let s: StyleSource = "color: red;".into();
+/// let s: StyleSource = css!("color: red;");
 ///
 /// let rendered = html! {<div class={s.clone()} />};
 /// let global_rendered = html! {<Global css={s} />};
 /// ```
 #[derive(Debug, Clone, PartialEq)]
-pub struct StyleSource<'a> {
+pub struct StyleSource {
     #[cfg(feature = "parser")]
-    inner: SheetSource<'a>,
-
-    #[cfg(not(feature = "parser"))]
     inner: SheetSource,
-    #[cfg(not(feature = "parser"))]
-    _marker: PhantomData<&'a ()>,
 
     manager: Option<StyleManager>,
     #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
     pub(crate) location: String,
 }
 
-impl StyleSource<'_> {
+impl StyleSource {
     #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
     #[track_caller]
     pub(crate) fn get_caller_location() -> String {
@@ -68,11 +51,9 @@ impl StyleSource<'_> {
         )
     }
 
-    pub(crate) fn try_into_sheet(self) -> Result<Sheet> {
+    pub(crate) fn into_sheet(self) -> Sheet {
         match self.inner {
-            SheetSource::Sheet(m) => Ok(m),
-            #[cfg(feature = "parser")]
-            SheetSource::String(m) => Ok(m.parse::<Sheet>()?),
+            SheetSource::Sheet(m) => m,
         }
     }
 
@@ -91,13 +72,11 @@ impl StyleSource<'_> {
     }
 }
 
-impl From<Sheet> for StyleSource<'_> {
+impl From<Sheet> for StyleSource {
     #[cfg_attr(all(debug_assertions, feature = "debug_style_locations"), track_caller)]
-    fn from(other: Sheet) -> StyleSource<'static> {
+    fn from(other: Sheet) -> StyleSource {
         StyleSource {
             inner: SheetSource::Sheet(other),
-            #[cfg(not(feature = "parser"))]
-            _marker: PhantomData,
             manager: None,
             #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
             location: Self::get_caller_location(),
@@ -110,39 +89,45 @@ impl From<Sheet> for StyleSource<'_> {
 mod feat_parser {
     use super::*;
 
-    impl From<String> for StyleSource<'_> {
+    impl TryFrom<String> for StyleSource {
+        type Error = crate::Error;
         #[cfg_attr(all(debug_assertions, feature = "debug_style_locations"), track_caller)]
-        fn from(other: String) -> StyleSource<'static> {
-            StyleSource {
-                inner: SheetSource::String(other.into()),
+        fn try_from(other: String) -> crate::Result<StyleSource> {
+            let sheet = SheetSource::Sheet(other.parse()?);
+            Ok(StyleSource {
+                inner: sheet,
                 manager: None,
                 #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
                 location: Self::get_caller_location(),
-            }
+            })
         }
     }
 
-    impl<'a> From<&'a str> for StyleSource<'a> {
+    impl<'a> TryFrom<&'a str> for StyleSource {
+        type Error = crate::Error;
         #[cfg_attr(all(debug_assertions, feature = "debug_style_locations"), track_caller)]
-        fn from(other: &'a str) -> StyleSource<'a> {
-            StyleSource {
-                inner: SheetSource::String(other.into()),
+        fn try_from(other: &'a str) -> crate::Result<StyleSource> {
+            let sheet = SheetSource::Sheet(other.parse()?);
+            Ok(StyleSource {
+                inner: sheet,
                 manager: None,
                 #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
                 location: Self::get_caller_location(),
-            }
+            })
         }
     }
 
-    impl<'a> From<Cow<'a, str>> for StyleSource<'a> {
+    impl<'a> TryFrom<Cow<'a, str>> for StyleSource {
+        type Error = crate::Error;
         #[cfg_attr(all(debug_assertions, feature = "debug_style_locations"), track_caller)]
-        fn from(other: Cow<'a, str>) -> StyleSource<'a> {
-            StyleSource {
-                inner: SheetSource::String(other),
+        fn try_from(other: Cow<'a, str>) -> crate::Result<StyleSource> {
+            let sheet = SheetSource::Sheet(other.parse()?);
+            Ok(StyleSource {
+                inner: sheet,
                 manager: None,
                 #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
                 location: Self::get_caller_location(),
-            }
+            })
         }
     }
 }

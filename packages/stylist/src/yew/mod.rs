@@ -106,8 +106,8 @@ impl From<Style> for Classes {
     }
 }
 
-impl From<StyleSource<'_>> for Classes {
-    fn from(style_src: StyleSource<'_>) -> Self {
+impl From<StyleSource> for Classes {
+    fn from(style_src: StyleSource) -> Self {
         let mut classes = Self::new();
         #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
         let location = style_src.location.clone();
@@ -119,8 +119,8 @@ impl From<StyleSource<'_>> for Classes {
     }
 }
 
-impl IntoPropValue<StyleSource<'static>> for Sheet {
-    fn into_prop_value(self) -> StyleSource<'static> {
+impl IntoPropValue<StyleSource> for Sheet {
+    fn into_prop_value(self) -> StyleSource {
         self.into()
     }
 }
@@ -131,22 +131,26 @@ mod feat_parser {
     use std::borrow::Cow;
 
     use super::*;
+    use stylist_core::ResultDisplay;
 
-    impl IntoPropValue<StyleSource<'static>> for String {
-        fn into_prop_value(self) -> StyleSource<'static> {
-            self.into()
+    impl IntoPropValue<StyleSource> for String {
+        fn into_prop_value(self) -> StyleSource {
+            self.try_into()
+                .expect_display("couldn't parse style string")
         }
     }
 
-    impl<'a> IntoPropValue<StyleSource<'a>> for &'a str {
-        fn into_prop_value(self) -> StyleSource<'a> {
-            self.into()
+    impl<'a> IntoPropValue<StyleSource> for &'a str {
+        fn into_prop_value(self) -> StyleSource {
+            self.try_into()
+                .expect_display("couldn't parse style string")
         }
     }
 
-    impl<'a> IntoPropValue<StyleSource<'a>> for Cow<'a, str> {
-        fn into_prop_value(self) -> StyleSource<'a> {
-            self.into()
+    impl<'a> IntoPropValue<StyleSource> for Cow<'a, str> {
+        fn into_prop_value(self) -> StyleSource {
+            self.try_into()
+                .expect_display("couldn't parse style string")
         }
     }
 }

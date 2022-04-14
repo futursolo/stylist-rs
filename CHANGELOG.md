@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.11.0
+
+### Breaking Changes:
+- `StyleSource` does not take a lifetime argument
+- Feature `parser`: `StyleSource` now eagerly parses its input.
+- Feature `parser`: The conversion from `str` have been changed to `TryFrom`
+  instead of `From`. If you're using `yew`, the `IntoPropValue<StyleSource>`
+  impls still exist, but now panic early during conversion.
+
+### Other Changes:
+- The `Style::new_*` API is more open for accepted types of the `Css` parameter.
+
 ## v0.10.0
 
 ### Breaking Changes:

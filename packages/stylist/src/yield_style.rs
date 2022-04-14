@@ -38,7 +38,7 @@ use crate::{Result, Style, StyleSource};
 /// }
 ///
 /// impl YieldStyle for MyStyledComponent {
-///     fn style_from(&self) -> StyleSource<'static> {
+///     fn style_from(&self) -> StyleSource {
 ///         css!("color: red;")
 ///     }
 /// }
@@ -54,7 +54,7 @@ pub trait YieldStyle {
     }
 
     /// Returns a type that can be turned into a [`Style`].
-    fn style_from(&self) -> StyleSource<'static>;
+    fn style_from(&self) -> StyleSource;
 
     /// Returns the generated style.
     ///
