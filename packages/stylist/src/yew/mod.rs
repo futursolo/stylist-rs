@@ -1,4 +1,43 @@
 //! This module contains yew specific features.
+//!
+//! ## Usage in function components
+//!
+//! You can create a style and use it like this:
+//!
+//! ```rust
+//! use yew::prelude::*;
+//! use stylist::yew::use_style;
+//!
+//! #[function_component]
+//! fn MyStyledComponent() -> Html {
+//!     let style = use_style!("color: red;");
+//!     html! {<div class={style}>{"Hello World!"}</div>}
+//! }
+//! ```
+//! ### Usage in struct components with the YieldStyle API
+//!
+//! Any struct that implements [`YieldStyle`] trait can call
+//! [`self.style()`](YieldStyle::style) to get a [`Style`] instance.
+//!
+//! ```rust
+//! use std::borrow::Cow;
+//! use stylist::{css, StyleSource, YieldStyle};
+//!
+//! pub struct Component;
+//!
+//! impl YieldStyle for Component {
+//!     fn style_from(&self) -> StyleSource<'static> {
+//!         css!("color: red;")
+//!     }
+//! }
+//!
+//! impl Component {
+//!     fn print_style(&self) {
+//!         println!("{}", self.style().get_class_name());
+//!     }
+//! }
+//! ```
+//!
 
 use yew::html::{Classes, IntoPropValue};
 
