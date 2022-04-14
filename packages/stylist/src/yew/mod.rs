@@ -1,4 +1,19 @@
 //! This module contains yew specific features.
+//!
+//! ## Usage in function components
+//!
+//! You can create a style and use it like this:
+//!
+//! ```rust
+//! use stylist::yew::use_style;
+//! use yew::prelude::*;
+//!
+//! #[function_component]
+//! fn MyStyledComponent() -> Html {
+//!     let style = use_style!("color: red;");
+//!     html! {<div class={style}>{"Hello World!"}</div>}
+//! }
+//! ```
 
 use yew::html::{Classes, IntoPropValue};
 

@@ -12,6 +12,7 @@ stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
 
 [dev-dependencies]
 gloo-utils = "0.1.4"
+gloo-timers = { version = "0.2.4", features = ["futures"] }
 wasm-bindgen-test = "0.3.31"
 wasm-bindgen = "0.2.81"
 

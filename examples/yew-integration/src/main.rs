@@ -84,11 +84,14 @@ mod tests {
     use web_sys::window;
 
     #[wasm_bindgen_test]
-    fn test_simple() {
+    async fn test_simple() {
         yew::Renderer::<App>::with_root(
             gloo_utils::document().get_element_by_id("output").unwrap(),
         )
         .render();
+        // wait for lifecycles to process
+        gloo_timers::future::TimeoutFuture::new(0).await;
+
         let window = window().unwrap();
         let doc = window.document().unwrap();
         let body = window.document().unwrap().body().unwrap();
