@@ -1,4 +1,5 @@
-use stylist::yew::{styled_component, Global};
+use stylist::css;
+use stylist::yew::{use_style, Global};
 use yew::prelude::*;
 
 use log::Level;
@@ -7,7 +8,7 @@ mod contexts;
 
 use contexts::{use_theme, ThemeKind, ThemeProvider};
 
-#[styled_component(Inside)]
+#[function_component(Inside)]
 pub fn inside() -> Html {
     let theme = use_theme();
 
@@ -23,21 +24,25 @@ pub fn inside() -> Html {
 
     let switch_theme = Callback::from(move |_| theme.set(other_theme.clone()));
 
+    let class = use_style!(
+        r#"
+        color: white;
+        height: 50px;
+        width: 300px;
+        font-size: 20px;
+        background-color: rgb(88, 164, 255);
+        border-radius: 5px;
+        border: none;
+        "#
+    );
     html! {
         <div>
-            <button class={css!(r#"color: white;
-                height: 50px;
-                width: 300px;
-                font-size: 20px;
-                background-color: rgb(88, 164, 255);
-                border-radius: 5px;
-                border: none;
-            "#)} onclick={switch_theme} id="yew-sample-button">{"Switch to "}{theme_str}</button>
+            <button {class} onclick={switch_theme} id="yew-sample-button">{"Switch to "}{theme_str}</button>
         </div>
     }
 }
 
-#[styled_component(App)]
+#[function_component(App)]
 pub fn app() -> Html {
     let theme = use_theme();
 
@@ -46,6 +51,25 @@ pub fn app() -> Html {
         ThemeKind::Dark => "dark theme",
     };
 
+    let class = use_style!(
+        r#"
+            box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+            height: 500px;
+            width: 500px;
+            border-radius: 5px;
+
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+
+            padding: 15px;
+            box-sizing: border-box;
+
+            flex-direction: column;
+            background-color: ${bg};
+        "#,
+        bg = theme.paper_color.clone()
+    );
     html! {
         <>
             // Global Styles can be applied with <Global /> component.
@@ -71,25 +95,7 @@ pub fn app() -> Html {
                 ft_color = theme.font_color.clone(),
             )} />
             <h1>{"Yew Theming w/ Context"}</h1>
-            <div class={css!(
-                r#"
-                    box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
-                    height: 500px;
-                    width: 500px;
-                    border-radius: 5px;
-
-                    display: flex;
-                    justify-content: space-around;
-                    align-items: center;
-
-                    padding: 15px;
-                    box-sizing: border-box;
-
-                    flex-direction: column;
-                    background-color: ${bg};
-                "#,
-                bg = theme.paper_color.clone()
-            )} id="yew-sample-content">
+            <div {class} id="yew-sample-content">
                 {"You are now using the "}{theme_str}{"!"}
                 <Inside />
             </div>
@@ -97,7 +103,7 @@ pub fn app() -> Html {
     }
 }
 
-#[styled_component(Root)]
+#[function_component(Root)]
 pub fn root() -> Html {
     html! {
         <ThemeProvider>

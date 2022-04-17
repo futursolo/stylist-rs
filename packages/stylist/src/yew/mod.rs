@@ -141,19 +141,8 @@ impl From<Style> for Classes {
     fn from(style: Style) -> Self {
         let mut classes = Self::new();
         classes.push(style.get_class_name().to_string());
-        classes
-    }
-}
-
-impl From<StyleSource> for Classes {
-    fn from(style_src: StyleSource) -> Self {
-        let mut classes = Self::new();
         #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
-        let location = style_src.location.clone();
-        let style = style_src.into_style();
-        classes.push(style.get_class_name().to_string());
-        #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
-        classes.push(location);
+        classes.extend(style.extra_classes);
         classes
     }
 }

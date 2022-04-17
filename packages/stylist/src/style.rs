@@ -146,6 +146,8 @@ impl Drop for StyleContent {
 #[derive(Debug, Clone)]
 pub struct Style {
     inner: Rc<StyleContent>,
+    #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+    pub(crate) extra_classes: Vec<String>,
 }
 
 impl Style {
@@ -156,6 +158,8 @@ impl Style {
         css: StyleSource,
         manager: StyleManager,
     ) -> Result<Self> {
+        #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+        let extra_classes = css.take_extra_classes();
         let css = css.into_sheet();
 
         // Creates the StyleKey, return from registry if already cached.
@@ -169,7 +173,11 @@ impl Style {
         let mut reg = reg.borrow_mut();
 
         if let Some(m) = reg.get(&key) {
-            return Ok(Style { inner: m });
+            return Ok(Style {
+                inner: m,
+                #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+                extra_classes,
+            });
         }
 
         let id = StyleId(format!("{}-{}", key.prefix, get_entropy()));
@@ -192,6 +200,8 @@ impl Style {
                 key: Rc::new(key),
             }
             .into(),
+            #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+            extra_classes,
         };
 
         new_style.inner.manager().mount(&new_style.inner)?;

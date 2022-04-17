@@ -1,14 +1,32 @@
-use stylist::yew::{styled_component, use_media_query, Global};
+use stylist::yew::{use_media_query, use_style, Global};
 use yew::prelude::*;
 
 use log::Level;
 
-#[styled_component(App)]
+#[function_component(App)]
 pub fn app() -> Html {
     let is_small = use_media_query("(max-width: 720px)");
 
     let size_name = if is_small { "small" } else { "big" };
 
+    let class = use_style!(
+        r#"
+        box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+        height: 500px;
+        width: 500px;
+        border-radius: 5px;
+
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+
+        padding: 15px;
+        box-sizing: border-box;
+
+        flex-direction: column;
+        background-color: white;
+        "#
+    );
     html! {
         <>
             <Global css=r#"
@@ -28,22 +46,7 @@ pub fn app() -> Html {
                     }
                 "# />
             <h1>{"Use Media Query Example"}</h1>
-            <div class={css!(r#"
-                box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
-                height: 500px;
-                width: 500px;
-                border-radius: 5px;
-
-                display: flex;
-                justify-content: space-around;
-                align-items: center;
-
-                padding: 15px;
-                box-sizing: border-box;
-
-                flex-direction: column;
-                background-color: white;
-            "#)} id="yew-sample-content">
+            <div {class} id="yew-sample-content">
                 {"To start, try adjust your browser width."}
                 <br />
                 {"You are now using the: "}{size_name}{" Window."}
