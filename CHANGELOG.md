@@ -3,6 +3,9 @@
 ## v0.11.0
 
 ### Breaking Changes:
+- Remove `YieldStyle`. This API can be easily reproduced in user code, if need be,
+  but often leads to clumsy code in struct components. Use alternative API and prefer
+  `function_component`/`style_component`.
 - `StyleSource` does not take a lifetime argument
 - Feature `parser`: `StyleSource` now eagerly parses its input.
 - Feature `parser`: The conversion from `str` have been changed to `TryFrom`

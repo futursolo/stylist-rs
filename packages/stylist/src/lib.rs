@@ -64,30 +64,7 @@
 //! ).expect("Failed to create style");
 //! ```
 //!
-//! ### YieldStyle API
-//!
-//! Any struct that implements [`YieldStyle`] trait can call
-//! [`self.style()`](YieldStyle::style) to get a [`Style`] instance.
-//!
-//! ```rust
-//! use std::borrow::Cow;
-//! use stylist::{css, StyleSource, YieldStyle};
-//!
-//! pub struct Component;
-//!
-//! impl YieldStyle for Component {
-//!     fn style_from(&self) -> StyleSource {
-//!         css!("color: red;")
-//!     }
-//! }
-//!
-//! impl Component {
-//!     fn print_style(&self) {
-//!         println!("{}", self.style().get_class_name());
-//!     }
-//! }
-//!
-//! ```
+//! ### Syntax
 //!
 //! Everything that is not in a conditioned block will be applied to the Component
 //! the class of this style is applied to.
@@ -157,12 +134,10 @@ mod global_style;
 mod style;
 mod style_src;
 mod utils;
-mod yield_style;
 
 pub use global_style::GlobalStyle;
 pub use style::Style;
 pub use style_src::StyleSource;
-pub use yield_style::YieldStyle;
 
 #[cfg_attr(documenting, doc(cfg(feature = "yew")))]
 #[cfg(feature = "yew")]

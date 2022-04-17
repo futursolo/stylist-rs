@@ -1,6 +1,6 @@
 use stylist::manager::StyleManager;
 use stylist::yew::Global;
-use stylist::{Style, StyleSource, YieldStyle};
+use stylist::Style;
 use web_sys::{window, Element, ShadowRootInit, ShadowRootMode};
 use yew::prelude::*;
 
@@ -84,6 +84,24 @@ impl Component for App {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
+        let card = stylist::css!(
+            r#"
+            box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+            height: 500px;
+            width: 500px;
+            border-radius: 5px;
+
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+
+            padding: 15px;
+            box-sizing: border-box;
+
+            flex-direction: column;
+            background-color: white;
+            "#
+        );
         html! {
             <>
                 <Global css=r#"
@@ -107,35 +125,12 @@ impl Component for App {
                     }
                 "# />
                 <h1>{"Yew Shadow DOM Example"}</h1>
-                <div class={self.style()}>
+                <div class={card}>
                     <span>{"Outside of Shadow DOM."}</span>
                     <ShadowRoot />
                 </div>
             </>
         }
-    }
-}
-
-impl YieldStyle for App {
-    fn style_from(&self) -> StyleSource {
-        stylist::css!(
-            r#"
-            box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
-            height: 500px;
-            width: 500px;
-            border-radius: 5px;
-
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-
-            padding: 15px;
-            box-sizing: border-box;
-
-            flex-direction: column;
-            background-color: white;
-            "#
-        )
     }
 }
 

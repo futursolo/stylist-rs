@@ -1,6 +1,5 @@
 use gloo::timers::callback::Timeout;
 use stylist::yew::Global;
-use stylist::{StyleSource, YieldStyle};
 use yew::prelude::*;
 
 use log::Level;
@@ -186,8 +185,54 @@ impl Component for Benchmarks {
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
+        let class = stylist::css!(
+            r#"
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+
+            .running {
+                height: 50px;
+            }
+
+            table {
+                border: 1px solid black;
+                border-collapse: collapse;
+            }
+
+            thead {
+                font-weight: bold;
+                background-color: rgb(240, 240, 240);
+            }
+
+            th {
+                text-align: left;
+                border: 1px solid black;
+                border-collapse: collapse;
+                padding: 5px;
+            }
+
+            tbody th {
+                font-weight: normal;
+            }
+
+            th:nth-child(1) {
+                padding-right: 20px;
+            }
+
+            th:nth-child(2) {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+
+            tbody tr:nth-child(even) {
+                background-color: rgb(240, 240, 240);
+            }
+            "#
+        );
         html! {
-            <div class={self.style()}>
+            <div {class}>
                 {
                     if !self.finished {
                         html!{<div class="running">{"Benchmarking..."}<br />{"The browser may be unresponsive during the benchmark."}</div>}
@@ -255,57 +300,6 @@ impl Component for Benchmarks {
     }
 }
 
-impl YieldStyle for Benchmarks {
-    fn style_from(&self) -> StyleSource {
-        stylist::css!(
-            r#"
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-
-            .running {
-                height: 50px;
-            }
-
-            table {
-                border: 1px solid black;
-                border-collapse: collapse;
-            }
-
-            thead {
-                font-weight: bold;
-                background-color: rgb(240, 240, 240);
-            }
-
-            th {
-                text-align: left;
-                border: 1px solid black;
-                border-collapse: collapse;
-                padding: 5px;
-            }
-
-            tbody th {
-                font-weight: normal;
-            }
-
-            th:nth-child(1) {
-                padding-right: 20px;
-            }
-
-            th:nth-child(2) {
-                padding-left: 20px;
-                padding-right: 20px;
-            }
-
-            tbody tr:nth-child(even) {
-                background-color: rgb(240, 240, 240);
-            }
-            "#
-        )
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub enum AppMsg {
     Start,
@@ -332,10 +326,28 @@ impl Component for App {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let class = stylist::css!(
+            r#"
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+
+            .before-intro {
+                padding-bottom: 20px;
+            }
+
+            button {
+                width: 300px;
+                height: 50px;
+                font-size: 20px;
+            }
+            "#
+        );
         html! {
             <>
                 <Global css={GLOBAL_STYLE} />
-                <div class={self.style()}>
+                <div {class}>
                     <h1>{"Stylist Benchmark"}</h1>
                     {
                         if self.started {
@@ -354,29 +366,6 @@ impl Component for App {
                 </div>
             </>
         }
-    }
-}
-
-impl YieldStyle for App {
-    fn style_from(&self) -> StyleSource {
-        stylist::css!(
-            r#"
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-
-            .before-intro {
-                padding-bottom: 20px;
-            }
-
-            button {
-                width: 300px;
-                height: 50px;
-                font-size: 20px;
-            }
-            "#
-        )
     }
 }
 
