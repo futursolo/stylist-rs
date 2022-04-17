@@ -117,8 +117,9 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_from(&self) -> StyleSource<'static> {
-        r#"
+    fn style_from(&self) -> StyleSource {
+        stylist::css!(
+            r#"
             box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
             height: 500px;
             width: 500px;
@@ -133,8 +134,8 @@ impl YieldStyle for App {
 
             flex-direction: column;
             background-color: white;
-        "#
-        .into()
+            "#
+        )
     }
 }
 

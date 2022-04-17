@@ -22,9 +22,12 @@ use crate::{Style, StyleSource};
 /// ```
 #[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]
 #[cfg(feature = "yew_use_style")]
-pub fn use_style<'a, Css: Into<StyleSource<'a>>>(css: Css) -> Style {
+pub fn use_style<Css>(css: Css) -> Style
+where
+    Css: TryInto<StyleSource>,
+    crate::Error: From<Css::Error>,
+{
     let mgr = use_context::<StyleManager>().unwrap_or_default();
-    let css = css.into();
 
     // It does not make sense to unmount a scoped style.
     Style::new_with_manager(css, mgr).expect_display("failed to create style")

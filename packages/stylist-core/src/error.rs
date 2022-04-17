@@ -19,6 +19,12 @@ pub enum Error {
     Web(Option<wasm_bindgen::JsValue>),
 }
 
+impl From<std::convert::Infallible> for Error {
+    fn from(infallible: std::convert::Infallible) -> Self {
+        match infallible {}
+    }
+}
+
 pub type Result<T> = std::result::Result<T, Error>;
 
 pub trait ResultDisplay<T> {

@@ -76,7 +76,7 @@
 //! pub struct Component;
 //!
 //! impl YieldStyle for Component {
-//!     fn style_from(&self) -> StyleSource<'static> {
+//!     fn style_from(&self) -> StyleSource {
 //!         css!("color: red;")
 //!     }
 //! }

@@ -256,8 +256,9 @@ impl Component for Benchmarks {
 }
 
 impl YieldStyle for Benchmarks {
-    fn style_from(&self) -> StyleSource<'static> {
-        r#"
+    fn style_from(&self) -> StyleSource {
+        stylist::css!(
+            r#"
             display: flex;
             justify-content: center;
             align-items: center;
@@ -300,8 +301,8 @@ impl YieldStyle for Benchmarks {
             tbody tr:nth-child(even) {
                 background-color: rgb(240, 240, 240);
             }
-        "#
-        .into()
+            "#
+        )
     }
 }
 
@@ -357,8 +358,9 @@ impl Component for App {
 }
 
 impl YieldStyle for App {
-    fn style_from(&self) -> StyleSource<'static> {
-        r#"
+    fn style_from(&self) -> StyleSource {
+        stylist::css!(
+            r#"
             display: flex;
             justify-content: center;
             align-items: center;
@@ -373,8 +375,8 @@ impl YieldStyle for App {
                 height: 50px;
                 font-size: 20px;
             }
-        "#
-        .into()
+            "#
+        )
     }
 }
 
