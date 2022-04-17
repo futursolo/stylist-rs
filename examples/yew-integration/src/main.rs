@@ -1,31 +1,52 @@
-use stylist::yew::{styled_component, Global};
+use stylist::yew::{use_style, Global};
 use yew::prelude::*;
 
 use log::Level;
 
-#[styled_component(Inside)]
+#[function_component(Inside)]
 pub fn inside() -> Html {
+    let class = use_style!(
+        r#"
+        width: 200px;
+        height: 200px;
+        border-radius: 5px;
+
+        background: black;
+
+        padding: 15px;
+        box-sizing: border-box;
+
+        box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+        color: white;
+    "#
+    );
     html! {
-        <div class={css!(r#"
-            width: 200px;
-            height: 200px;
-            border-radius: 5px;
-
-            background: black;
-
-            padding: 15px;
-            box-sizing: border-box;
-
-            box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
-            color: white;
-        "#)}>
+        <div {class}>
             {"The quick brown fox jumps over the lazy dog"}
         </div>
     }
 }
 
-#[styled_component(App)]
+#[function_component(App)]
 pub fn app() -> Html {
+    let class = use_style!(
+        r#"
+        box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
+        height: 500px;
+        width: 500px;
+        border-radius: 5px;
+
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+
+        padding: 15px;
+        box-sizing: border-box;
+
+        flex-direction: column;
+        background-color: white;
+        "#
+    );
     html! {
         <>
             // Global Styles can be applied with <Global /> component.
@@ -46,22 +67,7 @@ pub fn app() -> Html {
                     }
                 "# />
             <h1>{"Yew Integration"}</h1>
-            <div class={css!(r#"
-                box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
-                height: 500px;
-                width: 500px;
-                border-radius: 5px;
-
-                display: flex;
-                justify-content: space-around;
-                align-items: center;
-
-                padding: 15px;
-                box-sizing: border-box;
-
-                flex-direction: column;
-                background-color: white;
-            "#)} id="yew-sample-content">
+            <div {class} id="yew-sample-content">
                 {"The quick brown fox jumps over the lazy dog"}
                 <Inside />
             </div>
@@ -71,7 +77,7 @@ pub fn app() -> Html {
 
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
-    yew::start_app::<App>();
+    yew::Renderer::<App>::new().render();
 }
 
 #[cfg(test)]
@@ -84,10 +90,14 @@ mod tests {
     use web_sys::window;
 
     #[wasm_bindgen_test]
-    fn test_simple() {
-        yew::start_app_in_element::<App>(
+    async fn test_simple() {
+        yew::Renderer::<App>::with_root(
             gloo_utils::document().get_element_by_id("output").unwrap(),
-        );
+        )
+        .render();
+        // wait for lifecycles to process
+        gloo_timers::future::TimeoutFuture::new(0).await;
+
         let window = window().unwrap();
         let doc = window.document().unwrap();
         let body = window.document().unwrap().body().unwrap();
