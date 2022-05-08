@@ -1,11 +1,8 @@
 use crate::output::OutputFragment;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::{
-    braced,
-    parse::{Parse, ParseBuffer, Result as ParseResult},
-    token, Expr,
-};
+use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
+use syn::{braced, token, Expr};
 
 #[derive(Debug, Clone)]
 pub struct InterpolatedExpression {

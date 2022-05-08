@@ -218,7 +218,6 @@ impl Parser {
     }
 
     /// Parse a quoted string.
-    ///
     // TODO: Parse ' quoted strings.
     fn string(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         let escaped_char = traced_context("EscapedChar", recognize(preceded(tag("\\"), anychar)));
@@ -232,7 +231,6 @@ impl Parser {
     }
 
     /// Parse a string interpolation.
-    ///
     // TODO: Handle escaping.
     fn interpolation(i: &str) -> IResult<&str, &str, VerboseError<&str>> {
         traced_context(
@@ -249,7 +247,6 @@ impl Parser {
     }
 
     /// Parse a selector.
-    ///
     // TODO: Parse selector properly.
     fn selector(i: &str) -> IResult<&str, Selector, VerboseError<&str>> {
         traced_context(

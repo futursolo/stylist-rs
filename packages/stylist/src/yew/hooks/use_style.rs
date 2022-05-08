@@ -10,14 +10,14 @@ use crate::{Style, StyleSource};
 /// # Example
 ///
 /// ```
-/// use yew::prelude::*;
 /// use stylist::yew::use_style;
+/// use yew::prelude::*;
 ///
 /// #[function_component(Comp)]
 /// fn comp() -> Html {
 ///     // Returns a Style instance.
 ///     let style = use_style("color: red;");
-///     html!{<div class={style}>{"Hello world!"}</div>}
+///     html! {<div class={style}>{"Hello world!"}</div>}
 /// }
 /// ```
 #[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]

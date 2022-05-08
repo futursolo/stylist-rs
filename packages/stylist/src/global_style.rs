@@ -128,7 +128,8 @@ impl GlobalStyle {
 
     /// Unregister current style from style registry.
     ///
-    /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
+    /// After calling this method, the style will be unmounted from DOM after all its clones are
+    /// freed.
     pub fn unregister(&self) {
         let reg = self.inner.manager().get_registry();
         let mut reg = reg.borrow_mut();

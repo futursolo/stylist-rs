@@ -1,19 +1,11 @@
-use syn::{
-    parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
-    token,
-};
+use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
+use syn::token;
 
-use super::{
-    super::{
-        component_value::{ComponentValue, ComponentValueStream},
-        css_ident::CssIdent,
-    },
-    fragment_spacing, CssScope, IntoOutputContext,
-};
-use crate::{
-    output::{OutputFragment, OutputRule},
-    spacing_iterator::SpacedIterator,
-};
+use super::super::component_value::{ComponentValue, ComponentValueStream};
+use super::super::css_ident::CssIdent;
+use super::{fragment_spacing, CssScope, IntoOutputContext};
+use crate::output::{OutputFragment, OutputRule};
+use crate::spacing_iterator::SpacedIterator;
 
 #[derive(Debug)]
 pub enum CssAtRuleContent {
@@ -41,7 +33,8 @@ impl Parse for CssAtRule {
         let mut errors = vec![];
 
         // Recognize the type of @-rule
-        // TODO: be sensitive to this detected type when validating the prelude and contained attributes
+        // TODO: be sensitive to this detected type when validating the prelude and contained
+        // attributes
         if !["media", "supports"].contains(&name.to_output_string().as_str()) {
             errors.push(ParseError::new_spanned(
                 &name,

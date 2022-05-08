@@ -2,8 +2,7 @@
 use proc_macro2::{Ident, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::parse_macro_input;
-use syn::{Item, ItemFn};
+use syn::{parse_macro_input, Item, ItemFn};
 
 use super::styled_component_impl::{styled_component_impl_impl, HookLike};
 

@@ -1,11 +1,8 @@
 use super::ComponentValue;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::{
-    braced, bracketed, parenthesized,
-    parse::{Parse, ParseBuffer, Result as ParseResult},
-    token,
-};
+use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
+use syn::{braced, bracketed, parenthesized, token};
 
 #[derive(Debug, Clone)]
 pub enum BlockKind {

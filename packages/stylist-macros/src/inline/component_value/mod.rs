@@ -2,8 +2,8 @@
 //! You can think of this as being either a block, a function or a preserved (atomic) token.
 //!
 //! This guides our inline parser as follows:
-//! - first re-tokenize the TokenStream into a stream of ComponentValues. For this step see
-//!   also [`ComponentValueStream`].
+//! - first re-tokenize the TokenStream into a stream of ComponentValues. For this step see also
+//!   [`ComponentValueStream`].
 //! - parse and verify the component values into blocks, @-rules and attributes.
 //!
 //! In general, only a parse error in the first step should be fatal and panic immediately,
@@ -13,10 +13,8 @@ use super::css_ident::CssIdent;
 use crate::output::OutputFragment;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::{
-    parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
-    token, Lit,
-};
+use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
+use syn::{token, Lit};
 
 mod function_token;
 mod interpolated_expression;
@@ -89,8 +87,9 @@ impl ComponentValue {
 
             Self::Block(ref m) => {
                 if let BlockKind::Braced(_) = m.kind {
-                    // this kind of block is not supposed to appear in @-rule preludes, block qualifiers
-                    // or attribute values and as such should not get emitted
+                    // this kind of block is not supposed to appear in @-rule preludes, block
+                    // qualifiers or attribute values and as such should not get
+                    // emitted
                     unreachable!("braced blocks should not get reified");
                 }
                 let (start, end) = m.kind.surround_tokens();

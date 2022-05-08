@@ -14,15 +14,18 @@ pub struct ManagerProviderProps {
 /// # Example:
 ///
 /// ```
-/// use yew::prelude::*;
-/// use stylist::yew::ManagerProvider;
 /// use stylist::manager::StyleManager;
+/// use stylist::yew::ManagerProvider;
+/// use yew::prelude::*;
 ///
 /// #[function_component(App)]
 /// fn app() -> Html {
-///     let mgr = use_state(
-///         || StyleManager::builder().prefix("my-styles".into()).build().unwrap()
-///     );
+///     let mgr = use_state(|| {
+///         StyleManager::builder()
+///             .prefix("my-styles".into())
+///             .build()
+///             .unwrap()
+///     });
 ///
 ///     let children = Html::default();
 ///     html! {

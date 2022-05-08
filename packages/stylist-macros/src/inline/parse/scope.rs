@@ -1,10 +1,7 @@
 use std::mem;
 
-use syn::{
-    braced,
-    parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
-    token,
-};
+use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
+use syn::{braced, token};
 
 use super::{CssAttribute, CssQualifiedRule, CssScopeContent, IntoOutputContext};
 use crate::output::OutputRuleBlockContent;
