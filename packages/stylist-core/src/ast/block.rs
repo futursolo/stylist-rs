@@ -15,8 +15,8 @@ use super::{RuleBlockContent, Selector, StyleContext, ToStyleStr};
 pub struct Block {
     /// Selector(s) for Current Block
     ///
-    /// If the value is set as [`&[]`], it signals to substitute with the classname generated for the
-    /// [`Sheet`](super::Sheet) in which this is contained.
+    /// If the value is set as [`&[]`], it signals to substitute with the classname generated for
+    /// the [`Sheet`](super::Sheet) in which this is contained.
     pub condition: Cow<'static, [Selector]>,
     pub content: Cow<'static, [RuleBlockContent]>,
 }

@@ -1,7 +1,7 @@
-#![deny(clippy::all)]
 #![deny(missing_debug_implementations)]
 #![deny(unsafe_code)]
 #![deny(non_snake_case)]
+#![deny(clippy::all)]
 #![deny(clippy::cognitive_complexity)]
 #![cfg_attr(documenting, feature(doc_cfg))]
 #![cfg_attr(any(releasing, not(debug_assertions)), deny(dead_code, unused_imports))]
@@ -17,8 +17,8 @@
 //! You can create a style and use it with yew like this:
 //!
 //! ```rust
-//! use yew::prelude::*;
 //! use stylist::yew::styled_component;
+//! use yew::prelude::*;
 //!
 //! #[styled_component(MyStyledComponent)]
 //! fn my_styled_component() -> Html {
@@ -42,7 +42,8 @@
 //!             width: 100px
 //!         }
 //!     "#
-//! ).expect("Failed to mount style!");
+//! )
+//! .expect("Failed to mount style!");
 //! ```
 //!
 //! ### Style API
@@ -61,7 +62,8 @@
 //!             width: 100px
 //!         }
 //!     "#,
-//! ).expect("Failed to create style");
+//! )
+//! .expect("Failed to create style");
 //! ```
 //!
 //! ### Syntax
@@ -118,70 +120,38 @@
 //! ## Features Flags
 //!
 //! - `macros`: Enabled by default, this flag enables procedural macro support.
-//! - `random`: Enabled by default, this flag uses `fastrand` crate to generate a random
-//!   class name. Disabling this flag will opt for a class name that is counter-based.
-//! - `yew_integration`: This flag enables yew integration, which implements [`Classes`](::yew::html::Classes) for
-//!   [`Style`] and provides a [`Global`](yew::Global) component for applying global styles.
+//! - `random`: Enabled by default, this flag uses `fastrand` crate to generate a random class name.
+//!   Disabling this flag will opt for a class name that is counter-based.
+//! - `yew_integration`: This flag enables yew integration, which implements
+//!   [`Classes`](::yew::html::Classes) for [`Style`] and provides a [`Global`](yew::Global)
+//!   component for applying global styles.
 
 #[cfg(any(feature = "yew_use_media_query", target_arch = "wasm32"))]
 mod arch;
-
-pub mod manager;
-mod registry;
-
 pub mod ast;
 mod global_style;
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub mod macros;
+pub mod manager;
+mod registry;
 mod style;
 mod style_src;
 mod utils;
-
-pub use global_style::GlobalStyle;
-pub use style::Style;
-pub use style_src::StyleSource;
-
 #[cfg_attr(documenting, doc(cfg(feature = "yew")))]
 #[cfg(feature = "yew")]
 pub mod yew;
 
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub mod macros;
-
-/// A procedural macro that parses a string literal or an inline stylesheet into a [`Style`].
+pub use global_style::GlobalStyle;
+pub use style::Style;
+pub use style_src::StyleSource;
+#[doc(inline)]
+pub use stylist_core::{Error, Result};
+/// A procedural macro that parses a string literal or an inline stylesheet into a
+/// [`StyleSource`].
 ///
-/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
-///
-/// # Example
-///
-/// ```
-/// use stylist::style;
-///
-/// // Returns a Style instance.
-/// let style = style!("color: red;");
-/// ```
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::style;
-
-/// A procedural macro that parses a string literal or an inline stylesheet into a [`GlobalStyle`].
-///
-/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
-///
-/// # Example
-///
-/// ```
-/// use stylist::global_style;
-///
-/// // Returns a GlobalStyle instance.
-/// let style = global_style!("color: red;");
-/// ```
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
-#[cfg(feature = "macros")]
-pub use stylist_macros::global_style;
-
-/// A procedural macro that parses a string literal or an inline stylesheet into a [`StyleSource`].
-///
-/// Please consult the documentation of the [`macros`] module for the supported syntax of this macro.
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this
+/// macro.
 ///
 /// # Example
 ///
@@ -196,6 +166,36 @@ pub use stylist_macros::global_style;
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::css;
-
-#[doc(inline)]
-pub use stylist_core::{Error, Result};
+/// A procedural macro that parses a string literal or an inline stylesheet into a
+/// [`GlobalStyle`].
+///
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this
+/// macro.
+///
+/// # Example
+///
+/// ```
+/// use stylist::global_style;
+///
+/// // Returns a GlobalStyle instance.
+/// let style = global_style!("color: red;");
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::global_style;
+/// A procedural macro that parses a string literal or an inline stylesheet into a [`Style`].
+///
+/// Please consult the documentation of the [`macros`] module for the supported syntax of this
+/// macro.
+///
+/// # Example
+///
+/// ```
+/// use stylist::style;
+///
+/// // Returns a Style instance.
+/// let style = style!("color: red;");
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::style;

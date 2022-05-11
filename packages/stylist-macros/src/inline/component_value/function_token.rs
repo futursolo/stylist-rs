@@ -1,11 +1,9 @@
-use super::{super::css_ident::CssIdent, ComponentValue};
+use super::super::css_ident::CssIdent;
+use super::ComponentValue;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-use syn::{
-    parenthesized,
-    parse::{Parse, ParseBuffer, Result as ParseResult},
-    token,
-};
+use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
+use syn::{parenthesized, token};
 
 // Css-syntax parses like
 // v----v function token

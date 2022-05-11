@@ -11,8 +11,9 @@ use crate::Style;
 /// You can also get a StyleSource instance from a string or a [`Sheet`] by calling `.into()`.
 ///
 /// ```rust
+/// use stylist::yew::Global;
+/// use stylist::{css, StyleSource};
 /// use yew::prelude::*;
-/// use stylist::{css, StyleSource, yew::Global};
 ///
 /// let s: StyleSource = css!("color: red;");
 ///

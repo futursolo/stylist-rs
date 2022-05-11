@@ -1,10 +1,8 @@
 use itertools::Itertools;
 use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 
-use super::{
-    super::component_value::{ComponentValue, ComponentValueStream, PreservedToken},
-    CssAtRule, CssAttribute, CssQualifiedRule,
-};
+use super::super::component_value::{ComponentValue, ComponentValueStream, PreservedToken};
+use super::{CssAtRule, CssAttribute, CssQualifiedRule};
 
 #[derive(Debug)]
 pub enum CssScopeContent {

@@ -15,8 +15,8 @@ use yew::html::{Classes, IntoPropValue};
 /// ```rust
 /// use std::borrow::Cow;
 ///
-/// use yew::prelude::*;
 /// use stylist::yew::styled_component;
+/// use yew::prelude::*;
 ///
 /// #[styled_component(MyStyledComponent)]
 /// fn my_styled_component() -> Html {
@@ -43,8 +43,8 @@ pub use stylist_macros::styled_component;
 /// # Example:
 ///
 /// ```rust
-/// use yew::prelude::*;
 /// use stylist::yew::styled_component_impl;
+/// use yew::prelude::*;
 ///
 /// // Equivalent to #[styled_component(MyStyledComponent)]
 /// // This usage is discouraged, prefer `styled_component`
@@ -60,21 +60,23 @@ pub use stylist_macros::styled_component;
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component_impl;
 
-/// A procedural macro hook that parses a string literal or an inline stylesheet to create auto updating [`Style`]s.
+/// A procedural macro hook that parses a string literal or an inline stylesheet to create auto
+/// updating [`Style`]s.
 ///
-/// Please consult the documentation of the [`macros`](crate::macros) module for the supported syntax of this macro.
+/// Please consult the documentation of the [`macros`](crate::macros) module for the supported
+/// syntax of this macro.
 ///
 /// # Example
 ///
 /// ```
-/// use yew::prelude::*;
 /// use stylist::yew::use_style;
+/// use yew::prelude::*;
 ///
 /// #[function_component(Comp)]
 /// fn comp() -> Html {
 ///     // Returns a Style instance.
 ///     let style = use_style!("color: red;");
-///     html!{<div class={style}>{"Hello world!"}</div>}
+///     html! {<div class={style}>{"Hello world!"}</div>}
 /// }
 /// ```
 #[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]

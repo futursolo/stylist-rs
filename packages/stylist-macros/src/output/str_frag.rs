@@ -1,19 +1,19 @@
 use proc_macro2::{Delimiter, TokenStream};
 use quote::quote;
-use syn::{spanned::Spanned, Expr, ExprLit, Lit};
+use syn::spanned::Spanned;
+use syn::{Expr, ExprLit, Lit};
 
 use super::{OutputCowString, Reify, ReifyContext};
-use crate::{
-    inline::{component_value::PreservedToken, css_ident::CssIdent},
-    literal::argument::Argument,
-};
+use crate::inline::component_value::PreservedToken;
+use crate::inline::css_ident::CssIdent;
+use crate::literal::argument::Argument;
 
 #[derive(Debug, Clone)]
 pub enum OutputFragment {
     Expr(Expr),
     Arg(Argument),
     Token(PreservedToken),
-    Delimiter(Delimiter, /*start:*/ bool),
+    Delimiter(Delimiter, /* start: */ bool),
     Str(String),
 }
 

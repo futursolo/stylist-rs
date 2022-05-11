@@ -19,8 +19,8 @@ pub struct GlobalProps {
 /// # Example:
 ///
 /// ```
-/// use yew::prelude::*;
 /// use stylist::yew::Global;
+/// use yew::prelude::*;
 ///
 /// struct App;
 ///

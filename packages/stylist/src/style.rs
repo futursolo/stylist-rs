@@ -311,7 +311,8 @@ impl Style {
 
     /// Unregister current style from style registry.
     ///
-    /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
+    /// After calling this method, the style will be unmounted from DOM after all its clones are
+    /// freed.
     ///
     /// # Note
     ///

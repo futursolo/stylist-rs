@@ -9,7 +9,8 @@ use crate::output::{
     OutputScopeContent, OutputSelector, OutputSheet,
 };
 
-use super::{argument::Argument, fstring};
+use super::argument::Argument;
+use super::fstring;
 
 pub(crate) trait ToOutputWithArgs {
     type Output;
