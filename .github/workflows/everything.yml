@@ -49,6 +49,14 @@ jobs:
       - name: Restore Rust Cache
         uses: Swatinem/rust-cache@v1
 
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --all
+        env:
+          RUSTFLAGS: "--cfg releasing"
+
       - name: Setup trunk
         uses: jetli/trunk-action@v0.1.0
         with:
