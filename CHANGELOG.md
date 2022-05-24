@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.10.1
+
+### Other Changes:
+- Added an impl of `IntoPropValue<Classes>` for `Style` and `StyleSource` when
+  the `yew_integration` feature is active.
+
 ## v0.10.0
 
 ### Breaking Changes:
