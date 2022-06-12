@@ -13,7 +13,7 @@ This is a fork of [css-in-rust](https://github.com/lukidoescode/css-in-rust).
 Add the following to your `Cargo.toml`:
 
 ```toml
-stylist = "0.9"
+stylist = "0.10"
 ```
 
 ## Usage
