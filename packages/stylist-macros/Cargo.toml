@@ -1,6 +1,6 @@
 [package]
 name = "stylist-macros"
-version = "0.10.0"
+version = "0.10.1"
 edition = "2018"
 license = "MIT"
 repository = "https://github.com/futursolo/stylist-rs"
@@ -24,7 +24,7 @@ resolver = "2"
 proc-macro = true
 
 [dependencies]
-stylist-core = { path = "../stylist-core", version = "0.10.0", features = ["parser"] }
+stylist-core = { path = "../stylist-core", version = "0.10.1", features = ["parser"] }
 
 litrs = "0.2.3"
 proc-macro-error = "1.0.4"
