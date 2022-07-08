@@ -29,7 +29,7 @@ pub use location::Location;
 pub use punct::Punct;
 pub use space::Space;
 pub use token::{Token, TokenTree};
-pub use token_stream::TokenStream;
+pub use token_stream::{Iter, TokenStream};
 pub use tokenize::Tokenize;
 
 #[cfg(feature = "proc_macro_support")]
@@ -56,11 +56,11 @@ macro_rules! __impl_partial_eq {
 #[macro_export]
 macro_rules! __impl_token {
     ($typ: ident) => {
-        impl crate::tokens::Token for $typ {
+        impl $crate::tokens::Token for $typ {
             fn to_fragments(&self) -> Vec<&str> {
                 vec![&self.inner]
             }
-            fn location(&self) -> &crate::tokens::Location {
+            fn location(&self) -> &$crate::tokens::Location {
                 &self.location
             }
         }
@@ -72,11 +72,11 @@ macro_rules! __impl_token {
 #[macro_export]
 macro_rules! __impl_token {
     ($typ: ident) => {
-        impl crate::tokens::Token for $typ {
-            fn to_fragments(&self) -> Vec<crate::tokens::Fragment> {
-                vec![crate::tokens::Fragment::Literal(self.inner.to_string())]
+        impl $crate::tokens::Token for $typ {
+            fn to_fragments(&self) -> Vec<$crate::tokens::Fragment> {
+                vec![$crate::tokens::Fragment::Literal(self.inner.to_string())]
             }
-            fn location(&self) -> &crate::tokens::Location {
+            fn location(&self) -> &$crate::tokens::Location {
                 &self.location
             }
         }

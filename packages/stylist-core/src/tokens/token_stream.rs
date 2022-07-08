@@ -2,6 +2,8 @@ use std::iter::{FromIterator, IntoIterator};
 
 use super::TokenTree;
 
+pub type Iter<'a, T> = std::slice::Iter<'a, T>;
+
 /// An abstract stream of tokens
 ///
 /// This type can be created by passing an input to
@@ -22,7 +24,7 @@ impl TokenStream {
         self.inner.is_empty()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &TokenTree> {
+    pub fn iter(&self) -> Iter<'_, TokenTree> {
         self.inner.iter()
     }
 }

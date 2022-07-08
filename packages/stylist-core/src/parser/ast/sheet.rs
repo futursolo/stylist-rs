@@ -15,18 +15,13 @@ impl<'a> Parse<'a> for Sheet {
         let mut scopes = Vec::with_capacity(1); // at least 1 scope content is expected.
 
         let mut input = input;
-        loop {
-            // destructuring assignments are unstable
-            let (scope, new_input) = match ScopeContent::parse(input.clone())? {
-                Some(m) => m,
-                None => break,
-            };
+        while let Some((scope, new_input)) = ScopeContent::parse(input.clone())? {
+            scopes.push(scope);
 
             input = new_input;
-            scopes.push(scope);
         }
 
-        let input = input.trim_start();
+        let mut input = input.trim_start();
 
         if let Some(m) = input.first() {
             return Err(ParseError::unexpected_token(m.location().to_owned()));

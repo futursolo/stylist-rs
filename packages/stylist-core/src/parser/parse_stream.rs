@@ -1,20 +1,23 @@
-use crate::arc_ref::ArcRef;
-use crate::tokens::{TokenStream, TokenTree};
+use crate::tokens::{Iter, TokenStream, TokenTree};
+use std::iter::Peekable;
+
+type ParseIter<'a, T> = Peekable<Iter<'a, T>>;
 
 #[derive(Debug, Clone)]
 pub struct ParseStream<'a> {
-    inner: ArcRef<'a, TokenStream>,
-    cursor: usize,
+    cursor: Peekable<Iter<'a, TokenTree>>,
 }
 
-impl ParseStream<'_> {
+impl<'a> ParseStream<'a> {
     fn advance(&mut self, len: usize) {
-        self.cursor += len;
+        for _ in 0..len {
+            self.cursor.next();
+        }
     }
 
     /// Returns an `Iterator` over tokens.
-    pub fn iter(&self) -> impl Iterator<Item = &TokenTree> {
-        self.inner.iter().skip(self.cursor)
+    pub fn iter(&self) -> ParseIter<'a, TokenTree> {
+        self.cursor.clone()
     }
 
     /// Trim until next token is not space or comment.
@@ -25,17 +28,13 @@ impl ParseStream<'_> {
     }
 
     /// Returns a reference of the next token without removing it from the input.
-    pub fn first(&self) -> Option<&TokenTree> {
-        self.inner.iter().next()
+    pub fn first(&mut self) -> Option<&TokenTree> {
+        self.cursor.peek().cloned()
     }
 
     /// Pops the next token.
     pub fn pop_front(mut self) -> (Option<TokenTree>, Self) {
-        let token = self.first().cloned();
-
-        if token.is_some() {
-            self.advance(1);
-        }
+        let token = self.cursor.next().cloned();
 
         (token, self)
     }
@@ -62,11 +61,10 @@ impl ParseStream<'_> {
     }
 }
 
-impl<'a> From<ArcRef<'a, TokenStream>> for ParseStream<'a> {
-    fn from(m: ArcRef<'a, TokenStream>) -> Self {
+impl<'a> From<&'a TokenStream> for ParseStream<'a> {
+    fn from(m: &'a TokenStream) -> Self {
         Self {
-            inner: m,
-            cursor: 0,
+            cursor: m.iter().peekable(),
         }
     }
 }

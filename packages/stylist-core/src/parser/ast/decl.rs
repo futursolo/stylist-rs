@@ -1,10 +1,9 @@
 use crate::parser::{Parse, ParseError, ParseResult, ParseStream};
 use crate::tokens::{Delimiter, Ident, Token, TokenTree};
 
-fn parse_declaration<'a>(
-    input: ParseStream<'a>,
-    dangling: bool,
-) -> ParseResult<Option<((Ident, Vec<TokenTree>), ParseStream<'a>)>> {
+type Decl<'a> = ((Ident, Vec<TokenTree>), ParseStream<'a>);
+
+fn parse_declaration(input: ParseStream<'_>, dangling: bool) -> ParseResult<Option<Decl<'_>>> {
     let original_input = input.clone();
     let input = input.trim_start();
 
@@ -36,7 +35,7 @@ fn parse_declaration<'a>(
     let mut value: Vec<TokenTree> = Vec::new();
 
     enum TokenKind {
-        Fragment(TokenTree),
+        Fragment(Box<TokenTree>),
         Brace,
         Semicolon,
         Colon,
@@ -56,10 +55,8 @@ fn parse_declaration<'a>(
                         .unwrap(),
                 ));
             }
-        } else {
-            if input.is_empty() {
-                break; // end of the block.
-            }
+        } else if input.is_empty() {
+            break; // end of the block.
         }
 
         let (token, rest) = match input.pop_by(|m| {
@@ -77,7 +74,7 @@ fn parse_declaration<'a>(
                 _ => {}
             }
 
-            Some(TokenKind::Fragment(m.clone()))
+            Some(TokenKind::Fragment(m.clone().into()))
         }) {
             (Some(m), n) => (m, n),
             (None, n) => (TokenKind::Brace, n),
@@ -86,7 +83,7 @@ fn parse_declaration<'a>(
         input = rest;
 
         match token {
-            TokenKind::Fragment(m) => value.push(m),
+            TokenKind::Fragment(m) => value.push(*m),
             TokenKind::Brace => return Ok(None),
             TokenKind::Semicolon => break,
             TokenKind::Colon => return Ok(None),
