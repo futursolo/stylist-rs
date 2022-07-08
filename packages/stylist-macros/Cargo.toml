@@ -28,12 +28,12 @@ stylist-core = { path = "../stylist-core", version = "0.10.0", features = ["pars
 
 litrs = "0.2.3"
 proc-macro-error = "1.0.4"
-proc-macro2 = "1.0.29"
-quote = "1.0.9"
-nom = "7.0.0"
-syn = { version = "1.0.76", features = ["full", "extra-traits"] }
-itertools = "0.10.1"
-log = "0.4.14"
+proc-macro2 = "1.0.40"
+quote = "1.0.20"
+nom = "7.1.1"
+syn = { version = "1.0.98", features = ["full", "extra-traits"] }
+itertools = "0.10.3"
+log = "0.4.17"
 
 [dev-dependencies]
 env_logger = "0.9.0"
