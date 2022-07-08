@@ -121,6 +121,18 @@ impl From<StyleSource> for Classes {
     }
 }
 
+impl IntoPropValue<Classes> for Style {
+    fn into_prop_value(self) -> Classes {
+        self.into()
+    }
+}
+
+impl IntoPropValue<Classes> for StyleSource {
+    fn into_prop_value(self) -> Classes {
+        self.into()
+    }
+}
+
 impl IntoPropValue<StyleSource> for Sheet {
     fn into_prop_value(self) -> StyleSource {
         self.into()
