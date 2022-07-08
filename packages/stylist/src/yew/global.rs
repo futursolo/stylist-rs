@@ -7,7 +7,7 @@ use stylist_core::ResultDisplay;
 /// The properties for [`Global`] Component, please see its documentation for usage.
 #[derive(Properties, Clone, Debug, PartialEq)]
 pub struct GlobalProps {
-    pub css: StyleSource<'static>,
+    pub css: StyleSource,
 }
 
 /// A Global Style that will be applied to `<html />` tag, inspired by [emotion](https://emotion.sh).
@@ -19,8 +19,8 @@ pub struct GlobalProps {
 /// # Example:
 ///
 /// ```
-/// use yew::prelude::*;
 /// use stylist::yew::Global;
+/// use yew::prelude::*;
 ///
 /// struct App;
 ///
@@ -49,7 +49,7 @@ pub fn global(props: &GlobalProps) -> Html {
     #[derive(Debug, PartialEq)]
     struct GlobalDependents {
         manager: StyleManager,
-        css: StyleSource<'static>,
+        css: StyleSource,
     }
 
     use_effect_with_deps(

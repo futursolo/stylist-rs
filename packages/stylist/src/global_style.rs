@@ -6,8 +6,7 @@ use stylist_core::ResultDisplay;
 use crate::ast::ToStyleStr;
 use crate::manager::StyleManager;
 use crate::registry::StyleKey;
-use crate::style::StyleContent;
-use crate::style::StyleId;
+use crate::style::{StyleContent, StyleId};
 use crate::utils::get_entropy;
 use crate::{Result, StyleSource};
 
@@ -25,12 +24,9 @@ pub struct GlobalStyle {
 impl GlobalStyle {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
-    fn create_impl(css: StyleSource<'_>, manager: StyleManager) -> Result<Self> {
-        #[cfg(all(debug_assertions, feature = "parser"))]
-        use crate::ast::Sheet;
-
+    fn create_impl(css: StyleSource, manager: StyleManager) -> Result<Self> {
         let prefix = format!("{}-global", manager.prefix());
-        let css = css.try_to_sheet()?;
+        let css = css.into_sheet();
 
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
@@ -52,7 +48,7 @@ impl GlobalStyle {
         // not corrupting the stylesheet.
         #[cfg(all(debug_assertions, feature = "parser"))]
         style_str
-            .parse::<Sheet>()
+            .parse::<crate::ast::Sheet>()
             .expect_display("debug: Stylist failed to parse the style with interpolated values");
 
         let new_style = Self {
@@ -84,21 +80,23 @@ impl GlobalStyle {
     /// let style = Style::new("background-color: red;")?;
     /// # Ok::<(), stylist::Error>(())
     /// ```
-    pub fn new<'a, Css>(css: Css) -> Result<Self>
+    pub fn new<Css>(css: Css) -> Result<Self>
     where
-        Css: Into<StyleSource<'a>>,
+        Css: TryInto<StyleSource>,
+        crate::Error: From<Css::Error>,
     {
         Self::new_with_manager(css, StyleManager::default())
     }
 
     /// Creates a new style using a custom manager.
-    pub fn new_with_manager<'a, Css, M>(css: Css, manager: M) -> Result<Self>
+    pub fn new_with_manager<Css, M>(css: Css, manager: M) -> Result<Self>
     where
-        Css: Into<StyleSource<'a>>,
+        Css: TryInto<StyleSource>,
+        crate::Error: From<Css::Error>,
         M: Into<StyleManager>,
     {
         let mgr = manager.into();
-        Self::create_impl(css.into(), mgr)
+        Self::create_impl(css.try_into()?, mgr)
     }
 
     /// Get the parsed and generated style in `&str`.
@@ -130,7 +128,8 @@ impl GlobalStyle {
 
     /// Unregister current style from style registry.
     ///
-    /// After calling this method, the style will be unmounted from DOM after all its clones are freed.
+    /// After calling this method, the style will be unmounted from DOM after all its clones are
+    /// freed.
     pub fn unregister(&self) {
         let reg = self.inner.manager().get_registry();
         let mut reg = reg.borrow_mut();

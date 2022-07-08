@@ -1,5 +1,26 @@
 # Changelog
 
+## v0.11.0
+
+### Breaking Changes:
+- Remove `YieldStyle`. This API can be easily reproduced in user code, if need be,
+  but often leads to clumsy code in struct components. Use alternative API and prefer
+  `function_component` + `use_style!`/`styled_component`.
+- `StyleSource` does not take a lifetime argument
+- Feature `parser`: `StyleSource` now eagerly parses its input.
+- Feature `parser`: The conversion from `str` have been changed to `TryFrom`
+  instead of `From`. If you're using `yew`, the `IntoPropValue<StyleSource>`
+  impls still exist, but now panic early during conversion.
+
+### Other Changes:
+- The `Style::new_*` API is more open for accepted types of the `Css` parameter.
+
+## v0.10.1
+
+### Other Changes:
+- Added an impl of `IntoPropValue<Classes>` for `Style` and `StyleSource` when
+  the `yew_integration` feature is active.
+
 ## v0.10.0
 
 ### Breaking Changes:

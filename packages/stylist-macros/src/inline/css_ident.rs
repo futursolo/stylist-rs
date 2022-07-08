@@ -1,11 +1,9 @@
 use proc_macro2::{Punct, Spacing, TokenStream};
 use quote::ToTokens;
 use std::fmt::{Display, Formatter};
-use syn::{
-    ext::IdentExt,
-    parse::{Parse, ParseBuffer, Result as ParseResult},
-    token, Ident,
-};
+use syn::ext::IdentExt;
+use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
+use syn::{token, Ident};
 
 syn::custom_punctuation!(DoubleSub, --);
 

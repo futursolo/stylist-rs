@@ -1,8 +1,6 @@
-use syn::{
-    parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult},
-    spanned::Spanned,
-    token,
-};
+use syn::parse::{Error as ParseError, Parse, ParseBuffer, Result as ParseResult};
+use syn::spanned::Spanned;
+use syn::token;
 
 use super::{fragment_spacing, IntoOutputContext};
 use crate::inline::component_value::{

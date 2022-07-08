@@ -7,16 +7,6 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "cargo"
-    directory: "/packages/stylist-core"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "cargo"
-    directory: "/packages/stylist"
-    schedule:
-      interval: "weekly"
-
-  - package-ecosystem: "cargo"
-    directory: "/packages/stylist-macros"
+    directory: "/"
     schedule:
       interval: "weekly"

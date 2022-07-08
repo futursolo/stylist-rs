@@ -27,7 +27,7 @@ impl ToStyleStr for Selector {
             if joined_s.contains('&') || joined_s.contains(":root") {
                 w.push_str(
                     &joined_s
-                        .replace("&", scoped_class.as_str())
+                        .replace('&', scoped_class.as_str())
                         .replace(":root", scoped_class.as_str()),
                 );
             } else {
@@ -43,7 +43,7 @@ impl ToStyleStr for Selector {
 
         // For global styles, if it contains &, it will be replaced with html.
         } else if joined_s.contains('&') {
-            w.push_str(&joined_s.replace("&", ":root"));
+            w.push_str(&joined_s.replace('&', ":root"));
         // For other styles, it will be written as is.
         } else {
             w.push_str(&joined_s);

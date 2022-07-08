@@ -2,8 +2,7 @@
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
 use syn::parse::{Parse, ParseStream};
-use syn::parse_macro_input;
-use syn::{Ident, Item, ItemFn};
+use syn::{parse_macro_input, Ident, Item, ItemFn};
 
 #[derive(Debug)]
 pub struct HookLike {

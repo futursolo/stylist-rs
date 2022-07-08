@@ -1,13 +1,11 @@
-use nom::{
-    branch::alt,
-    bytes::complete::{is_not, tag, take_while},
-    character::complete::{alpha1, alphanumeric1},
-    combinator::{all_consuming, cut, map, opt, recognize},
-    error::{context, convert_error, ErrorKind, ParseError, VerboseError},
-    multi::many0,
-    sequence::{delimited, preceded},
-    IResult,
-};
+use nom::branch::alt;
+use nom::bytes::complete::{is_not, tag, take_while};
+use nom::character::complete::{alpha1, alphanumeric1};
+use nom::combinator::{all_consuming, cut, map, opt, recognize};
+use nom::error::{context, convert_error, ErrorKind, ParseError, VerboseError};
+use nom::multi::many0;
+use nom::sequence::{delimited, preceded};
+use nom::IResult;
 use stylist_core::{Error, Result};
 
 #[cfg(test)]

@@ -22,8 +22,7 @@ pub mod tokens;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ast::Sheet;
-    use ast::ToStyleStr;
+    use ast::{Sheet, ToStyleStr};
 
     #[test]
     fn test_scoped_complex() {

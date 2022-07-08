@@ -5,8 +5,8 @@ use crate::arch::window;
 
 /// A hook to provide media query.
 ///
-/// This hook will return the result of whether the provided query matches and updates when the result
-/// changes.
+/// This hook will return the result of whether the provided query matches and updates when the
+/// result changes.
 #[cfg_attr(documenting, doc(cfg(feature = "yew_use_media_query")))]
 #[cfg(feature = "yew_use_media_query")]
 pub fn use_media_query(query: &str) -> bool {

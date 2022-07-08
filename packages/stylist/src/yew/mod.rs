@@ -1,7 +1,6 @@
 //! This module contains yew specific features.
 
-use yew::html::Classes;
-use yew::html::IntoPropValue;
+use yew::html::{Classes, IntoPropValue};
 
 /// A procedural macro to style a function component.
 ///
@@ -16,8 +15,8 @@ use yew::html::IntoPropValue;
 /// ```rust
 /// use std::borrow::Cow;
 ///
-/// use yew::prelude::*;
 /// use stylist::yew::styled_component;
+/// use yew::prelude::*;
 ///
 /// #[styled_component(MyStyledComponent)]
 /// fn my_styled_component() -> Html {
@@ -44,8 +43,8 @@ pub use stylist_macros::styled_component;
 /// # Example:
 ///
 /// ```rust
-/// use yew::prelude::*;
 /// use stylist::yew::styled_component_impl;
+/// use yew::prelude::*;
 ///
 /// // Equivalent to #[styled_component(MyStyledComponent)]
 /// // This usage is discouraged, prefer `styled_component`
@@ -61,21 +60,23 @@ pub use stylist_macros::styled_component;
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component_impl;
 
-/// A procedural macro hook that parses a string literal or an inline stylesheet to create auto updating [`Style`]s.
+/// A procedural macro hook that parses a string literal or an inline stylesheet to create auto
+/// updating [`Style`]s.
 ///
-/// Please consult the documentation of the [`macros`](crate::macros) module for the supported syntax of this macro.
+/// Please consult the documentation of the [`macros`](crate::macros) module for the supported
+/// syntax of this macro.
 ///
 /// # Example
 ///
 /// ```
-/// use yew::prelude::*;
 /// use stylist::yew::use_style;
+/// use yew::prelude::*;
 ///
 /// #[function_component(Comp)]
 /// fn comp() -> Html {
 ///     // Returns a Style instance.
 ///     let style = use_style!("color: red;");
-///     html!{<div class={style}>{"Hello world!"}</div>}
+///     html! {<div class={style}>{"Hello world!"}</div>}
 /// }
 /// ```
 #[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]
@@ -107,16 +108,33 @@ impl From<Style> for Classes {
     }
 }
 
-impl From<StyleSource<'_>> for Classes {
-    fn from(style_src: StyleSource<'_>) -> Self {
+impl From<StyleSource> for Classes {
+    fn from(style_src: StyleSource) -> Self {
         let mut classes = Self::new();
-        classes.push(style_src.to_style().get_class_name().to_string());
+        #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+        let location = style_src.location.clone();
+        let style = style_src.into_style();
+        classes.push(style.get_class_name().to_string());
+        #[cfg(all(debug_assertions, feature = "debug_style_locations"))]
+        classes.push(location);
         classes
     }
 }
 
-impl IntoPropValue<StyleSource<'static>> for Sheet {
-    fn into_prop_value(self) -> StyleSource<'static> {
+impl IntoPropValue<Classes> for Style {
+    fn into_prop_value(self) -> Classes {
+        self.into()
+    }
+}
+
+impl IntoPropValue<Classes> for StyleSource {
+    fn into_prop_value(self) -> Classes {
+        self.into()
+    }
+}
+
+impl IntoPropValue<StyleSource> for Sheet {
+    fn into_prop_value(self) -> StyleSource {
         self.into()
     }
 }
@@ -127,22 +145,26 @@ mod feat_parser {
     use std::borrow::Cow;
 
     use super::*;
+    use stylist_core::ResultDisplay;
 
-    impl IntoPropValue<StyleSource<'static>> for String {
-        fn into_prop_value(self) -> StyleSource<'static> {
-            self.into()
+    impl IntoPropValue<StyleSource> for String {
+        fn into_prop_value(self) -> StyleSource {
+            self.try_into()
+                .expect_display("couldn't parse style string")
         }
     }
 
-    impl<'a> IntoPropValue<StyleSource<'a>> for &'a str {
-        fn into_prop_value(self) -> StyleSource<'a> {
-            self.into()
+    impl<'a> IntoPropValue<StyleSource> for &'a str {
+        fn into_prop_value(self) -> StyleSource {
+            self.try_into()
+                .expect_display("couldn't parse style string")
         }
     }
 
-    impl<'a> IntoPropValue<StyleSource<'a>> for Cow<'a, str> {
-        fn into_prop_value(self) -> StyleSource<'a> {
-            self.into()
+    impl<'a> IntoPropValue<StyleSource> for Cow<'a, str> {
+        fn into_prop_value(self) -> StyleSource {
+            self.try_into()
+                .expect_display("couldn't parse style string")
         }
     }
 }

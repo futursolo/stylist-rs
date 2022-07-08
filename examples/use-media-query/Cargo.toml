@@ -2,24 +2,24 @@
 name = "example-use-media-query"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-log = "0.4.14"
+log = "0.4.17"
 console_log = { version = "0.2.0", features = ["color"] }
-yew = { version = "0.19" }
+yew = "0.19.3"
 stylist = { path = "../../packages/stylist", features = [
     "yew_integration",
     "yew_use_media_query",
 ] }
 
 [dev-dependencies]
-gloo-utils = "0.1"
-wasm-bindgen-test = "0.3.27"
-wasm-bindgen = "0.2.77"
+gloo-utils = "0.1.4"
+wasm-bindgen-test = "0.3.31"
+wasm-bindgen = "0.2.81"
 
 [dev-dependencies.web-sys]
-version = "0.3.54"
+version = "0.3.58"
 features = [
     "Window",
     "Document",

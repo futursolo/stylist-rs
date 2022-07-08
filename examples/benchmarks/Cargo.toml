@@ -2,12 +2,12 @@
 name = "stylist-benchmarks"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-log = "0.4.14"
+log = "0.4.17"
 console_log = { version = "0.2.0", features = ["color"] }
-yew = { version = "0.19" }
+yew = "0.19.3"
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
-web-sys = { version = "0.3.54", features = ["Window", "Performance"] }
-gloo = "0.4.0"
+web-sys = { version = "0.3.58", features = ["Window", "Performance"] }
+gloo = "0.8.0"
