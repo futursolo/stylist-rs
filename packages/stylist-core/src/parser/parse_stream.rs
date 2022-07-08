@@ -45,7 +45,7 @@ impl ParseStream<'_> {
     /// Returns the value in form of `T`
     pub fn pop_by<O, T>(mut self, op: O) -> (Option<T>, Self)
     where
-        O: Fn(&TokenTree) -> Option<T>,
+        O: FnOnce(&TokenTree) -> Option<T>,
     {
         match self.first().and_then(op) {
             Some(m) => {
