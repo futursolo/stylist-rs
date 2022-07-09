@@ -9,12 +9,6 @@ pub struct ParseStream<'a> {
 }
 
 impl<'a> ParseStream<'a> {
-    fn advance(&mut self, len: usize) {
-        for _ in 0..len {
-            self.cursor.next();
-        }
-    }
-
     /// Returns an `Iterator` over tokens.
     pub fn iter(&self) -> ParseIter<'a, TokenTree> {
         self.cursor.clone()
@@ -22,7 +16,7 @@ impl<'a> ParseStream<'a> {
 
     /// Trim until next token is not space or comment.
     pub fn trim_start(mut self) -> Self {
-        self.advance(self.iter().take_while(|m| m.is_trimmable()).count());
+        while self.cursor.next_if(|m| m.is_trimmable()).is_some() {}
 
         self
     }
@@ -48,7 +42,7 @@ impl<'a> ParseStream<'a> {
     {
         match self.first().and_then(op) {
             Some(m) => {
-                self.advance(1);
+                self.cursor.next();
                 (Some(m), self)
             }
             None => (None, self),
@@ -56,8 +50,8 @@ impl<'a> ParseStream<'a> {
     }
 
     /// Returns `true` if all tokens have been parsed.
-    pub fn is_empty(&self) -> bool {
-        self.iter().next().is_none()
+    pub fn is_empty(&mut self) -> bool {
+        self.cursor.peek().is_none()
     }
 }
 
