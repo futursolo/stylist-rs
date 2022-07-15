@@ -31,7 +31,7 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
 
             format!(
                 "var(--stylist-{}-{}, {})",
-                ::stylist::CssVariables::entropy(&struct_var_ident),
+                ::stylist::CssVariables::entropy(&#struct_var_ident),
                 #field_str,
                 #struct_var_ident.#field_ident,
             )
