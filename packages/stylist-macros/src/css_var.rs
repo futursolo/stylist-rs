@@ -1,5 +1,5 @@
 use convert_case::{Case, Casing};
-use proc_macro2::{Ident, Span, TokenStream};
+use proc_macro2::{Span, TokenStream};
 use proc_macro_error::abort;
 use quote::quote;
 use syn::{ExprField, LitStr, Member};
@@ -15,7 +15,6 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
         Member::Unnamed(_) => abort!(field, "unnamed fields are not supported!"),
     };
 
-    let struct_var_ident = Ident::new("_var", Span::mixed_site());
     let struct_var = field.base;
     let struct_attrs = field.attrs;
 
@@ -26,15 +25,11 @@ pub(crate) fn macro_fn(input: TokenStream) -> TokenStream {
 
     quote! {
         #(#[#struct_attrs])*
-        {
-            let #struct_var_ident = #struct_var;
-
-            format!(
-                "var(--stylist-{}-{}, {})",
-                ::stylist::CssVariables::entropy(&#struct_var_ident),
-                #field_str,
-                #struct_var_ident.#field_ident,
-            )
-        }
+        format!(
+            "var(--stylist-{}-{}, {})",
+            ::stylist::CssVariables::entropy(&#struct_var),
+            #field_str,
+            #struct_var.#field_ident,
+        )
     }
 }
