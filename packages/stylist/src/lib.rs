@@ -138,6 +138,7 @@ mod registry;
 mod style;
 mod style_src;
 mod utils;
+mod vars;
 #[cfg_attr(documenting, doc(cfg(feature = "yew")))]
 #[cfg(feature = "yew")]
 pub mod yew;
@@ -199,3 +200,47 @@ pub use stylist_macros::global_style;
 #[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::style;
+pub use vars::CssVariables;
+
+/// A procedural macro to create a style source for mounting css variables.
+///
+/// # Example
+///
+/// ```
+/// use stylist::yew::Global;
+/// use stylist::CssVariables;
+/// # use yew::html;
+///
+/// #[derive(CssVariables)]
+/// struct Theme {
+///     color: String,
+///     background: String,
+/// }
+///
+/// let light_theme = Theme {
+///     color: "black".into(),
+///     background: "white".into(),
+/// };
+///
+/// let dark_theme = Theme {
+///     color: "white".into(),
+///     background: "black".into(),
+/// };
+///
+/// // Themes can be converted to style sources and mounted normally:
+///
+/// html! {
+///     <>
+///         <Global css={light_theme.to_css_vars_for("html[data-theme='light']")} />
+///         <Global css={dark_theme.to_css_vars_for("html[data-theme='dark']")} />
+///     </>
+/// };
+/// ```
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::CssVariables;
+
+/// A procedural macro to use a css variable.
+#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
+#[cfg(feature = "macros")]
+pub use stylist_macros::css_var;
