@@ -27,7 +27,6 @@ use yew::html::{Classes, IntoPropValue};
 /// # Note:
 ///
 /// You don't need to import [`css!`](crate::css) inside of a `styled_component`.
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component;
 
@@ -56,7 +55,6 @@ pub use stylist_macros::styled_component;
 /// ```
 ///
 /// [Hooks]: https://yew.rs/next/concepts/function-components#hooks
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component_impl;
 
@@ -79,7 +77,6 @@ pub use stylist_macros::styled_component_impl;
 ///     html! {<div class={style}>{"Hello world!"}</div>}
 /// }
 /// ```
-#[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]
 #[cfg(feature = "yew_use_style")]
 pub use stylist_macros::use_style;
 

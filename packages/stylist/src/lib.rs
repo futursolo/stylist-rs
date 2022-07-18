@@ -4,6 +4,7 @@
 #![deny(clippy::all)]
 #![deny(clippy::cognitive_complexity)]
 #![cfg_attr(documenting, feature(doc_cfg))]
+#![cfg_attr(documenting, feature(doc_auto_cfg))]
 #![cfg_attr(any(releasing, not(debug_assertions)), deny(dead_code, unused_imports))]
 
 //! Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
@@ -130,7 +131,6 @@
 mod arch;
 pub mod ast;
 mod global_style;
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub mod macros;
 pub mod manager;
@@ -138,7 +138,6 @@ mod registry;
 mod style;
 mod style_src;
 mod utils;
-#[cfg_attr(documenting, doc(cfg(feature = "yew")))]
 #[cfg(feature = "yew")]
 pub mod yew;
 
@@ -163,7 +162,6 @@ pub use stylist_core::{Error, Result};
 /// let rendered = html! {<div class={css!("color: red;")} />};
 /// let rendered_global = html! {<Global css={css!("color: red;")} />};
 /// ```
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::css;
 /// A procedural macro that parses a string literal or an inline stylesheet into a
@@ -180,7 +178,6 @@ pub use stylist_macros::css;
 /// // Returns a GlobalStyle instance.
 /// let style = global_style!("color: red;");
 /// ```
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::global_style;
 /// A procedural macro that parses a string literal or an inline stylesheet into a [`Style`].
@@ -196,6 +193,5 @@ pub use stylist_macros::global_style;
 /// // Returns a Style instance.
 /// let style = style!("color: red;");
 /// ```
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::style;
