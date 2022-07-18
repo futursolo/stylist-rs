@@ -1,9 +1,9 @@
 error[E0277]: `NoDisplay` doesn't implement `std::fmt::Display`
- --> $DIR/no_display_impl-fail.rs:7:23
+ --> tests/inline_integrations/no_display_impl-fail.rs:7:23
   |
 7 |         background: ${expr};
   |                       ^^^^ `NoDisplay` cannot be formatted with the default formatter
   |
   = help: the trait `std::fmt::Display` is not implemented for `NoDisplay`
   = note: in format strings you may be able to use `{:?}` (or {:#?} for pretty-print) instead
-  = note: required because of the requirements on the impl of `ToString` for `NoDisplay`
+  = note: required for the cast to the object type `dyn std::fmt::Display`
