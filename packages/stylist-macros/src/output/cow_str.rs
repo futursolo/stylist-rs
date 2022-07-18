@@ -22,8 +22,10 @@ impl OutputCowString {
         let expr = expr.into_token_stream(&mut inner_context);
         inner_context.uses_static(); // .to_string().into()
         Self::Raw(
-            quote_spanned! {source.span()=>
-                (&{ #expr } as &dyn ::std::fmt::Display).to_string().into()
+            quote_spanned! {source.span() =>
+                ::std::convert::Into::<_>::into(
+                    ::std::string::ToString::to_string(&(#expr) as &dyn ::std::fmt::Display)
+                )
             },
             inner_context,
         )
