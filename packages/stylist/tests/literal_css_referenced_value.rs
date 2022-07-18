@@ -15,7 +15,7 @@ fn test_sheet_value_by_ref() {
         r#"
             color: ${color};
         "#,
-        color = &theme.color,
+        color = theme.color,
     );
 
     let style = Style::new(parsed).expect("Failed to parse style.");
