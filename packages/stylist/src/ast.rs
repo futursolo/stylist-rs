@@ -35,7 +35,6 @@
 /// [`css!`](crate::css).
 ///
 /// Use [`css!`](crate::css) unless you know what you are doing.
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::sheet;
 

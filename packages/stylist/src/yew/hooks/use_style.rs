@@ -20,7 +20,6 @@ use crate::{Style, StyleSource};
 ///     html! {<div class={style}>{"Hello world!"}</div>}
 /// }
 /// ```
-#[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]
 #[cfg(feature = "yew_use_style")]
 pub fn use_style<Css>(css: Css) -> Style
 where
