@@ -16,6 +16,7 @@ pub mod bow;
 mod parser;
 
 #[cfg(test)]
+#[cfg(feature = "parser")]
 mod tests {
     use super::*;
     use ast::{Sheet, ToStyleStr};

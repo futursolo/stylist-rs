@@ -339,7 +339,7 @@ impl Parser {
     /// Parses a Rule Block
     fn rule_block(i: &str, kind: RuleBlockKind) -> IResult<&str, Rule, VerboseError<&str>> {
         let cond = |i| match kind {
-            RuleBlockKind::Other => Self::at_rule_condition(i, (tag("@media"), tag("@supports"))),
+            RuleBlockKind::Other => Self::at_rule_condition(i, (tag("@container"), tag("@media"), tag("@supports"))),
             RuleBlockKind::Keyframes => map(recognize(Self::condition), |m| {
                 vec![m.trim().to_string().into()]
             })(i),
@@ -459,7 +459,7 @@ impl Parser {
             Self::trimmed(expect_non_empty(map(
                 separated_pair(
                     // Collect at Rules.
-                    |i| Self::at_rule_condition(i, (tag("@supports"), tag("@media"))),
+                    |i| Self::at_rule_condition(i, (tag("@container"), tag("@supports"), tag("@media"))),
                     tag("{"),
                     // Collect contents with-in rules.
                     terminated(Parser::scope_contents, tag("}")),
@@ -850,6 +850,49 @@ mod tests {
                     value: vec!["pink".into()].into(),
                 }
                 .into()]
+                .into(),
+            }),
+        ]);
+
+        assert_eq!(parsed, expected);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_container_rule() -> Result<()> {
+        init();
+
+        let test_str = r#"
+                @container (min-width: 200px) {
+                    background: #000;
+                }
+
+            "#;
+        let parsed = Parser::parse(test_str)?;
+        log::debug!("{:?}", parsed);
+        
+        let expected = Sheet::from(vec![
+            ScopeContent::Rule(Rule {
+                condition: vec![
+                    "@container ".into(),
+                    "(min-width: 200px)".into(),
+                ]
+                .into(),
+                content: vec![RuleBlockContent::Block(
+                    Block {
+                        condition: Cow::Borrowed(&[]),
+                        content: vec![
+                            StyleAttribute {
+                                key: "background".into(),
+                                value: vec!["#000".into()].into(),
+                            }
+                            .into(),
+                        ]
+                        .into(),
+                    }
+                    .into(),
+                )]
                 .into(),
             }),
         ]);
