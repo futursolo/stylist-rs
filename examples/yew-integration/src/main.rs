@@ -3,8 +3,8 @@ use yew::prelude::*;
 
 use log::Level;
 
-#[styled_component(Inside)]
-pub fn inside() -> Html {
+#[styled_component]
+pub fn Inside() -> Html {
     html! {
         <div class={css!(r#"
             width: 200px;
@@ -24,8 +24,8 @@ pub fn inside() -> Html {
     }
 }
 
-#[styled_component(App)]
-pub fn app() -> Html {
+#[styled_component]
+pub fn App() -> Html {
     html! {
         <>
             // Global Styles can be applied with <Global /> component.

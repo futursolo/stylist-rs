@@ -33,8 +33,8 @@ use yew::html::{Classes, IntoPropValue};
 /// use stylist::yew::styled_component;
 /// use yew::prelude::*;
 ///
-/// #[styled_component(MyStyledComponent)]
-/// fn my_styled_component() -> Html {
+/// #[styled_component]
+/// fn MyStyledComponent() -> Html {
 ///     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
 /// }
 /// ```

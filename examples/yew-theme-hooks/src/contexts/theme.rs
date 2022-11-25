@@ -65,7 +65,7 @@ impl Deref for ThemeContext {
     type Target = Theme;
 
     fn deref(&self) -> &Self::Target {
-        &*self.inner.current()
+        self.inner.current()
     }
 }
 
@@ -80,8 +80,8 @@ pub(crate) struct ThemeProviderProps {
     pub children: Children,
 }
 
-#[styled_component(ThemeProvider)]
-pub(crate) fn theme_provider(props: &ThemeProviderProps) -> Html {
+#[styled_component]
+pub(crate) fn ThemeProvider(props: &ThemeProviderProps) -> Html {
     let theme_kind = use_state(|| ThemeKind::Light);
 
     let theme_ctx = ThemeContext::new(theme_kind);

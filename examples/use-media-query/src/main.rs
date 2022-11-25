@@ -3,8 +3,8 @@ use yew::prelude::*;
 
 use log::Level;
 
-#[styled_component(App)]
-pub fn app() -> Html {
+#[styled_component]
+pub fn App() -> Html {
     let is_small = use_media_query("(max-width: 720px)");
 
     let size_name = if is_small { "small" } else { "big" };

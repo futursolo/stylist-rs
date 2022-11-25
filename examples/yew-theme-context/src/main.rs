@@ -7,8 +7,8 @@ mod contexts;
 
 use contexts::{use_theme, ThemeKind, ThemeProvider};
 
-#[styled_component(Inside)]
-pub fn inside() -> Html {
+#[styled_component]
+pub fn Inside() -> Html {
     let theme = use_theme();
 
     let theme_str = match theme.kind() {
@@ -37,8 +37,8 @@ pub fn inside() -> Html {
     }
 }
 
-#[styled_component(App)]
-pub fn app() -> Html {
+#[styled_component]
+pub fn App() -> Html {
     let theme = use_theme();
 
     let theme_str = match theme.kind() {
@@ -97,8 +97,8 @@ pub fn app() -> Html {
     }
 }
 
-#[styled_component(Root)]
-pub fn root() -> Html {
+#[styled_component]
+pub fn Root() -> Html {
     html! {
         <ThemeProvider>
             <App />

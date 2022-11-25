@@ -31,8 +31,8 @@ macro.
 use yew::prelude::*;
 use stylist::yew::styled_component;
 
-#[styled_component(MyStyledComponent)]
-fn my_styled_component() -> Html {
+#[styled_component]
+fn MyStyledComponent() -> Html {
     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
 }
 ```
