@@ -17,6 +17,8 @@
 
 ### Other Changes:
 - The `Style::new_*` API is more open for accepted types of the `Css` parameter.
+- The name of styled components now defaults to the name of the function, like in
+  `function_component`.
 
 ## v0.10.1
 
