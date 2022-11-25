@@ -101,6 +101,10 @@
 //! - `yew_integration`: This flag enables yew integration, which implements
 //!   [`Classes`](::yew::html::Classes) for [`Style`] and provides a [`Global`](yew::Global)
 //!   component for applying global styles.
+//! - `debug_style_locations`: Enabled by default, this flag annotates elements with additional
+//!   classes to help debugging and finding the source location of styles.
+//! - `debug_parser`: Enabled by default, this flag generates additional checks when
+//!   `debug_assertions` are enabled.
 
 #[cfg(any(feature = "yew_use_media_query", target_arch = "wasm32"))]
 mod arch;

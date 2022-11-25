@@ -48,13 +48,14 @@ trybuild = "1.0.63"
 yew = "0.20"
 
 [features]
-random = ["fastrand", "instant"]
-macros = ["stylist-macros"]
-parser = ["stylist-core/parser"]
-default = ["macros", "parser", "random", "debug_style_locations"]
+default = ["debug_style_locations", "debug_parser", "macros", "random"]
+debug_parser = ["stylist-core/parser"]
 debug_style_locations = []
+macros = ["stylist-macros"]
+random = ["dep:fastrand", "dep:instant"]
+parser = ["stylist-core/parser"]
 yew_integration = ["yew", "yew_use_media_query", "yew_use_style"]
-yew_use_media_query = ["yew", "web-sys/MediaQueryList", "gloo-events"]
+yew_use_media_query = ["yew", "web-sys/MediaQueryList", "dep:gloo-events"]
 yew_use_style = ["yew"]
 
 [package.metadata.docs.rs]

@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-#[cfg(all(debug_assertions, feature = "parser"))]
+#[cfg(all(debug_assertions, feature = "debug_parser"))]
 use stylist_core::ResultDisplay;
 
 use crate::ast::ToStyleStr;
@@ -46,7 +46,7 @@ impl GlobalStyle {
 
         // We parse the style str again in debug mode to ensure that interpolated values are
         // not corrupting the stylesheet.
-        #[cfg(all(debug_assertions, feature = "parser"))]
+        #[cfg(all(debug_assertions, feature = "debug_parser"))]
         style_str
             .parse::<crate::ast::Sheet>()
             .expect_display("debug: Stylist failed to parse the style with interpolated values");
@@ -143,6 +143,7 @@ impl GlobalStyle {
 }
 
 #[cfg(test)]
+#[cfg(feature = "parser")]
 mod tests {
     use super::*;
 

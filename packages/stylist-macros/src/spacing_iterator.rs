@@ -3,7 +3,7 @@
 #[test]
 fn test_spacing_iterator() {
     use SpacedIterator;
-    let it = (1..7).spaced_with(|l, _| (*l == 4).then(|| 2000));
+    let it = (1..7).spaced_with(|l, _| (*l == 4).then_some(2000));
     itertools::assert_equal(it, vec![1, 2, 3, 4, 2000, 5, 6]);
 }
 
