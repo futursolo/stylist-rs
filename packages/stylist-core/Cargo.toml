@@ -19,6 +19,7 @@ categories = ["wasm", "web-programming"]
 readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 resolver = "2"
+rust-version = "1.60"
 
 [dependencies]
 nom = { version = "7.1.1", optional = true }
@@ -34,4 +35,4 @@ env_logger = "0.9.0"
 wasm-bindgen-test = "0.3.31"
 
 [features]
-parser = ["nom"]
+parser = ["dep:nom"]
