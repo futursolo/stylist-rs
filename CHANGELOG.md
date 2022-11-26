@@ -3,6 +3,7 @@
 ## v0.11.0
 
 ### Breaking Changes:
+- Yew version is bumped to v0.20.
 - Remove `YieldStyle`. This API can be easily reproduced in user code, if need be,
   but often leads to clumsy code in struct components. Use alternative API and prefer
   `function_component` + `use_style!`/`styled_component`.
