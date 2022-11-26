@@ -19,6 +19,7 @@ categories = ["wasm", "web-programming"]
 readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 resolver = "2"
+rust-version = "1.60"
 
 [lib]
 proc-macro = true
@@ -36,4 +37,4 @@ itertools = "0.10.3"
 log = "0.4.17"
 
 [dev-dependencies]
-env_logger = "0.9.0"
+env_logger = "0.10.0"
