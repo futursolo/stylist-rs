@@ -3,15 +3,15 @@ use yew::prelude::*;
 
 use log::Level;
 
-#[styled_component(App)]
-pub fn app() -> Html {
+#[styled_component]
+pub fn App() -> Html {
     let is_small = use_media_query("(max-width: 720px)");
 
     let size_name = if is_small { "small" } else { "big" };
 
     html! {
         <>
-            <Global css=r#"
+            <Global css={css!(r#"
                     html, body {
                         font-family: sans-serif;
 
@@ -26,7 +26,7 @@ pub fn app() -> Html {
 
                         background-color: rgb(237, 244, 255);
                     }
-                "# />
+                "#)} />
             <h1>{"Use Media Query Example"}</h1>
             <div class={css!(r#"
                 box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
@@ -54,7 +54,7 @@ pub fn app() -> Html {
 
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
-    yew::start_app::<App>();
+    yew::Renderer::<App>::new().render();
 }
 
 #[cfg(test)]
@@ -68,9 +68,10 @@ mod tests {
 
     #[wasm_bindgen_test]
     fn test_simple() {
-        yew::start_app_in_element::<App>(
+        yew::Renderer::<App>::with_root(
             gloo_utils::document().get_element_by_id("output").unwrap(),
-        );
+        )
+        .render();
         let window = window().unwrap();
         let doc = window.document().unwrap();
         let body = window.document().unwrap().body().unwrap();

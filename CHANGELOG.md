@@ -11,9 +11,14 @@
 - Feature `parser`: The conversion from `str` have been changed to `TryFrom`
   instead of `From`. If you're using `yew`, the `IntoPropValue<StyleSource>`
   impls still exist, but now panic early during conversion.
+- Feature `parser`: This feature is now disabled by default. Use the `css!`, other
+  macros and interpolation syntax to write styles, if you don't need to parse css at
+  runtime.
 
 ### Other Changes:
 - The `Style::new_*` API is more open for accepted types of the `Css` parameter.
+- The name of styled components now defaults to the name of the function, like in
+  `function_component`.
 
 ## v0.10.1
 
