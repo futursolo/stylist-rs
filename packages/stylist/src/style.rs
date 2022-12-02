@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use stylist_core::ResultDisplay;
 
 use crate::ast::ToStyleStr;
-use crate::manager::StyleManager;
+use crate::manager::{StyleManager, WeakStyleManager};
 use crate::registry::StyleKey;
 use crate::{Result, StyleSource};
 
@@ -44,7 +44,7 @@ pub(crate) struct StyleContent {
 
     pub style_str: String,
 
-    pub manager: StyleManager,
+    pub manager: WeakStyleManager,
 }
 
 impl StyleContent {
@@ -57,15 +57,23 @@ impl StyleContent {
     }
 
     pub fn unmount(&self) -> Result<()> {
-        self.manager().unmount(self.id())
+        StyleManager::unmount(self.id())
     }
 
     pub fn key(&self) -> Rc<StyleKey> {
         self.key.clone()
     }
 
-    pub fn manager(&self) -> &StyleManager {
-        &self.manager
+    pub fn manager(&self) -> Option<StyleManager> {
+        self.manager.upgrade()
+    }
+
+    pub fn unregister(&self) {
+        if let Some(mgr) = self.manager() {
+            let reg = mgr.get_registry();
+            let mut reg = reg.borrow_mut();
+            reg.unregister(self.key());
+        }
     }
 }
 
@@ -166,6 +174,7 @@ impl Style {
             ast: css,
         };
 
+        let weak_mgr = manager.downgrade();
         let reg = manager.get_registry();
         let mut reg = reg.borrow_mut();
 
@@ -189,13 +198,13 @@ impl Style {
                 is_global: false,
                 id,
                 style_str,
-                manager,
+                manager: weak_mgr,
                 key: Rc::new(key),
             }
             .into(),
         };
 
-        new_style.inner.manager().mount(&new_style.inner)?;
+        manager.mount(&new_style.inner)?;
 
         // Register the created Style.
         reg.register(new_style.inner.clone());
@@ -306,6 +315,7 @@ impl Style {
     }
 
     /// Return a reference of style key.
+    #[cfg(test)]
     pub(crate) fn key(&self) -> Rc<StyleKey> {
         self.inner.key()
     }
@@ -319,9 +329,7 @@ impl Style {
     ///
     /// Most of time, you don't need to unmount a style.
     pub fn unregister(&self) {
-        let reg = self.inner.manager().get_registry();
-        let mut reg = reg.borrow_mut();
-        reg.unregister(self.key());
+        self.inner.unregister();
     }
 
     /// Returns the [`StyleId`] for current style.

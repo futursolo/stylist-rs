@@ -8,7 +8,7 @@
 
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::rc::Rc;
+use std::rc::{Rc, Weak};
 
 use once_cell::unsync::Lazy;
 use stylist_core::ResultDisplay;
@@ -20,9 +20,9 @@ pub use crate::style::StyleId;
 use crate::Result;
 
 /// A builder for [`StyleManager`].
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct StyleManagerBuilder {
-    registry: Rc<RefCell<StyleRegistry>>,
+    registry: RefCell<StyleRegistry>,
 
     prefix: Cow<'static, str>,
     container: Option<Node>,
@@ -33,7 +33,7 @@ pub struct StyleManagerBuilder {
 impl Default for StyleManagerBuilder {
     fn default() -> Self {
         Self {
-            registry: Rc::default(),
+            registry: RefCell::default(),
             prefix: "stylist".into(),
             container: None,
             append: true,
@@ -92,6 +92,18 @@ impl StyleManagerBuilder {
     }
 }
 
+// A style manager, but with a weak reference.
+#[derive(Debug, Clone)]
+pub(crate) struct WeakStyleManager {
+    inner: Weak<StyleManagerBuilder>,
+}
+
+impl WeakStyleManager {
+    pub fn upgrade(&self) -> Option<StyleManager> {
+        self.inner.upgrade().map(|inner| StyleManager { inner })
+    }
+}
+
 /// A struct to customise behaviour of [`Style`](crate::Style).
 #[derive(Debug, Clone)]
 pub struct StyleManager {
@@ -102,6 +114,12 @@ impl StyleManager {
     /// Creates a builder for to build StyleManager.
     pub fn builder() -> StyleManagerBuilder {
         StyleManagerBuilder::new()
+    }
+
+    pub(crate) fn downgrade(&self) -> WeakStyleManager {
+        WeakStyleManager {
+            inner: Rc::downgrade(&self.inner),
+        }
     }
 
     /// The default prefix used by the managed [`Style`](crate::Style) instances.
@@ -115,8 +133,8 @@ impl StyleManager {
     }
 
     /// Get the Registry instance.
-    pub(crate) fn get_registry(&self) -> Rc<RefCell<StyleRegistry>> {
-        self.inner.registry.clone()
+    pub(crate) fn get_registry(&self) -> &RefCell<StyleRegistry> {
+        &self.inner.registry
     }
 
     /// Mount the [`Style`](crate::Style) into the DOM tree.
@@ -148,7 +166,7 @@ impl StyleManager {
 
     /// Unmount the [`Style`](crate::Style) from the DOM tree.
     #[cfg(target_arch = "wasm32")]
-    pub(crate) fn unmount(&self, id: &StyleId) -> Result<()> {
+    pub(crate) fn unmount(id: &StyleId) -> Result<()> {
         use crate::arch::document;
         use crate::Error;
 
@@ -176,7 +194,7 @@ impl StyleManager {
     /// Unmount the [`Style`] from the DOM tree.
     #[cfg(not(target_arch = "wasm32"))]
     #[allow(unused_variables)]
-    pub(crate) fn unmount(&self, id: &StyleId) -> Result<()> {
+    pub(crate) fn unmount(id: &StyleId) -> Result<()> {
         // Does nothing on non-wasm targets.
         Ok(())
     }

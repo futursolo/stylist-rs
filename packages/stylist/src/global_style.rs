@@ -35,6 +35,7 @@ impl GlobalStyle {
             ast: css,
         };
 
+        let weak_mgr = manager.downgrade();
         let reg = manager.get_registry();
         let mut reg = reg.borrow_mut();
 
@@ -56,13 +57,13 @@ impl GlobalStyle {
                 is_global: true,
                 id: StyleId(format!("{}-{}", key.prefix, get_entropy())),
                 style_str,
-                manager,
+                manager: weak_mgr,
                 key: Rc::new(key),
             }
             .into(),
         };
 
-        new_style.inner.manager().mount(&new_style.inner)?;
+        manager.mount(&new_style.inner)?;
 
         // Register the created Style.
         reg.register(new_style.inner.clone());
@@ -121,19 +122,12 @@ impl GlobalStyle {
         self.inner.get_style_str()
     }
 
-    /// Returns a reference of style key.
-    pub(crate) fn key(&self) -> Rc<StyleKey> {
-        self.inner.key()
-    }
-
     /// Unregister current style from style registry.
     ///
     /// After calling this method, the style will be unmounted from DOM after all its clones are
     /// freed.
     pub fn unregister(&self) {
-        let reg = self.inner.manager().get_registry();
-        let mut reg = reg.borrow_mut();
-        reg.unregister(self.key());
+        self.inner.unregister();
     }
 
     /// Returns the [`StyleId`] for current style.

@@ -41,19 +41,12 @@ impl StyleRegistry {
 
 #[cfg(test)]
 mod tests {
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
     use super::*;
     use crate::manager::StyleManager;
     use crate::*;
 
     fn sample_scopes() -> Sheet {
         "color: red;".parse().expect("Failed to Parse style.")
-    }
-
-    fn get_registry() -> Rc<RefCell<StyleRegistry>> {
-        StyleManager::default().get_registry()
     }
 
     fn init() {
@@ -68,7 +61,8 @@ mod tests {
         let style_b = Style::new(sample_scopes()).expect("Failed to create Style.");
 
         {
-            let reg = get_registry();
+            let mgr = StyleManager::default();
+            let reg = mgr.get_registry();
             let reg = reg.borrow_mut();
 
             log::debug!("{:#?}", reg);
@@ -98,7 +92,8 @@ mod tests {
         .expect("Failed to create Style.");
 
         {
-            let reg = get_registry();
+            let mgr = StyleManager::default();
+            let reg = mgr.get_registry();
             let reg = reg.borrow_mut();
 
             assert!(reg.styles.get(&*style.key()).is_some());
@@ -107,7 +102,8 @@ mod tests {
         style.unregister();
 
         {
-            let reg = get_registry();
+            let mgr = StyleManager::default();
+            let reg = mgr.get_registry();
             let reg = reg.borrow_mut();
 
             assert!(reg.styles.get(&*style.key()).is_none());

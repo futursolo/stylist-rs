@@ -6,6 +6,7 @@ use crate::manager::StyleManager;
 #[derive(Properties, Clone, Debug, PartialEq)]
 pub struct ManagerProviderProps {
     pub manager: StyleManager,
+    #[prop_or_default]
     pub children: Children,
 }
 
