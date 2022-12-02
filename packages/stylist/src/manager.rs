@@ -279,6 +279,9 @@ mod feat_ssr {
             let reg = reg.borrow();
 
             for content in reg.styles.values() {
+                // We cannot guarantee a valid class name if the user choose to use a custom prefix.
+                // If the default prefix is used, StyleId is guaranteed to be valid without
+                // escaping.
                 write!(w, r#"<style data-style="{}">"#, content.id())?;
                 write!(w, "{}", html_escape::encode_style(content.get_style_str()))?;
                 write!(w, "</style>")?;
