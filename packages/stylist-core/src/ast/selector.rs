@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use serde::{Deserialize, Serialize};
+
 use super::{StringFragment, StyleContext, ToStyleStr};
 
 /// A CSS Selector.
@@ -8,7 +10,7 @@ use super::{StringFragment, StyleContext, ToStyleStr};
 /// ```css
 /// div[attr="val"].my-class#some-id
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Selector {
     pub fragments: Cow<'static, [StringFragment]>,
 }
