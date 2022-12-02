@@ -3,6 +3,7 @@ use std::fmt;
 use std::ops::Deref;
 use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
 #[cfg(all(debug_assertions, feature = "debug_parser"))]
 use stylist_core::ResultDisplay;
 
@@ -16,8 +17,8 @@ use crate::utils::get_entropy;
 /// The Unique Identifier of a Style.
 ///
 /// This is primarily used by [`StyleManager`] to track the mounted instance of [`Style`].
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct StyleId(String);
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub struct StyleId(pub(crate) String);
 
 impl Deref for StyleId {
     type Target = str;
