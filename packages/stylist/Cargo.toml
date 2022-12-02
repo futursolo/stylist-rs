@@ -30,6 +30,7 @@ gloo-events = { version = "0.1.2", optional = true }
 fastrand = { version = "1.8.0", optional = true }
 instant = { version = "0.1.12", optional = true, features = ["wasm-bindgen"] }
 serde = { version = "1", features = ["derive"] }
+html-escape = { version = "0.2.12", optional = true }
 
 [dependencies.web-sys]
 version = "0.3.60"
@@ -58,7 +59,7 @@ parser = ["stylist-core/parser"]
 yew_integration = ["yew", "yew_use_media_query", "yew_use_style"]
 yew_use_media_query = ["yew", "web-sys/MediaQueryList", "dep:gloo-events"]
 yew_use_style = ["yew"]
-ssr = []
+ssr = ["html-escape"]
 hydration = []
 
 [package.metadata.docs.rs]

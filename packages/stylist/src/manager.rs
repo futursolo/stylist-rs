@@ -218,10 +218,7 @@ impl Default for StyleManager {
 
 #[cfg(any(feature = "ssr", feature = "hydration"))]
 mod feat_ssr_hydration {
-    use std::collections::hash_map::Entry;
-
     use serde::{Deserialize, Serialize};
-    use stylist_core::ast::ToStyleStr;
 
     use super::*;
     use crate::registry::StyleKey;
@@ -237,7 +234,17 @@ mod feat_ssr_hydration {
     /// If you are using [`ManagerProvider`](crate::yew::ManagerProvider),
     /// this behaviour is managed automatically.
     #[derive(Debug, Serialize, Deserialize)]
-    pub struct StyleData(Vec<(StyleKey, StyleId)>);
+    pub struct StyleData(pub(super) Vec<(StyleKey, StyleId)>);
+}
+
+#[cfg(any(feature = "ssr", feature = "hydration"))]
+pub use feat_ssr_hydration::*;
+
+#[cfg(feature = "ssr")]
+mod feat_ssr {
+    use std::fmt;
+
+    use super::*;
 
     impl StyleManager {
         /// Returns StyleData of current style manager.
@@ -258,6 +265,33 @@ mod feat_ssr_hydration {
             )
         }
 
+        /// Writes styles stored in the manager as `<style data-style="stylist-...">...</style>`.
+        pub fn write_static<W>(&self, w: &mut W) -> fmt::Result
+        where
+            W: fmt::Write,
+        {
+            let reg = self.get_registry();
+            let reg = reg.borrow();
+
+            for content in reg.styles.values() {
+                write!(w, r#"<style data-style="{}">"#, content.id())?;
+                write!(w, "{}", html_escape::encode_style(content.get_style_str()))?;
+                write!(w, "</style>")?;
+            }
+
+            Ok(())
+        }
+    }
+}
+
+#[cfg(feature = "hydration")]
+mod feat_hydration {
+    use super::*;
+
+    use crate::ast::ToStyleStr;
+    use std::collections::hash_map::Entry;
+
+    impl StyleManager {
         /// Loads StyleData of current style manager.
         ///
         /// # Note
@@ -301,6 +335,3 @@ mod feat_ssr_hydration {
         }
     }
 }
-
-#[cfg(any(feature = "ssr", feature = "hydration"))]
-pub use feat_ssr_hydration::*;
