@@ -111,6 +111,11 @@ pub struct StyleManager {
 }
 
 impl StyleManager {
+    /// Create a new StyleManager with default configuration.
+    pub fn new() -> Result<StyleManager> {
+        Self::builder().build()
+    }
+
     /// Creates a builder for to build StyleManager.
     pub fn builder() -> StyleManagerBuilder {
         StyleManagerBuilder::new()
