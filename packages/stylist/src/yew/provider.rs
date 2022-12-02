@@ -40,7 +40,7 @@ pub struct ManagerProviderProps {
 pub fn manager_provider(props: &ManagerProviderProps) -> HtmlResult {
     let ManagerProviderProps { manager, children } = props.clone();
 
-    #[cfg(feature = "ssr")]
+    #[cfg(any(feature = "ssr", feature = "hydration"))]
     {
         use crate::manager::StyleData;
 

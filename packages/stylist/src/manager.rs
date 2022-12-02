@@ -216,8 +216,8 @@ impl Default for StyleManager {
     }
 }
 
-#[cfg(feature = "ssr")]
-mod feat_ssr {
+#[cfg(any(feature = "ssr", feature = "hydration"))]
+mod feat_ssr_hydration {
     use std::collections::hash_map::Entry;
 
     use serde::{Deserialize, Serialize};
@@ -304,5 +304,5 @@ mod feat_ssr {
     }
 }
 
-#[cfg(feature = "ssr")]
-pub use feat_ssr::*;
+#[cfg(any(feature = "ssr", feature = "hydration"))]
+pub use feat_ssr_hydration::*;
