@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.12.0
+
+### Other Changes:
+- Added Server-side Rendering Support.
+- Fixed a reference cycle between `Style` and `StyleManager`.
+
 ## v0.11.0
 
 ### Breaking Changes:
