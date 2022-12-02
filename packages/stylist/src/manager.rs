@@ -215,3 +215,94 @@ impl Default for StyleManager {
         MGR.with(|m| (*m).clone())
     }
 }
+
+#[cfg(feature = "ssr")]
+mod feat_ssr {
+    use std::collections::hash_map::Entry;
+
+    use serde::{Deserialize, Serialize};
+    use stylist_core::ast::ToStyleStr;
+
+    use super::*;
+    use crate::registry::StyleKey;
+
+    /// Data of Styles managed by the current style manager.
+    ///
+    /// This type is serializable and deserializable.
+    /// This type should be sent to the client side and loaded with
+    /// [`StyleManager::load_style_data`].
+    ///
+    /// # Note
+    ///
+    /// If you are using [`ManagerProvider`](crate::yew::ManagerProvider),
+    /// this behaviour is managed automatically.
+    #[derive(Debug, Serialize, Deserialize)]
+    pub struct StyleData(Vec<(StyleKey, StyleId)>);
+
+    impl StyleManager {
+        /// Returns StyleData of current style manager.
+        ///
+        /// # Note
+        ///
+        /// If you are using [`ManagerProvider`](crate::yew::ManagerProvider),
+        /// this behaviour is managed automatically.
+        pub fn style_data(&self) -> StyleData {
+            let reg = self.get_registry();
+            let reg = reg.borrow();
+
+            StyleData(
+                reg.styles
+                    .iter()
+                    .map(|(key, v)| ((**key).clone(), v.id().to_owned()))
+                    .collect::<Vec<_>>(),
+            )
+        }
+
+        /// Loads StyleData of current style manager.
+        ///
+        /// # Note
+        ///
+        /// If you are using [`ManagerProvider`](crate::yew::ManagerProvider),
+        /// this behaviour is managed automatically.
+        ///
+        /// # Panics
+        ///
+        /// This method should be called as early as possible.
+        /// If the same style to be loaded already existed in the manager, it will panic.
+        pub fn load_style_data(&self, data: &StyleData) {
+            let reg = self.get_registry();
+            let mut reg = reg.borrow_mut();
+
+            for (key, id) in data.0.iter() {
+                let key = Rc::new(key.clone());
+
+                match reg.styles.entry(key.clone()) {
+                    Entry::Occupied(m) => {
+                        assert_eq!(
+                            m.get().id(),
+                            id,
+                            "An existing style has been rendered with a different class, this is not supported, please load style data first!"
+                        );
+                    }
+                    Entry::Vacant(m) => {
+                        m.insert(
+                            StyleContent {
+                                is_global: key.is_global,
+                                id: id.clone(),
+                                style_str: key.ast.to_style_str(Some(id)),
+                                manager: self.downgrade(),
+                                key: key.clone(),
+                            }
+                            .into(),
+                        );
+                    }
+                }
+            }
+
+            todo!()
+        }
+    }
+}
+
+#[cfg(feature = "ssr")]
+pub use feat_ssr::*;

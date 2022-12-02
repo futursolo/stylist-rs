@@ -2,6 +2,8 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
 
+use serde::{Deserialize, Serialize};
+
 use crate::ast::Sheet;
 use crate::style::StyleContent;
 
@@ -9,7 +11,7 @@ use crate::style::StyleContent;
 ///
 /// Every Style that has the same [`StyleKey`] will be considered as the same style in the
 /// registry.
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq, Serialize, Deserialize)]
 pub(crate) struct StyleKey {
     pub is_global: bool,
     pub prefix: Cow<'static, str>,
@@ -19,7 +21,7 @@ pub(crate) struct StyleKey {
 /// The style registry is a registry that keeps an instance of all styles for current manager.
 #[derive(Debug, Default)]
 pub(crate) struct StyleRegistry {
-    styles: HashMap<Rc<StyleKey>, Rc<StyleContent>>,
+    pub(crate) styles: HashMap<Rc<StyleKey>, Rc<StyleContent>>,
 }
 
 impl StyleRegistry {
