@@ -17,7 +17,7 @@ use crate::utils::get_entropy;
 ///
 /// This is primarily used by [`StyleManager`] to track the mounted instance of [`Style`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct StyleId(pub(crate) String);
+pub struct StyleId(String);
 
 impl Deref for StyleId {
     type Target = str;

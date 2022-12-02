@@ -12,5 +12,5 @@ stylist = { path = "../../packages/stylist", features = [
     "yew_integration",
     "parser",
 ] }
-web-sys = { version = "0.3.58", features = ["Window", "Performance"] }
+web-sys = { version = "0.3.60", features = ["Window", "Performance"] }
 gloo = "0.8.0"
