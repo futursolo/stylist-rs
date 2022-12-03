@@ -18,7 +18,11 @@ pub enum Error {
     #[error("Failed to Interact with Web API. Are you running in Browser?")]
     Web(Option<wasm_bindgen::JsValue>),
 
-    #[error("Failed to read from manager. Did the rendering thread panic?")]
+    /// Failed to read styles from the StyleManager.
+    ///
+    /// This is raised when the writer is dropped without associating it with a StyleManager or the
+    /// renderer panicked during rendering process.
+    #[error("Failed to read from manager. Did the renderer panic?")]
     ReadFailed,
 }
 
