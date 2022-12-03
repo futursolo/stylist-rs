@@ -107,6 +107,9 @@ pub fn App() -> Html {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gloo_utils::document;
+    use std::time::Duration;
+    use stylist::manager::render_static;
     use wasm_bindgen_test::*;
 
     wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
@@ -115,12 +118,50 @@ mod tests {
 
     #[wasm_bindgen_test]
     async fn test_simple() {
-        yew::Renderer::<App>::with_root(
-            gloo_utils::document().get_element_by_id("output").unwrap(),
-        )
-        .render();
+        let (writer, mut reader) = render_static();
+        let manager = StyleManager::builder()
+            .writer(writer)
+            .build()
+            .expect("failed to create style manager.");
+
+        let head_s = reader
+            .read_static_markup()
+            .await
+            .expect("failed to read styles.");
+        let body_s = yew::LocalServerRenderer::<ServerApp>::with_props(ServerAppProps { manager })
+            .render()
+            .await;
+
+        // No styles are rendered to head element during SSR.
+        assert_eq!(
+            gloo_utils::document()
+                .query_selector_all("[data-style]")
+                .unwrap()
+                .length(),
+            0
+        );
+
+        let frag = document().create_document_fragment();
+        frag.set_node_value(Some(head_s));
+
+        // Manually append styles.
+        gloo_utils::head().append_child(&frag).unwrap();
+
+        let output_el = gloo_utils::document().get_element_by_id("output").unwrap();
+        output_el.set_inner_html(&body_s);
+
+        yew::Renderer::<App>::with_root(output_el).render();
         // wait for lifecycles to process
-        gloo_timers::future::TimeoutFuture::new(0).await;
+        yew::platform::time::sleep(Duration::from_millis(50)).await;
+
+        // There should be 3 style elements (SSR ones)
+        assert_eq!(
+            gloo_utils::document()
+                .query_selector_all("[data-style]")
+                .unwrap()
+                .length(),
+            3
+        );
 
         let window = window().unwrap();
         let doc = window.document().unwrap();
