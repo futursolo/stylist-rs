@@ -17,6 +17,9 @@ pub enum Error {
     /// This is usually raised when the style element failed to mount.
     #[error("Failed to Interact with Web API. Are you running in Browser?")]
     Web(Option<wasm_bindgen::JsValue>),
+
+    #[error("Failed to read from manager. Did the rendering thread panic?")]
+    ReadFailed,
 }
 
 impl From<std::convert::Infallible> for Error {

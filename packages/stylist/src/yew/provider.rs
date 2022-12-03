@@ -45,19 +45,22 @@ pub fn manager_provider(props: &ManagerProviderProps) -> HtmlResult {
         use crate::manager::StyleData;
 
         let _manager = manager.clone();
-        let style_data =
+        let _style_data =
             use_transitive_state!(move |_| -> StyleData { _manager.style_data() }, ())?;
 
-        // We must load the styles immediately before child components are rendered.
-        let manager = manager.clone();
-        use_memo(
-            move |manager| {
-                if let Some(m) = style_data {
-                    manager.load_style_data(m.as_ref());
-                }
-            },
-            manager,
-        );
+        #[cfg(feature = "hydration")]
+        {
+            // We must load the styles immediately before child components are rendered.
+            let manager = manager.clone();
+            use_memo(
+                move |manager| {
+                    if let Some(m) = _style_data {
+                        manager.load_style_data(m.as_ref());
+                    }
+                },
+                manager,
+            );
+        }
     }
 
     Ok(html! {

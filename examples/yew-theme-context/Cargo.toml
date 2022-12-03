@@ -3,6 +3,7 @@ name = "example-yew-theme-context"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2021"
+publish = false
 
 [dependencies]
 log = "0.4.17"

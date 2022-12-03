@@ -40,24 +40,29 @@ pub struct GlobalProps {
 pub fn global(props: &GlobalProps) -> Html {
     let mgr = use_context::<StyleManager>().unwrap_or_default();
 
-    #[derive(Debug, PartialEq)]
-    struct GlobalDependents {
-        manager: StyleManager,
-        css: StyleSource,
+    #[cfg(feature = "ssr")]
+    {
+        // Effects are not run during SSR.
+        // We use a use_memo hook to register global styles.
+        let manager = mgr.clone();
+        let css = props.css.clone();
+        use_memo(
+            move |_| {
+                GlobalStyle::new_with_manager(css, manager)
+                    .expect_display("Failed to create style.")
+            },
+            (),
+        );
     }
 
     use_effect_with_deps(
-        |deps| {
-            let global_style =
-                GlobalStyle::new_with_manager(deps.css.clone(), deps.manager.clone())
-                    .expect_display("Failed to create style.");
+        |(manager, css)| {
+            let global_style = GlobalStyle::new_with_manager(css.clone(), manager.clone())
+                .expect_display("Failed to create style.");
 
             move || global_style.unregister()
         },
-        GlobalDependents {
-            manager: mgr,
-            css: props.css.clone(),
-        },
+        (mgr, props.css.clone()),
     );
 
     Html::default()
