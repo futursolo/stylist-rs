@@ -53,7 +53,7 @@ impl<T> ResultDisplay<T> for Result<T> {
     fn expect_display(self, msg: &str) -> T {
         match self {
             Ok(m) => m,
-            Err(e) => panic!("{}: {}", msg, e),
+            Err(e) => panic!("{msg}: {e}"),
         }
     }
 }

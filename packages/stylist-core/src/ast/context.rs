@@ -140,7 +140,7 @@ impl<'a> StyleContext<'a> {
             // Use the selector of parent context
             .or_else(|| self.selector.clone())
             // Use class name of scope context
-            .or_else(|| self.class_name.map(|m| format!(".{}", m).into()))
+            .or_else(|| self.class_name.map(|m| format!(".{m}").into()))
             // Use html
             .or_else(|| Some(":root".into()));
 

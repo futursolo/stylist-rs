@@ -24,7 +24,7 @@ impl ToStyleStr for Selector {
         }
 
         if let Some(ref m) = ctx.class_name {
-            let scoped_class = format!(".{}", m);
+            let scoped_class = format!(".{m}");
             // If contains current selector or root pseudo class, replace them with class name.
             if joined_s.contains('&') || joined_s.contains(":root") {
                 w.push_str(
