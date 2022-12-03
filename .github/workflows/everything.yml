@@ -98,7 +98,6 @@ jobs:
     name: Publish to crates.io
     runs-on: ubuntu-latest
     needs:
-      - test
       - lint
       - rustfmt
       - test-native
