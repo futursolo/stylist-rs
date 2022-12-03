@@ -1,4 +1,19 @@
 //! This module contains yew specific features.
+//!
+//! ## Usage in function components
+//!
+//! You can create a style and use it like this:
+//!
+//! ```rust
+//! use stylist::yew::use_style;
+//! use yew::prelude::*;
+//!
+//! #[function_component]
+//! fn MyStyledComponent() -> Html {
+//!     let style = use_style!("color: red;");
+//!     html! {<div class={style}>{"Hello World!"}</div>}
+//! }
+//! ```
 
 use yew::html::{Classes, IntoPropValue};
 
@@ -18,8 +33,8 @@ use yew::html::{Classes, IntoPropValue};
 /// use stylist::yew::styled_component;
 /// use yew::prelude::*;
 ///
-/// #[styled_component(MyStyledComponent)]
-/// fn my_styled_component() -> Html {
+/// #[styled_component]
+/// fn MyStyledComponent() -> Html {
 ///     html! {<div class={css!("color: red;")}>{"Hello World!"}</div>}
 /// }
 /// ```
@@ -27,7 +42,6 @@ use yew::html::{Classes, IntoPropValue};
 /// # Note:
 ///
 /// You don't need to import [`css!`](crate::css) inside of a `styled_component`.
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component;
 
@@ -56,7 +70,6 @@ pub use stylist_macros::styled_component;
 /// ```
 ///
 /// [Hooks]: https://yew.rs/next/concepts/function-components#hooks
-#[cfg_attr(documenting, doc(cfg(feature = "macros")))]
 #[cfg(feature = "macros")]
 pub use stylist_macros::styled_component_impl;
 
@@ -79,7 +92,6 @@ pub use stylist_macros::styled_component_impl;
 ///     html! {<div class={style}>{"Hello world!"}</div>}
 /// }
 /// ```
-#[cfg_attr(documenting, doc(cfg(feature = "yew_use_style")))]
 #[cfg(feature = "yew_use_style")]
 pub use stylist_macros::use_style;
 

@@ -300,7 +300,7 @@ impl Component for Benchmarks {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum AppMsg {
     Start,
 }
@@ -371,5 +371,5 @@ impl Component for App {
 
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
-    yew::start_app::<App>();
+    yew::Renderer::<App>::new().render();
 }

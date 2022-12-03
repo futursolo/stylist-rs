@@ -5,75 +5,86 @@ on: [push, pull_request]
 
 jobs:
   rustfmt:
-    name: Check formatting
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly
-          override: true
-          profile: minimal
-          components: rustfmt, clippy
-      - name: Run cargo fmt -- --check
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-      - name: Run cargo clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          options: --all --all-features
-        env:
-          RUSTFLAGS: "--cfg releasing"
-
-  test:
-    name: Run Tests
+    name: Check Formatting
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Project
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@nightly
         with:
-          toolchain: stable
-          override: true
-          profile: minimal
+          components: rustfmt, clippy
 
       - name: Restore Rust Cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
-      - name: Run cargo test
-        uses: actions-rs/cargo@v1
+      - name: Run cargo fmt -- --check
+        run: cargo +nightly fmt --all -- --check --unstable-features
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          command: test
-          args: --all-features --all
+          components: rustfmt, clippy
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo clippy
+        run: cargo clippy --all --all-features
         env:
           RUSTFLAGS: "--cfg releasing"
 
+  test-native:
+    name: Run Native Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run cargo test
+        run: cargo test --all-features --all
+        env:
+          RUSTFLAGS: "--cfg releasing"
+
+  test-web:
+    name: Run Browser Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
+
       - name: Setup trunk
-        uses: jetli/trunk-action@v0.1.0
+        uses: jetli/trunk-action@v0.2.0
         with:
           version: "latest"
 
-      - name: Setup Rust wasm
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          target: wasm32-unknown-unknown
-          profile: minimal
-
       - name: Run cargo build --all --target=wasm32-unknown-unknown
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --all --target=wasm32-unknown-unknown
+        run: cargo build --all --target=wasm32-unknown-unknown
         env:
           RUSTFLAGS: "--cfg releasing"
 
@@ -86,7 +97,11 @@ jobs:
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
-    needs: test
+    needs:
+      - lint
+      - rustfmt
+      - test-native
+      - test-web
     if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     steps:
       - name: Checkout Project
@@ -95,31 +110,22 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          override: true
           components: rustfmt, clippy
-          profile: minimal
 
       - name: Restore Rust Cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
 
       - name: Run cargo publish --dry-run for stylist-core
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --dry-run --manifest-path packages/stylist-core/Cargo.toml
+        run: cargo publish --dry-run --manifest-path packages/stylist-core/Cargo.toml
         env:
           RUSTFLAGS: "--cfg releasing"
 
       - name: Run cargo publish for stylist-core
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist-core/Cargo.toml
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist-core/Cargo.toml
         env:
           RUSTFLAGS: "--cfg releasing"
 
@@ -130,19 +136,13 @@ jobs:
       # Not possible if stylist-core does not have a compatible version on crates.io
       # - name: Run cargo publish --dry-run for stylist-macros
       #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      #   uses: actions-rs/cargo@v1
-      #   with:
-      #     command: publish
-      #     args: --dry-run --manifest-path packages/stylist-macros/Cargo.toml
+      #   run: cargo publish --dry-run --manifest-path packages/stylist-macros/Cargo.toml
       #   env:
       #     RUSTFLAGS: "--cfg releasing"
 
       - name: Run cargo publish for stylist-macros
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist-macros/Cargo.toml
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist-macros/Cargo.toml
         env:
           RUSTFLAGS: "--cfg releasing"
 
@@ -153,18 +153,12 @@ jobs:
       # Not possible if stylist-core or stylist-macros do not have a compatible version on crates.io
       # - name: Run cargo publish --dry-run for stylist
       #   if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-      #   uses: actions-rs/cargo@v1
-      #   with:
-      #     command: publish
-      #     args: --dry-run --manifest-path packages/stylist/Cargo.toml
+      #   run: cargo publish --dry-run --manifest-path packages/stylist/Cargo.toml
       #   env:
       #     RUSTFLAGS: "--cfg releasing"
 
       - name: Run cargo publish for stylist
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
-        uses: actions-rs/cargo@v1
-        with:
-          command: publish
-          args: --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist/Cargo.toml
+        run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }} --manifest-path packages/stylist/Cargo.toml
         env:
           RUSTFLAGS: "--cfg releasing"

@@ -3,8 +3,8 @@ use yew::prelude::*;
 
 use log::Level;
 
-#[styled_component(Inside)]
-pub fn inside() -> Html {
+#[styled_component]
+pub fn Inside() -> Html {
     html! {
         <div class={css!(r#"
             width: 200px;
@@ -24,12 +24,12 @@ pub fn inside() -> Html {
     }
 }
 
-#[styled_component(App)]
-pub fn app() -> Html {
+#[styled_component]
+pub fn App() -> Html {
     html! {
         <>
             // Global Styles can be applied with <Global /> component.
-            <Global css=r#"
+            <Global css={css!(r#"
                     html, body {
                         font-family: sans-serif;
 
@@ -44,7 +44,7 @@ pub fn app() -> Html {
 
                         background-color: rgb(237, 244, 255);
                     }
-                "# />
+                "#)} />
             <h1>{"Yew Integration"}</h1>
             <div class={css!(r#"
                 box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
@@ -71,7 +71,7 @@ pub fn app() -> Html {
 
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
-    yew::start_app::<App>();
+    yew::Renderer::<App>::new().render();
 }
 
 #[cfg(test)]
@@ -84,10 +84,14 @@ mod tests {
     use web_sys::window;
 
     #[wasm_bindgen_test]
-    fn test_simple() {
-        yew::start_app_in_element::<App>(
+    async fn test_simple() {
+        yew::Renderer::<App>::with_root(
             gloo_utils::document().get_element_by_id("output").unwrap(),
-        );
+        )
+        .render();
+        // wait for lifecycles to process
+        gloo_timers::future::TimeoutFuture::new(0).await;
+
         let window = window().unwrap();
         let doc = window.document().unwrap();
         let body = window.document().unwrap().body().unwrap();

@@ -1,6 +1,6 @@
 use stylist::manager::StyleManager;
 use stylist::yew::Global;
-use stylist::Style;
+use stylist::{css, Style};
 use web_sys::{window, Element, ShadowRootInit, ShadowRootMode};
 use yew::prelude::*;
 
@@ -30,7 +30,8 @@ impl Component for ShadowRoot {
                         .expect("Failed to create manager.");
 
                     let style = Style::new_with_manager(
-                        r#"
+                        css!(
+                            r#"
                             background-color: pink;
                             width: 200px;
                             height: 200px;
@@ -41,7 +42,8 @@ impl Component for ShadowRoot {
                             box-sizing: border-box;
 
                             box-shadow: 0 0 5px 1px rgba(0, 0, 0, 0.7);
-                        "#,
+                        "#
+                        ),
                         mgr,
                     )
                     .unwrap();
@@ -104,7 +106,7 @@ impl Component for App {
         );
         html! {
             <>
-                <Global css=r#"
+                <Global css={css!(r#"
                     html, body {
                         font-family: sans-serif;
 
@@ -123,7 +125,7 @@ impl Component for App {
                     span {
                         color: red;
                     }
-                "# />
+                "#)} />
                 <h1>{"Yew Shadow DOM Example"}</h1>
                 <div class={card}>
                     <span>{"Outside of Shadow DOM."}</span>
@@ -136,5 +138,5 @@ impl Component for App {
 
 fn main() {
     console_log::init_with_level(Level::Trace).expect("Failed to initialise Log!");
-    yew::start_app::<App>();
+    yew::Renderer::<App>::new().render();
 }
