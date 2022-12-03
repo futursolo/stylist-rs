@@ -11,13 +11,13 @@ jobs:
       - name: Checkout Project
         uses: actions/checkout@v3
 
-      - name: Restore Rust Cache
-        uses: Swatinem/rust-cache@v2
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt, clippy
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Run cargo fmt -- --check
         run: cargo +nightly fmt --all -- --check --unstable-features
@@ -29,13 +29,13 @@ jobs:
       - name: Checkout Project
         uses: actions/checkout@v3
 
-      - name: Restore Rust Cache
-        uses: Swatinem/rust-cache@v2
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Run cargo clippy
         run: cargo clippy --all --all-features
