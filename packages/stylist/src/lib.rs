@@ -117,6 +117,7 @@ mod registry;
 mod style;
 mod style_src;
 mod utils;
+mod vars;
 #[cfg(feature = "yew")]
 pub mod yew;
 
