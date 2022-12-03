@@ -81,7 +81,9 @@ jobs:
         run: curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
       - name: Run Browser Tests
-        run: wasm-pack test --headless --chrome --firefox examples/yew-integration
+        run: |
+          wasm-pack test --headless --chrome --firefox examples/yew-integration
+          wasm-pack test --headless --chrome --firefox examples/yew-ssr
 
   publish:
     name: Publish to crates.io
