@@ -124,13 +124,14 @@ mod tests {
             .build()
             .expect("failed to create style manager.");
 
+        let body_s = yew::LocalServerRenderer::<ServerApp>::with_props(ServerAppProps { manager })
+            .render()
+            .await;
+
         let head_s = reader
             .read_static_markup()
             .await
             .expect("failed to read styles.");
-        let body_s = yew::LocalServerRenderer::<ServerApp>::with_props(ServerAppProps { manager })
-            .render()
-            .await;
 
         // No styles are rendered to head element during SSR.
         assert_eq!(
