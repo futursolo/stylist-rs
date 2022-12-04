@@ -38,31 +38,25 @@ pub struct GlobalProps {
 /// ```
 #[function_component(Global)]
 pub fn global(props: &GlobalProps) -> Html {
+    let GlobalProps { css } = props.clone();
     let mgr = use_context::<StyleManager>().unwrap_or_default();
 
-    #[cfg(feature = "ssr")]
-    {
-        // Effects are not run during SSR.
-        // We use a use_memo hook to register global styles.
-        let manager = mgr.clone();
-        let css = props.css.clone();
-        use_memo(
-            move |_| {
-                GlobalStyle::new_with_manager(css, manager)
-                    .expect_display("Failed to create style.")
-            },
-            (),
-        );
+    struct GlobalStyleGuard {
+        inner: GlobalStyle,
     }
 
-    use_effect_with_deps(
-        |(manager, css)| {
-            let global_style = GlobalStyle::new_with_manager(css.clone(), manager.clone())
-                .expect_display("Failed to create style.");
+    impl Drop for GlobalStyleGuard {
+        fn drop(&mut self) {
+            self.inner.unregister();
+        }
+    }
 
-            move || global_style.unregister()
+    use_memo(
+        move |(manager, css)| GlobalStyleGuard {
+            inner: GlobalStyle::new_with_manager(css.clone(), manager)
+                .expect_display("Failed to create style."),
         },
-        (mgr, props.css.clone()),
+        (mgr, css),
     );
 
     Html::default()
