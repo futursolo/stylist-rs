@@ -8,7 +8,8 @@ use super::*;
 ///
 /// # Notes
 ///
-/// Styles are sent back when the style manager is dropped.
+/// You can only read styles from a style manager once. This is expected. You should never share
+/// styles between renders.
 #[derive(Debug)]
 pub struct StaticReader {
     inner: Arc<Mutex<StyleData>>,
