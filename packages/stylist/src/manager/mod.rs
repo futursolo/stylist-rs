@@ -11,13 +11,18 @@ use std::cell::RefCell;
 use std::rc::{Rc, Weak};
 
 use once_cell::unsync::Lazy;
+use stylist_core::ast::ToStyleStr;
 use stylist_core::ResultDisplay;
 use web_sys::Node;
 
-use crate::registry::StyleRegistry;
-use crate::style::StyleContent;
-pub use crate::style::StyleId;
+mod content;
+mod key;
+mod registry;
 use crate::Result;
+pub(crate) use content::StyleContent;
+pub use key::StyleId;
+pub(crate) use key::StyleKey;
+use registry::StyleRegistry;
 
 /// A builder for [`StyleManager`].
 #[derive(Debug)]
@@ -78,7 +83,6 @@ impl StyleManagerBuilder {
     /// Default: `true`
     pub fn append(mut self, value: bool) -> Self {
         self.append = value;
-
         self
     }
 
@@ -142,8 +146,53 @@ impl StyleManager {
         self.inner.container.clone()
     }
 
-    /// Get the Registry instance.
-    pub(crate) fn get_registry(&self) -> &RefCell<StyleRegistry> {
+    /// Returns the registry if it is availble, otherwise, creates the style and mounts it.
+    pub(crate) fn get_or_register_style(&self, key: StyleKey) -> Result<Rc<StyleContent>> {
+        let weak_mgr = self.downgrade();
+        let mut reg = self.inner.registry.borrow_mut();
+
+        if let Some(m) = reg.get(&key) {
+            return Ok(m);
+        }
+
+        let id = match key.is_global {
+            true => StyleId::new_global(&key.prefix),
+            false => StyleId::new_scoped(&key.prefix),
+        };
+
+        // Non-global styles have ids prefixed in classes.
+        let style_str = key.ast.to_style_str((!key.is_global).then_some(&id));
+
+        // We parse the style str again in debug mode to ensure that interpolated values are
+        // not corrupting the stylesheet.
+        #[cfg(all(debug_assertions, feature = "debug_parser"))]
+        style_str
+            .parse::<crate::ast::Sheet>()
+            .expect_display("debug: Stylist failed to parse the style with interpolated values");
+
+        let content: Rc<_> = StyleContent {
+            id,
+            style_str,
+            manager: weak_mgr,
+            key: Rc::new(key),
+        }
+        .into();
+
+        self.mount(&content)?;
+
+        // Register the created Style.
+        reg.register(content.clone());
+
+        Ok(content)
+    }
+
+    pub(crate) fn unregister_style(&self, key: &Rc<StyleKey>) {
+        self.inner.registry.borrow_mut().unregister(key);
+    }
+
+    /// Return a reference of style key.
+    #[cfg(test)]
+    fn get_registry(&self) -> &RefCell<StyleRegistry> {
         &self.inner.registry
     }
 
@@ -231,7 +280,6 @@ mod feat_ssr_hydration {
     use serde::{Deserialize, Serialize};
 
     use super::*;
-    use crate::registry::StyleKey;
 
     /// Data of Styles managed by the current style manager.
     ///
@@ -434,8 +482,7 @@ mod feat_hydration {
         /// This method should be called as early as possible.
         /// If the same style to be loaded already existed in the manager, it will panic.
         pub fn load_style_data(&self, data: &StyleData) {
-            let reg = self.get_registry();
-            let mut reg = reg.borrow_mut();
+            let mut reg = self.inner.registry.borrow_mut();
 
             for (key, id) in data.0.iter() {
                 let key = Rc::new(key.clone());
@@ -451,7 +498,6 @@ mod feat_hydration {
                     Entry::Vacant(m) => {
                         m.insert(
                             StyleContent {
-                                is_global: key.is_global,
                                 id: id.clone(),
                                 style_str: key.ast.to_style_str(Some(id)),
                                 manager: self.downgrade(),

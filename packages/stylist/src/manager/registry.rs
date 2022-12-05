@@ -1,49 +1,33 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use serde::{Deserialize, Serialize};
-
-use crate::ast::Sheet;
-use crate::style::StyleContent;
-
-/// A [`StyleKey`].
-///
-/// Every Style that has the same [`StyleKey`] will be considered as the same style in the
-/// registry.
-#[derive(Debug, Clone, PartialEq, Hash, Eq, Serialize, Deserialize)]
-pub(crate) struct StyleKey {
-    pub is_global: bool,
-    pub prefix: Cow<'static, str>,
-    pub ast: Sheet,
-}
+use super::{StyleContent, StyleKey};
 
 /// The style registry is a registry that keeps an instance of all styles for current manager.
 #[derive(Debug, Default)]
-pub(crate) struct StyleRegistry {
+pub(super) struct StyleRegistry {
     pub(crate) styles: HashMap<Rc<StyleKey>, Rc<StyleContent>>,
 }
 
 impl StyleRegistry {
-    pub(crate) fn register(&mut self, content: Rc<StyleContent>) {
-        let key = content.key();
-        if self.styles.insert(key, content).is_some() {
+    pub fn register(&mut self, content: Rc<StyleContent>) {
+        if self.styles.insert(content.key().clone(), content).is_some() {
             panic!("A Style with this StyleKey has already been created.");
         }
     }
 
-    pub(crate) fn unregister(&mut self, key: Rc<StyleKey>) {
-        self.styles.remove(&key);
+    pub fn unregister(&mut self, key: &StyleKey) {
+        self.styles.remove(key);
     }
 
-    pub(crate) fn get(&self, key: &StyleKey) -> Option<Rc<StyleContent>> {
+    pub fn get(&self, key: &StyleKey) -> Option<Rc<StyleContent>> {
         self.styles.get(key).cloned()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::ast::Sheet;
     use crate::manager::StyleManager;
     use crate::*;
 
@@ -98,7 +82,7 @@ mod tests {
             let reg = mgr.get_registry();
             let reg = reg.borrow_mut();
 
-            assert!(reg.styles.get(&*style.key()).is_some());
+            assert!(reg.styles.get(style.key()).is_some());
         }
 
         style.unregister();
@@ -108,7 +92,7 @@ mod tests {
             let reg = mgr.get_registry();
             let reg = reg.borrow_mut();
 
-            assert!(reg.styles.get(&*style.key()).is_none());
+            assert!(reg.styles.get(style.key()).is_none());
         }
     }
 }

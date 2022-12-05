@@ -1,88 +1,8 @@
 use std::borrow::Cow;
-use std::fmt;
-use std::ops::Deref;
 use std::rc::Rc;
 
-use serde::{Deserialize, Serialize};
-#[cfg(all(debug_assertions, feature = "debug_parser"))]
-use stylist_core::ResultDisplay;
-
-use crate::ast::ToStyleStr;
-use crate::manager::{StyleManager, WeakStyleManager};
-use crate::registry::StyleKey;
+use crate::manager::{StyleContent, StyleId, StyleKey, StyleManager};
 use crate::{Result, StyleSource};
-
-use crate::utils::get_entropy;
-
-/// The Unique Identifier of a Style.
-///
-/// This is primarily used by [`StyleManager`] to track the mounted instance of [`Style`].
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct StyleId(pub(crate) String);
-
-impl Deref for StyleId {
-    type Target = str;
-    fn deref(&self) -> &Self::Target {
-        self.0.as_str()
-    }
-}
-
-impl fmt::Display for StyleId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-#[derive(Debug)]
-pub(crate) struct StyleContent {
-    #[allow(dead_code)]
-    pub is_global: bool,
-
-    pub id: StyleId,
-
-    pub key: Rc<StyleKey>,
-
-    pub style_str: String,
-
-    pub manager: WeakStyleManager,
-}
-
-impl StyleContent {
-    pub fn id(&self) -> &StyleId {
-        &self.id
-    }
-
-    pub fn get_style_str(&self) -> &str {
-        &self.style_str
-    }
-
-    pub fn unmount(&self) -> Result<()> {
-        StyleManager::unmount(self.id())
-    }
-
-    pub fn key(&self) -> Rc<StyleKey> {
-        self.key.clone()
-    }
-
-    pub fn manager(&self) -> Option<StyleManager> {
-        self.manager.upgrade()
-    }
-
-    pub fn unregister(&self) {
-        if let Some(mgr) = self.manager() {
-            let reg = mgr.get_registry();
-            let mut reg = reg.borrow_mut();
-            reg.unregister(self.key());
-        }
-    }
-}
-
-impl Drop for StyleContent {
-    /// Unmounts the style from the HTML head web-sys style
-    fn drop(&mut self) {
-        let _result = self.unmount();
-    }
-}
 
 /// A struct that represents a scoped Style.
 ///
@@ -174,40 +94,8 @@ impl Style {
             ast: css,
         };
 
-        let weak_mgr = manager.downgrade();
-        let reg = manager.get_registry();
-        let mut reg = reg.borrow_mut();
-
-        if let Some(m) = reg.get(&key) {
-            return Ok(Style { inner: m });
-        }
-
-        let id = StyleId(format!("{}-{}", key.prefix, get_entropy()));
-
-        let style_str = key.ast.to_style_str(Some(&id));
-
-        // We parse the style str again in debug mode to ensure that interpolated values are
-        // not corrupting the stylesheet.
-        #[cfg(all(debug_assertions, feature = "debug_parser"))]
-        style_str
-            .parse::<crate::ast::Sheet>()
-            .expect_display("debug: Stylist failed to parse the style with interpolated values");
-
-        let new_style = Self {
-            inner: StyleContent {
-                is_global: false,
-                id,
-                style_str,
-                manager: weak_mgr,
-                key: Rc::new(key),
-            }
-            .into(),
-        };
-
-        manager.mount(&new_style.inner)?;
-
-        // Register the created Style.
-        reg.register(new_style.inner.clone());
+        let inner = manager.get_or_register_style(key)?;
+        let new_style = Self { inner };
 
         Ok(new_style)
     }
@@ -316,7 +204,7 @@ impl Style {
 
     /// Return a reference of style key.
     #[cfg(test)]
-    pub(crate) fn key(&self) -> Rc<StyleKey> {
+    pub(crate) fn key(&self) -> &Rc<StyleKey> {
         self.inner.key()
     }
 

@@ -115,7 +115,6 @@ mod global_style;
 #[cfg(feature = "macros")]
 pub mod macros;
 pub mod manager;
-mod registry;
 mod style;
 mod style_src;
 mod utils;
