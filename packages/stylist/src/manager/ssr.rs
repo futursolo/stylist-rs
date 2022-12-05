@@ -1,4 +1,5 @@
 use core::fmt;
+use std::ops::DerefMut;
 use std::sync::{Arc, Mutex};
 
 use super::*;
@@ -72,18 +73,17 @@ impl StyleManagerBuilder {
 }
 
 impl StyleData {
-    pub(super) fn new() -> StyleData {
+    pub(crate) fn new() -> StyleData {
         StyleData(Arc::default())
     }
 }
 
-#[cfg(feature = "yew")]
 impl StyleManager {
-    pub(crate) fn style_data(&self) -> StyleData {
-        match self.inner.style_data {
-            Some(ref m) => m.lock().expect("failed to lock style data").clone(),
-            None => StyleData::new(),
-        }
+    pub(crate) fn style_data(&self) -> Option<impl DerefMut<Target = StyleData> + '_> {
+        self.inner
+            .style_data
+            .as_ref()
+            .map(|m| m.lock().expect("failed to lock style data"))
     }
 }
 

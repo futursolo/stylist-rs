@@ -185,8 +185,7 @@ impl StyleManager {
 
         #[cfg(feature = "ssr")]
         {
-            if let Some(ref m) = self.inner.style_data {
-                let mut style_data = m.lock().expect("failed to lock data");
+            if let Some(ref mut style_data) = self.style_data() {
                 // Automatically detach if has been used.
                 style_data.as_vec_mut().push(StyleDataContent {
                     key: content.key().as_ref().clone(),

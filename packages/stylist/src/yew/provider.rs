@@ -45,8 +45,15 @@ pub fn manager_provider(props: &ManagerProviderProps) -> HtmlResult {
         use crate::manager::StyleData;
 
         let _manager = manager.clone();
-        let _style_data =
-            use_transitive_state!(move |_| -> StyleData { _manager.style_data() }, ())?;
+        let _style_data = use_transitive_state!(
+            move |_| -> StyleData {
+                _manager
+                    .style_data()
+                    .map(|m| m.clone())
+                    .unwrap_or_else(StyleData::new)
+            },
+            ()
+        )?;
 
         #[cfg(feature = "hydration")]
         {
