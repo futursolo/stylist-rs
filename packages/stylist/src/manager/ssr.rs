@@ -77,6 +77,7 @@ impl StyleData {
     }
 }
 
+#[cfg(feature = "yew")]
 impl StyleManager {
     pub(crate) fn style_data(&self) -> StyleData {
         match self.inner.style_data {

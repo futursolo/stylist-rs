@@ -20,7 +20,8 @@ pub(crate) struct StyleKey {
 
 /// The Unique Identifier of a Style.
 ///
-/// This is primarily used by [`StyleManager`] to track the mounted instance of [`Style`].
+/// This is primarily used by [`StyleManager`](crate::manager::StyleManager) to track the mounted
+/// instance of [`Style`](crate::Style).
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct StyleId(String);
 
