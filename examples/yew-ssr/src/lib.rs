@@ -131,7 +131,7 @@ mod tests {
         let data = reader.read_style_data();
         let mut head_s = String::new();
         data.write_static_markup(&mut head_s)
-            .expect("failed to read styles from style manager");
+            .expect("failed to write styles");
 
         // No styles are rendered to head element during SSR.
         assert_eq!(

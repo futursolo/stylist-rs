@@ -40,7 +40,7 @@ pub struct StyleManagerBuilder {
     append: bool,
 
     #[cfg(feature = "ssr")]
-    style_data: std::sync::Arc<std::sync::Mutex<StyleData>>,
+    style_data: Option<std::sync::Arc<std::sync::Mutex<StyleData>>>,
 }
 
 impl Default for StyleManagerBuilder {
@@ -51,7 +51,7 @@ impl Default for StyleManagerBuilder {
             container: None,
             append: true,
             #[cfg(feature = "ssr")]
-            style_data: std::sync::Arc::new(std::sync::Mutex::new(StyleData::new())),
+            style_data: None,
         }
     }
 }
@@ -165,19 +165,6 @@ impl StyleManager {
             false => StyleId::new_scoped(&key.prefix),
         };
 
-        #[cfg(feature = "ssr")]
-        {
-            use std::sync::Arc;
-
-            // Automatically detach if has been used.
-            Arc::make_mut(&mut self.inner.style_data.lock().expect("failed to lock data").0).push(
-                StyleDataContent {
-                    key: key.clone(),
-                    id: id.clone(),
-                },
-            );
-        }
-
         // Non-global styles have ids prefixed in classes.
         let style_str = key.ast.to_style_str((!key.is_global).then_some(&id));
 
@@ -196,8 +183,25 @@ impl StyleManager {
         }
         .into();
 
-        self.mount(&content)?;
+        #[cfg(feature = "ssr")]
+        {
+            if let Some(ref m) = self.inner.style_data {
+                let mut style_data = m.lock().expect("failed to lock data");
+                // Automatically detach if has been used.
+                style_data.as_vec_mut().push(StyleDataContent {
+                    key: content.key().as_ref().clone(),
+                    id: content.id().clone(),
+                    style_str: content.get_style_str().to_string(),
+                });
 
+                // Register the created Style.
+                reg.register(content.clone());
+
+                return Ok(content);
+            }
+        }
+
+        self.mount(&content)?;
         // Register the created Style.
         reg.register(content.clone());
 
@@ -305,6 +309,8 @@ mod feat_ssr_hydration {
     pub(super) struct StyleDataContent {
         pub key: StyleKey,
         pub id: StyleId,
+        #[serde(skip)]
+        pub style_str: String,
     }
 
     /// Data of Styles managed by the current style manager.
@@ -366,7 +372,7 @@ mod feat_hydration {
         pub fn load_style_data(&self, data: &StyleData) {
             let mut reg = self.inner.registry.borrow_mut();
 
-            for StyleDataContent { id, key } in data.0.iter() {
+            for StyleDataContent { id, key, .. } in data.0.iter() {
                 let key = Rc::new(key.clone());
 
                 match reg.styles.entry(key.clone()) {

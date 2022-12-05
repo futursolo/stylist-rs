@@ -45,13 +45,12 @@ impl StyleData {
     where
         W: fmt::Write,
     {
-        for StyleDataContent { id, key } in self.0.iter() {
+        for StyleDataContent { id, style_str, .. } in self.0.iter() {
             // We cannot guarantee a valid class name if the user choose to use a custom prefix.
             // If the default prefix is used, StyleId is guaranteed to be valid without
             // escaping.
             write!(w, r#"<style data-style="{}">"#, id)?;
-            let content = key.ast.to_style_str((!key.is_global).then_some(id));
-            write!(w, "{}", html_escape::encode_style(&content))?;
+            write!(w, "{}", html_escape::encode_style(&style_str))?;
             write!(w, "</style>")?;
         }
 
@@ -67,7 +66,7 @@ impl StyleManagerBuilder {
     /// This also sets the StyleManager into the "static" mode. which it will stop rendering
     /// styles into any html element.
     pub fn writer(mut self, w: StaticWriter) -> Self {
-        self.style_data = w.inner;
+        self.style_data = Some(w.inner);
         self
     }
 }
@@ -80,10 +79,15 @@ impl StyleData {
 
 impl StyleManager {
     pub(crate) fn style_data(&self) -> StyleData {
-        self.inner
-            .style_data
-            .lock()
-            .expect("failed to lock style data")
-            .clone()
+        match self.inner.style_data {
+            Some(ref m) => m.lock().expect("failed to lock style data").clone(),
+            None => StyleData::new(),
+        }
+    }
+}
+
+impl StyleData {
+    pub(super) fn as_vec_mut(&mut self) -> &mut Vec<StyleDataContent> {
+        Arc::make_mut(&mut self.0)
     }
 }
