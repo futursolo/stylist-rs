@@ -15,6 +15,7 @@ pub struct StaticReader {
 }
 
 impl StaticReader {
+    /// Reads [`StyleData`] from a [`StyleManager`].
     pub fn read_style_data(self) -> StyleData {
         self.inner
             .lock()
