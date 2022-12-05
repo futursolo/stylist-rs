@@ -165,6 +165,19 @@ impl StyleManager {
             false => StyleId::new_scoped(&key.prefix),
         };
 
+        #[cfg(feature = "ssr")]
+        {
+            use std::sync::Arc;
+
+            // Automatically detach if has been used.
+            Arc::make_mut(&mut self.inner.style_data.lock().expect("failed to lock data").0).push(
+                StyleDataContent {
+                    key: key.clone(),
+                    id: id.clone(),
+                },
+            );
+        }
+
         // Non-global styles have ids prefixed in classes.
         let style_str = key.ast.to_style_str((!key.is_global).then_some(&id));
 
