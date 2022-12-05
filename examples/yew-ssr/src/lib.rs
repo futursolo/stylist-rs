@@ -118,7 +118,7 @@ mod tests {
 
     #[wasm_bindgen_test]
     async fn test_simple() {
-        let (writer, mut reader) = render_static();
+        let (writer, reader) = render_static();
         let manager = StyleManager::builder()
             .writer(writer)
             .build()
@@ -128,10 +128,10 @@ mod tests {
             .render()
             .await;
 
-        let head_s = reader
-            .read_static_markup()
-            .await
-            .expect("failed to read styles.");
+        let data = reader.read_style_data();
+        let mut head_s = String::new();
+        data.write_static_markup(&mut head_s)
+            .expect("failed to read styles from style manager");
 
         // No styles are rendered to head element during SSR.
         assert_eq!(
@@ -143,7 +143,7 @@ mod tests {
         );
 
         let frag = document().create_document_fragment();
-        frag.set_node_value(Some(head_s));
+        frag.set_node_value(Some(&head_s));
 
         // Manually append styles.
         gloo_utils::head().append_child(&frag).unwrap();

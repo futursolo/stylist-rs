@@ -18,11 +18,16 @@ use web_sys::Node;
 mod content;
 mod key;
 mod registry;
+#[cfg(feature = "ssr")]
+mod ssr;
 use crate::Result;
 pub(crate) use content::StyleContent;
 pub use key::StyleId;
 pub(crate) use key::StyleKey;
 use registry::StyleRegistry;
+
+#[cfg(feature = "ssr")]
+pub use ssr::*;
 
 /// A builder for [`StyleManager`].
 #[derive(Debug)]
@@ -35,7 +40,7 @@ pub struct StyleManagerBuilder {
     append: bool,
 
     #[cfg(feature = "ssr")]
-    writer: Option<StaticWriter>,
+    style_data: std::sync::Arc<std::sync::Mutex<StyleData>>,
 }
 
 impl Default for StyleManagerBuilder {
@@ -46,7 +51,7 @@ impl Default for StyleManagerBuilder {
             container: None,
             append: true,
             #[cfg(feature = "ssr")]
-            writer: None,
+            style_data: std::sync::Arc::new(std::sync::Mutex::new(StyleData::new())),
         }
     }
 }
@@ -277,9 +282,17 @@ impl Default for StyleManager {
 
 #[cfg(any(feature = "ssr", feature = "hydration"))]
 mod feat_ssr_hydration {
+    use std::sync::Arc;
+
     use serde::{Deserialize, Serialize};
 
     use super::*;
+
+    #[derive(Debug, Clone, Serialize, Deserialize)]
+    pub(super) struct StyleDataContent {
+        pub key: StyleKey,
+        pub id: StyleId,
+    }
 
     /// Data of Styles managed by the current style manager.
     ///
@@ -291,176 +304,32 @@ mod feat_ssr_hydration {
     ///
     /// If you are using [`ManagerProvider`](crate::yew::ManagerProvider),
     /// this behaviour is managed automatically.
-    #[derive(Debug, Serialize, Deserialize)]
-    pub struct StyleData(pub(super) Vec<(StyleKey, StyleId)>);
+    #[derive(Debug, Clone)]
+    pub struct StyleData(pub(super) Arc<Vec<StyleDataContent>>);
+
+    impl Serialize for StyleData {
+        fn serialize<S>(&self, serializer: S) -> std::result::Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer,
+        {
+            self.0.serialize(serializer)
+        }
+    }
+
+    impl<'de> Deserialize<'de> for StyleData {
+        fn deserialize<D>(deserializer: D) -> std::result::Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de>,
+        {
+            Vec::<StyleDataContent>::deserialize(deserializer)
+                .map(Arc::new)
+                .map(Self)
+        }
+    }
 }
 
 #[cfg(any(feature = "ssr", feature = "hydration"))]
 pub use feat_ssr_hydration::*;
-
-#[cfg(feature = "ssr")]
-mod feat_ssr {
-    use std::fmt;
-
-    use futures::channel::oneshot as sync_oneshot;
-
-    use super::*;
-    use crate::{Error, Result};
-
-    #[derive(Debug)]
-    enum StaticReaderInner {
-        Pending {
-            rx: sync_oneshot::Receiver<(StyleData, String)>,
-        },
-        Done {
-            data: StyleData,
-            static_markup: String,
-        },
-    }
-
-    /// The reader to read styles from a [`StyleManager`].
-    ///
-    /// # Notes
-    ///
-    /// Styles are sent back when the style manager is dropped.
-    #[derive(Debug)]
-    pub struct StaticReader {
-        inner: StaticReaderInner,
-    }
-
-    impl StaticReader {
-        async fn read(&mut self) -> Result<(&StyleData, &str)> {
-            loop {
-                match self.inner {
-                    StaticReaderInner::Pending { ref mut rx } => {
-                        let (data, static_markup) = rx.await.map_err(|_| Error::ReadFailed)?;
-                        self.inner = StaticReaderInner::Done {
-                            data,
-                            static_markup,
-                        };
-                    }
-                    StaticReaderInner::Done {
-                        ref data,
-                        ref static_markup,
-                    } => return Ok((data, static_markup)),
-                }
-            }
-        }
-
-        /// Reads style data from the manager.
-        pub async fn read_style_data(&mut self) -> Result<&StyleData> {
-            let (data, _) = self.read().await?;
-
-            Ok(data)
-        }
-
-        /// Reads styles as `<style data-style="stylist-...">...</style>` from the manager.
-        pub async fn read_static_markup(&mut self) -> Result<&str> {
-            let (_, markup) = self.read().await?;
-            Ok(markup)
-        }
-    }
-
-    /// The writer to be passed to [`StyleManager`] to write styles.
-    #[derive(Debug)]
-    pub struct StaticWriter {
-        tx: sync_oneshot::Sender<(StyleData, String)>,
-    }
-
-    /// Creates a [StaticWriter] - [StaticReader] pair.
-    pub fn render_static() -> (StaticWriter, StaticReader) {
-        let (tx, rx) = sync_oneshot::channel();
-
-        (
-            StaticWriter { tx },
-            StaticReader {
-                inner: StaticReaderInner::Pending { rx },
-            },
-        )
-    }
-
-    impl StyleManagerBuilder {
-        pub fn style_data(&self) -> StyleData {
-            let reg = self.registry.borrow();
-
-            StyleData(
-                reg.styles
-                    .iter()
-                    .map(|(key, v)| ((**key).clone(), v.id().to_owned()))
-                    .collect::<Vec<_>>(),
-            )
-        }
-
-        pub fn write_static_markup<W>(&self, w: &mut W) -> fmt::Result
-        where
-            W: fmt::Write,
-        {
-            let reg = self.registry.borrow();
-
-            for content in reg.styles.values() {
-                // We cannot guarantee a valid class name if the user choose to use a custom prefix.
-                // If the default prefix is used, StyleId is guaranteed to be valid without
-                // escaping.
-                write!(w, r#"<style data-style="{}">"#, content.id())?;
-                write!(w, "{}", html_escape::encode_style(content.get_style_str()))?;
-                write!(w, "</style>")?;
-            }
-
-            Ok(())
-        }
-    }
-
-    impl StyleManagerBuilder {
-        /// Set the [StaticWriter] for current manager.
-        ///
-        /// # Note
-        ///
-        /// This also sets the StyleManager into the "static" mode. which it will stop rendering
-        /// styles into any html element.
-        pub fn writer(mut self, w: StaticWriter) -> Self {
-            self.writer = Some(w);
-
-            self
-        }
-    }
-
-    impl StyleManager {
-        /// Returns StyleData of current style manager.
-        ///
-        /// # Note
-        ///
-        /// If you are using [`ManagerProvider`](crate::yew::ManagerProvider),
-        /// this behaviour is managed automatically.
-        pub fn style_data(&self) -> StyleData {
-            self.inner.style_data()
-        }
-
-        /// Writes styles stored in the manager as `<style data-style="stylist-...">...</style>`.
-        pub fn write_static_markup<W>(&self, w: &mut W) -> fmt::Result
-        where
-            W: fmt::Write,
-        {
-            self.inner.write_static_markup(w)
-        }
-    }
-
-    impl Drop for StyleManagerBuilder {
-        fn drop(&mut self) {
-            if let Some(m) = self.writer.take() {
-                let data = self.style_data();
-                let mut markup = String::new();
-                // Ignoring the result as writing to a String can never fail.
-                let _ = self.write_static_markup(&mut markup);
-
-                // Ignoring the result if the channel has been dropped.
-                let _ = m.tx.send((data, markup));
-            }
-        }
-    }
-}
-
-#[cfg(feature = "ssr")]
-pub use feat_ssr::*;
 
 #[cfg(feature = "hydration")]
 mod feat_hydration {
@@ -484,7 +353,7 @@ mod feat_hydration {
         pub fn load_style_data(&self, data: &StyleData) {
             let mut reg = self.inner.registry.borrow_mut();
 
-            for (key, id) in data.0.iter() {
+            for StyleDataContent { id, key } in data.0.iter() {
                 let key = Rc::new(key.clone());
 
                 match reg.styles.entry(key.clone()) {

@@ -17,7 +17,7 @@ mod target_non_wasm32 {
     }
 
     async fn render(index_html_s: Arc<str>) -> String {
-        let (writer, mut reader) = render_static();
+        let (writer, reader) = render_static();
 
         let body_s = yew::ServerRenderer::<ServerApp>::with_props(move || {
             let manager = StyleManager::builder()
@@ -29,14 +29,15 @@ mod target_non_wasm32 {
         .render()
         .await;
 
-        let style_s = reader
-            .read_static_markup()
-            .await
+        let data = reader.read_style_data();
+
+        let mut style_s = String::new();
+        data.write_static_markup(&mut style_s)
             .expect("failed to read styles from style manager");
 
         index_html_s
             .replace("<!--%BODY_PLACEHOLDER%-->", &body_s)
-            .replace("<!--%HEAD_PLACEHOLDER%-->", style_s)
+            .replace("<!--%HEAD_PLACEHOLDER%-->", &style_s)
     }
 
     pub async fn main() {
