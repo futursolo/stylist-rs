@@ -8,8 +8,12 @@ ignore = [
   "packages/stylist-core/target/",
 
   "examples/benchmarks/target/",
+  "examples/use-media-query/target/",
   "examples/yew-integration/target/",
+  "examples/yew-proc-macros/target/",
+  "examples/yew-shadow/target/",
   "examples/yew-theme-context/target/",
+  "examples/yew-theme-hooks/target/",
 ]
 
 [tools]
