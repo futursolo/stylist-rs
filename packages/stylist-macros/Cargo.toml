@@ -27,7 +27,7 @@ proc-macro = true
 [dependencies]
 stylist-core = { path = "../stylist-core", version = "0.11", features = ["parser"] }
 
-litrs = "0.2.3"
+litrs = "0.3.0"
 proc-macro-error = "1.0.4"
 proc-macro2 = "1.0.40"
 quote = "1.0.20"
