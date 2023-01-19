@@ -11,6 +11,7 @@ members = [
     "examples/yew-theme-context",
     "examples/yew-theme-hooks",
     "examples/use-media-query",
+    "examples/yew-ssr",
 ]
 resolver = "2"
 

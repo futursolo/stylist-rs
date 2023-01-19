@@ -131,7 +131,7 @@ impl Parser {
                 }),
             }),
             Err(nom::Err::Incomplete(e)) => Err(Error::Parse {
-                reason: format!("{:#?}", e),
+                reason: format!("{e:#?}"),
                 source: None,
             }),
             Ok((_, res)) => Ok(res),

@@ -38,7 +38,7 @@ impl PreservedToken {
     pub fn to_output_string(&self) -> String {
         match self {
             Self::Ident(i) => i.to_output_string(),
-            Self::Literal(l) => format!("{}", l),
+            Self::Literal(l) => format!("{l}"),
             Self::Punct(p) => format!("{}", p.as_char()),
         }
     }

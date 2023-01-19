@@ -3,16 +3,17 @@ name = "example-yew-shadow"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2021"
+publish = false
 
 [dependencies]
 log = "0.4.17"
 console_log = { version = "0.2.0", features = ["color"] }
 yew = { version = "0.20", features = ["csr"] }
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
-once_cell = "1.13.0"
+once_cell = "1.16.0"
 
 [dependencies.web-sys]
-version = "0.3.58"
+version = "0.3.60"
 features = [
     "Window",
     "Document",

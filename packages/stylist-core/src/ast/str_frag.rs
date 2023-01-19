@@ -1,9 +1,11 @@
 use std::borrow::Cow;
 
+use serde::{Deserialize, Serialize};
+
 use super::{StyleContext, ToStyleStr};
 
 /// A String Fragment
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct StringFragment {
     pub inner: Cow<'static, str>,
 }

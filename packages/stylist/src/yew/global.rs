@@ -38,26 +38,25 @@ pub struct GlobalProps {
 /// ```
 #[function_component(Global)]
 pub fn global(props: &GlobalProps) -> Html {
+    let GlobalProps { css } = props.clone();
     let mgr = use_context::<StyleManager>().unwrap_or_default();
 
-    #[derive(Debug, PartialEq)]
-    struct GlobalDependents {
-        manager: StyleManager,
-        css: StyleSource,
+    struct GlobalStyleGuard {
+        inner: GlobalStyle,
     }
 
-    use_effect_with_deps(
-        |deps| {
-            let global_style =
-                GlobalStyle::new_with_manager(deps.css.clone(), deps.manager.clone())
-                    .expect_display("Failed to create style.");
+    impl Drop for GlobalStyleGuard {
+        fn drop(&mut self) {
+            self.inner.unregister();
+        }
+    }
 
-            move || global_style.unregister()
+    use_memo(
+        move |(manager, css)| GlobalStyleGuard {
+            inner: GlobalStyle::new_with_manager(css.clone(), manager)
+                .expect_display("Failed to create style."),
         },
-        GlobalDependents {
-            manager: mgr,
-            css: props.css.clone(),
-        },
+        (mgr, css),
     );
 
     Html::default()

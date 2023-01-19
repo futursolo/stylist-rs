@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.12.0
+
+### Other Changes:
+- Added Server-side Rendering Support.
+- Fixed a reference cycle between `Style` and `StyleManager`.
+- Added `StyleManager::new()` to create a style manager with default configuration.
+
 ## v0.11.0
 
 ### Breaking Changes:

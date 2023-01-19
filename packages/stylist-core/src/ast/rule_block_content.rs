@@ -1,8 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 use super::{Block, Rule, StyleAttribute, StyleContext, ToStyleStr};
 use crate::bow::Bow;
 
 /// The content of a [`Rule`] or a [`Block`]
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum RuleBlockContent {
     StyleAttr(StyleAttribute),
     Rule(Bow<'static, Rule>),

@@ -38,7 +38,7 @@ impl Parse for CssAtRule {
         if !["media", "supports"].contains(&name.to_output_string().as_str()) {
             errors.push(ParseError::new_spanned(
                 &name,
-                format!("@-rule '{}' not supported", name),
+                format!("@-rule '{name}' not supported"),
             ));
         }
 

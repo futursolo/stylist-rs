@@ -3,6 +3,7 @@ name = "example-yew-integration"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2021"
+publish = false
 
 [dependencies]
 log = "0.4.17"
@@ -11,13 +12,13 @@ yew = { version = "0.20", features = ["csr"] }
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
 
 [dev-dependencies]
-gloo-utils = "0.1.4"
-gloo-timers = { version = "0.2.4", features = ["futures"] }
-wasm-bindgen-test = "0.3.31"
-wasm-bindgen = "0.2.81"
+gloo-utils = "0.1.6"
+gloo-timers = { version = "0.2.5", features = ["futures"] }
+wasm-bindgen-test = "0.3.33"
+wasm-bindgen = "0.2.83"
 
 [dev-dependencies.web-sys]
-version = "0.3.58"
+version = "0.3.60"
 features = [
     "Window",
     "Document",

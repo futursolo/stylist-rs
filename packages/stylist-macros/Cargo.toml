@@ -1,6 +1,6 @@
 [package]
 name = "stylist-macros"
-version = "0.11.0"
+version = "0.12.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/futursolo/stylist-rs"
@@ -25,15 +25,15 @@ rust-version = "1.60"
 proc-macro = true
 
 [dependencies]
-stylist-core = { path = "../stylist-core", version = "0.11", features = ["parser"] }
+stylist-core = { path = "../stylist-core", version = "0.12", features = ["parser"] }
 
 litrs = "0.3.0"
 proc-macro-error = "1.0.4"
-proc-macro2 = "1.0.40"
-quote = "1.0.20"
+proc-macro2 = "1.0.47"
+quote = "1.0.21"
 nom = "7.1.1"
-syn = { version = "1.0.98", features = ["full", "extra-traits"] }
-itertools = "0.10.3"
+syn = { version = "1.0.105", features = ["full", "extra-traits"] }
+itertools = "0.10.5"
 log = "0.4.17"
 
 [dev-dependencies]

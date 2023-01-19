@@ -2,12 +2,34 @@ use std::borrow::Cow;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
+
 use super::{ScopeContent, StyleContext, ToStyleStr};
 
 /// The top node of a stylesheet.
 // Once a sheet is constructed, it becomes immutable.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Sheet(Arc<Cow<'static, [ScopeContent]>>);
+
+impl Serialize for Sheet {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.0.as_ref().serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Sheet {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        Deserialize::deserialize(deserializer)
+            .map(Arc::new)
+            .map(Self)
+    }
+}
 
 impl Deref for Sheet {
     type Target = [ScopeContent];

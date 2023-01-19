@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use serde::{Deserialize, Serialize};
+
 use super::{RuleBlockContent, StringFragment, StyleContext, ToStyleStr};
 
 /// An At-Rule can contain both other blocks and in some cases more At-Rules.
@@ -15,7 +17,7 @@ use super::{RuleBlockContent, StringFragment, StyleContext, ToStyleStr};
 ///     }
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Rule {
     pub condition: Cow<'static, [StringFragment]>,
     pub content: Cow<'static, [RuleBlockContent]>,

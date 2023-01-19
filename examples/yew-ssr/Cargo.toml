@@ -1,0 +1,50 @@
+[package]
+name = "example-yew-ssr"
+version = "0.1.0"
+authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
+edition = "2021"
+publish = false
+
+[[bin]]
+name = "yew-ssr-client"
+required-features = ["csr"]
+
+[[bin]]
+name = "yew-ssr-server"
+required-features = ["ssr"]
+
+[dependencies]
+log = "0.4.17"
+console_log = { version = "0.2.0", features = ["color"] }
+yew = { version = "0.20" }
+stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+tokio = { version = "1.22.0", features = ["full"] }
+env_logger = "0.10"
+clap = { version = "4.0.29", features = ["derive"] }
+warp = "0.3"
+
+[dev-dependencies]
+gloo-utils = "0.1.6"
+gloo-timers = { version = "0.2.5", features = ["futures"] }
+wasm-bindgen-test = "0.3.33"
+wasm-bindgen = "0.2.83"
+yew = { version = "0.20", features = ["csr", "ssr", "hydration"] }
+stylist = { path = "../../packages/stylist", features = ["yew_integration", "ssr", "hydration"] }
+
+[dev-dependencies.web-sys]
+version = "0.3.60"
+features = [
+    "Window",
+    "Document",
+    "Element",
+    "HtmlElement",
+    "HtmlHeadElement",
+    "HtmlStyleElement",
+    "CssStyleDeclaration",
+]
+
+[features]
+csr = ["yew/csr", "yew/hydration", "stylist/hydration"]
+ssr = ["yew/ssr", "stylist/ssr"]

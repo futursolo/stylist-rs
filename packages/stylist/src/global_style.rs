@@ -1,13 +1,6 @@
 use std::rc::Rc;
 
-#[cfg(all(debug_assertions, feature = "debug_parser"))]
-use stylist_core::ResultDisplay;
-
-use crate::ast::ToStyleStr;
-use crate::manager::StyleManager;
-use crate::registry::StyleKey;
-use crate::style::{StyleContent, StyleId};
-use crate::utils::get_entropy;
+use crate::manager::{StyleContent, StyleId, StyleKey, StyleManager};
 use crate::{Result, StyleSource};
 
 /// A struct that represents a global Style.
@@ -25,47 +18,17 @@ impl GlobalStyle {
     // The big method is monomorphic, so less code duplication and code bloat through generics
     // and inlining
     fn create_impl(css: StyleSource, manager: StyleManager) -> Result<Self> {
-        let prefix = format!("{}-global", manager.prefix());
         let css = css.into_sheet();
 
         // Creates the StyleKey, return from registry if already cached.
         let key = StyleKey {
             is_global: true,
-            prefix: prefix.into(),
+            prefix: manager.prefix(),
             ast: css,
         };
 
-        let reg = manager.get_registry();
-        let mut reg = reg.borrow_mut();
-
-        if let Some(m) = reg.get(&key) {
-            return Ok(Self { inner: m });
-        }
-
-        let style_str = key.ast.to_style_str(None);
-
-        // We parse the style str again in debug mode to ensure that interpolated values are
-        // not corrupting the stylesheet.
-        #[cfg(all(debug_assertions, feature = "debug_parser"))]
-        style_str
-            .parse::<crate::ast::Sheet>()
-            .expect_display("debug: Stylist failed to parse the style with interpolated values");
-
-        let new_style = Self {
-            inner: StyleContent {
-                is_global: true,
-                id: StyleId(format!("{}-{}", key.prefix, get_entropy())),
-                style_str,
-                manager,
-                key: Rc::new(key),
-            }
-            .into(),
-        };
-
-        new_style.inner.manager().mount(&new_style.inner)?;
-
-        // Register the created Style.
-        reg.register(new_style.inner.clone());
+        let inner = manager.get_or_register_style(key)?;
+        let new_style = Self { inner };
 
         Ok(new_style)
     }
@@ -121,19 +84,12 @@ impl GlobalStyle {
         self.inner.get_style_str()
     }
 
-    /// Returns a reference of style key.
-    pub(crate) fn key(&self) -> Rc<StyleKey> {
-        self.inner.key()
-    }
-
     /// Unregister current style from style registry.
     ///
     /// After calling this method, the style will be unmounted from DOM after all its clones are
     /// freed.
     pub fn unregister(&self) {
-        let reg = self.inner.manager().get_registry();
-        let mut reg = reg.borrow_mut();
-        reg.unregister(self.key());
+        self.inner.unregister();
     }
 
     /// Returns the [`StyleId`] for current style.

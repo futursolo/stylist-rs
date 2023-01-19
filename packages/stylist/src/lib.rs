@@ -105,6 +105,8 @@
 //!   classes to help debugging and finding the source location of styles.
 //! - `debug_parser`: Enabled by default, this flag generates additional checks when
 //!   `debug_assertions` are enabled.
+//! - `ssr`: Disabled by default, this flag enables Server-side Rendering Support.
+//! - `hydration`: Disabled by default, this flag enables Server-side Rendering Hydration Support.
 
 #[cfg(any(feature = "yew_use_media_query", target_arch = "wasm32"))]
 mod arch;
@@ -113,7 +115,6 @@ mod global_style;
 #[cfg(feature = "macros")]
 pub mod macros;
 pub mod manager;
-mod registry;
 mod style;
 mod style_src;
 mod utils;

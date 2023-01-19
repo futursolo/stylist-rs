@@ -17,6 +17,13 @@ pub enum Error {
     /// This is usually raised when the style element failed to mount.
     #[error("Failed to Interact with Web API. Are you running in Browser?")]
     Web(Option<wasm_bindgen::JsValue>),
+
+    /// Failed to read styles from the StyleManager.
+    ///
+    /// This is raised when the writer is dropped without associating it with a StyleManager or the
+    /// renderer panicked during rendering process.
+    #[error("Failed to read from manager. Did the renderer panic?")]
+    ReadFailed,
 }
 
 impl From<std::convert::Infallible> for Error {
@@ -46,7 +53,7 @@ impl<T> ResultDisplay<T> for Result<T> {
     fn expect_display(self, msg: &str) -> T {
         match self {
             Ok(m) => m,
-            Err(e) => panic!("{}: {}", msg, e),
+            Err(e) => panic!("{msg}: {e}"),
         }
     }
 }
