@@ -16,6 +16,7 @@ pub enum Error {
     ///
     /// This is usually raised when the style element failed to mount.
     #[error("Failed to Interact with Web API. Are you running in Browser?")]
+    #[cfg(not(feature = "proc_macro"))]
     Web(Option<wasm_bindgen::JsValue>),
 
     /// Failed to read styles from the StyleManager.
