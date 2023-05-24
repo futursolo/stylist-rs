@@ -37,4 +37,3 @@ wasm-bindgen-test = "0.3.33"
 
 [features]
 parser = ["dep:nom"]
-proc_macro = []
