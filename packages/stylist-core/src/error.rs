@@ -1,8 +1,8 @@
 use thiserror::Error;
 
-#[cfg(not(feature = "__proc_macro_workaround"))]
+#[cfg(any(not(feature = "__proc_macro_workaround"), target_arch = "wasm32"))]
 type JsValue = wasm_bindgen::JsValue;
-#[cfg(feature = "__proc_macro_workaround")]
+#[cfg(all(feature = "__proc_macro_workaround", not(target_arch = "wasm32")))]
 type JsValue = ();
 
 #[derive(Debug, Error, PartialEq)]
