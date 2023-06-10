@@ -1,8 +1,16 @@
 use thiserror::Error;
 
-#[cfg(any(not(feature = "__proc_macro_workaround"), target_arch = "wasm32"))]
+// Feature `__proc_macro_workaround` is enabled for the workspace as `stylist-macros` enables it.
+// To mitigate this, we do not enable this feature on stylist-macros for wasm32 targets to make sure
+// tests can run with default feature merging behaviour.
+//
+// For users outside of this workspace, __proc_macro_workaround will not be enabled
+// when they use version = "2021" or resolver = "2" as procedural macros can have different feature
+// flags. This should be OK for all downstream crates as stylist requires Rust 1.60 which supports
+// both.
+#[cfg(not(feature = "__proc_macro_workaround"))]
 type JsValue = wasm_bindgen::JsValue;
-#[cfg(all(feature = "__proc_macro_workaround", not(target_arch = "wasm32")))]
+#[cfg(feature = "__proc_macro_workaround")]
 type JsValue = ();
 
 #[derive(Debug, Error, PartialEq)]
