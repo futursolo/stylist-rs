@@ -9,7 +9,7 @@ use thiserror::Error;
 // To mitigate this side effect, we do not enable this feature on stylist-macros for wasm32 targets
 // to make sure tests can run with default feature merging behaviour.
 //
-// For users outside of this workspace, __proc_macro_workaround will not be enabled
+// For crates outside of this workspace, `__proc_macro_workaround` will not be enabled
 // when they use version = "2021" or resolver = "2" as procedural macros can have different feature
 // flags. This should be OK for all downstream crates as stylist requires Rust 1.60 which supports
 // both.
