@@ -1,6 +1,7 @@
 use thiserror::Error;
 
 // Feature `__proc_macro_workaround` is enabled for the workspace as `stylist-macros` enables it.
+// This is the workspace feature merging behaviour even if resolver 2 is enabled.
 // To mitigate this, we do not enable this feature on stylist-macros for wasm32 targets to make sure
 // tests can run with default feature merging behaviour.
 //
