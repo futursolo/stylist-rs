@@ -25,8 +25,6 @@ rust-version = "1.60"
 proc-macro = true
 
 [dependencies]
-stylist-core = { path = "../stylist-core", version = "0.12", features = ["parser"] }
-
 litrs = "0.4.0"
 proc-macro-error = "1.0.4"
 proc-macro2 = "1.0.47"
@@ -35,6 +33,12 @@ nom = "7.1.1"
 syn = { version = "1.0.105", features = ["full", "extra-traits"] }
 itertools = "0.10.5"
 log = "0.4.17"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+stylist-core = { path = "../stylist-core", version = "0.12", features = ["parser", "__proc_macro_workaround"] }
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+stylist-core = { path = "../stylist-core", version = "0.12", features = ["parser"] }
 
 [dev-dependencies]
 env_logger = "0.10.0"

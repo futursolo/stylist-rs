@@ -73,9 +73,7 @@ impl<'a> StyleContext<'a> {
 
     /// Calculate the layers that current context differs from the parent context
     fn unique_conditions(&self) -> impl Iterator<Item = &str> {
-        self.conditions()
-            .into_iter()
-            .skip(self.common_conditions().count())
+        self.conditions().skip(self.common_conditions().count())
     }
 
     /// Calculate the layers that parent context differs from current context
