@@ -116,7 +116,7 @@ pub fn fragment_coalesce(
     match (l.as_string(), r.as_string()) {
         (Some(lt), Some(rt)) => {
             // Two successive string literals can be combined into a single one
-            Ok(OutputFragment::Str(format!("{}{}", lt, rt)))
+            Ok(OutputFragment::Str(format!("{lt}{rt}")))
         }
         _ => Err((l, r)),
     }

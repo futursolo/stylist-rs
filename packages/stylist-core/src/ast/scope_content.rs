@@ -1,3 +1,5 @@
+use serde::{Deserialize, Serialize};
+
 use super::{Block, Rule, StyleContext, ToStyleStr};
 
 /// A scope represents a media query or all content not in a media query.
@@ -20,7 +22,7 @@ use super::{Block, Rule, StyleContext, ToStyleStr};
 /// }
 /// /* END Scope */
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum ScopeContent {
     Block(Block),
     Rule(Rule),

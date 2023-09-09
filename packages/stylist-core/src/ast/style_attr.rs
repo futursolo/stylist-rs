@@ -1,12 +1,14 @@
 use std::borrow::Cow;
 
+use serde::{Deserialize, Serialize};
+
 use super::{StringFragment, StyleContext, ToStyleStr};
 
 /// A simple CSS property in the form of a key value pair. Mirrors what would
 /// be called a "Declaration" in the CSS standard.
 ///
 /// E.g.: `color: red`
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct StyleAttribute {
     pub key: Cow<'static, str>,
     pub value: Cow<'static, [StringFragment]>,

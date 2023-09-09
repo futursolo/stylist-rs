@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use serde::{Deserialize, Serialize};
+
 use super::{RuleBlockContent, Selector, StyleContext, ToStyleStr};
 
 /// A block is a set of css properties that apply to elements that
@@ -11,7 +13,7 @@ use super::{RuleBlockContent, Selector, StyleContext, ToStyleStr};
 ///     color: red;
 /// }
 /// ```
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct Block {
     /// Selector(s) for Current Block
     ///

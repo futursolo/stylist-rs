@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::hash::{Hash, Hasher};
 use std::ops::Deref;
 use Bow::*;
@@ -9,6 +10,30 @@ use Bow::*;
 pub enum Bow<'a, T: 'a + ?Sized> {
     Borrowed(&'a T),
     Boxed(Box<T>),
+}
+
+impl<'a, T> Serialize for Bow<'a, T>
+where
+    T: 'a + Serialize,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.deref().serialize(serializer)
+    }
+}
+
+impl<'a, 'de, T> Deserialize<'de> for Bow<'a, T>
+where
+    T: 'a + 'de + Deserialize<'de>,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        T::deserialize(deserializer).map(Box::new).map(Bow::Boxed)
+    }
 }
 
 impl<T: ?Sized> Deref for Bow<'_, T> {

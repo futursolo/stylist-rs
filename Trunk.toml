@@ -1,16 +1,19 @@
 [watch]
 # Paths to watch. The `build.target`'s parent folder is watched by default.
 watch = []
-# Paths to ignore.
-ignore = [
-  "target/",
-  "packages/stylist/target/",
-  "packages/stylist-core/target/",
 
-  "examples/benchmarks/target/",
-  "examples/yew-integration/target/",
-  "examples/yew-theme-context/target/",
-]
+ # Paths to ignore.
+ ignore = [
+   "target/",
+   "packages/stylist/target/",
+   "packages/stylist-core/target/",
 
-[tools]
-wasm_bindgen = "0.2.77"
+   "examples/benchmarks/target/",
+   "examples/use-media-query/target/",
+   "examples/yew-integration/target/",
+   "examples/yew-proc-macros/target/",
+   "examples/yew-shadow/target/",
+   "examples/yew-theme-context/target/",
+   "examples/yew-theme-hooks/target/",
+ ]
+ 

@@ -3,14 +3,15 @@ name = "stylist-benchmarks"
 version = "0.1.0"
 authors = ["Kaede Hoshikawa <futursolo@icloud.com>"]
 edition = "2021"
+publish = false
 
 [dependencies]
 log = "0.4.17"
-console_log = { version = "0.2.0", features = ["color"] }
+console_log = { version = "1.0.0", features = ["color"] }
 yew = { version = "0.20", features = ["csr"] }
 stylist = { path = "../../packages/stylist", features = [
     "yew_integration",
     "parser",
 ] }
-web-sys = { version = "0.3.58", features = ["Window", "Performance"] }
+web-sys = { version = "0.3.60", features = ["Window", "Performance"] }
 gloo = "0.8.0"
