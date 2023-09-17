@@ -42,8 +42,8 @@ jobs:
         env:
           RUSTFLAGS: "--cfg releasing"
 
-  test-native:
-    name: Run Native Tests
+  test-native-stable:
+    name: Run Native Tests (Stable)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Project
@@ -59,6 +59,30 @@ jobs:
 
       - name: Run cargo test
         run: cargo test --all-features --all
+        env:
+          RUSTFLAGS: "--cfg releasing"
+
+  test-native-msrv:
+    name: Run Native Tests (MSRV)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v3
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@1.64.0
+        with:
+          components: rustfmt, clippy
+
+      - name: Restore Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      # We only run tests on core packages, examples can be upgraded to be incompatible of msrv.
+      - name: Run cargo test
+        run: |
+          cargo test --all-features --package stylist-core
+          cargo test --all-features --package stylist-macros
+          cargo test --all-features --package stylist
         env:
           RUSTFLAGS: "--cfg releasing"
 
