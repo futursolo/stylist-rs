@@ -126,7 +126,8 @@ jobs:
     needs:
       - lint
       - rustfmt
-      - test-native
+      - test-native-stable
+      - test-native-msrv
       - test-web
     if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     steps:
