@@ -15,7 +15,7 @@ stylist = { path = "../../packages/stylist", default-features = false, features 
 ] }
 
 [dev-dependencies]
-gloo-utils = "0.1.6"
+gloo-utils = "0.2.0"
 wasm-bindgen-test = "0.3.33"
 wasm-bindgen = "0.2.83"
 
