@@ -48,6 +48,7 @@ log = "0.4.17"
 env_logger = "0.10.0"
 trybuild = "1.0.72"
 yew = "0.20"
+rustversion = "1"
 
 [features]
 default = ["debug_style_locations", "debug_parser", "macros", "random"]
