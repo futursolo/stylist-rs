@@ -3,6 +3,7 @@
 ### v0.13.0
 
 - Increase MSRV to 1.64.0.
+- Update syn to v2.
 
 ### v0.12.1
 
