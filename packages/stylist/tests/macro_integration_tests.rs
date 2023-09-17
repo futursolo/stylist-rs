@@ -1,6 +1,5 @@
 #[allow(dead_code)]
 #[rustversion::attr(stable(1.64.0), test)]
-#[test]
 fn test_macro_integrations() {
     let t = trybuild::TestCases::new();
 
