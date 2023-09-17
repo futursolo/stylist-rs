@@ -5,7 +5,7 @@ use syn::ext::IdentExt;
 use syn::parse::{Parse, ParseBuffer, Result as ParseResult};
 use syn::{token, Ident};
 
-syn::custom_punctuation!(DoubleSub, --);
+syn::custom_punctuation!(DoubleMinus, --);
 
 #[derive(Debug, Clone)]
 pub enum IdentPart {
@@ -20,7 +20,8 @@ pub struct CssIdent {
 
 impl IdentPart {
     pub fn peek(lookahead: &ParseBuffer, accept_dash: bool, accept_ident: bool) -> bool {
-        let peek_dash = accept_dash && (lookahead.peek(token::Sub) || lookahead.peek(DoubleSub));
+        let peek_dash =
+            accept_dash && (lookahead.peek(token::Minus) || lookahead.peek(DoubleMinus));
         let peek_ident = accept_ident && lookahead.peek(Ident::peek_any);
         peek_dash || peek_ident
     }
@@ -35,9 +36,9 @@ impl Display for CssIdent {
 
 impl CssIdent {
     pub fn peek(lookahead: &ParseBuffer) -> bool {
-        if lookahead.peek(token::Sub) {
+        if lookahead.peek(token::Minus) {
             // A single dash is not an identifier
-            lookahead.peek2(token::Sub) || lookahead.peek2(Ident::peek_any)
+            lookahead.peek2(token::Minus) || lookahead.peek2(Ident::peek_any)
         } else {
             IdentPart::peek(lookahead, true, true)
         }
@@ -62,7 +63,7 @@ impl IdentPart {
     ) -> ParseResult<IdentPart> {
         debug_assert!(accept_dash || accept_ident);
         let lookahead = input.lookahead1();
-        if accept_dash && (lookahead.peek(token::Sub) || lookahead.peek(DoubleSub)) {
+        if accept_dash && (lookahead.peek(token::Minus) || lookahead.peek(DoubleMinus)) {
             let dash = input.parse::<Punct>()?;
             debug_assert!(dash.as_char() == '-', "expected a - character");
             Ok(IdentPart::Dash(dash))
