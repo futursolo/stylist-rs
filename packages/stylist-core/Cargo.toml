@@ -9,17 +9,12 @@ authors = [
 ]
 edition = "2021"
 description = "Stylist is a CSS-in-Rust styling solution for WebAssembly Applications."
-keywords = [
-    "CSS",
-    "web",
-    "css-in-rust",
-    "yew"
-]
+keywords = ["CSS", "web", "css-in-rust", "yew"]
 categories = ["wasm", "web-programming"]
 readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 resolver = "2"
-rust-version = "1.60"
+rust-version = "1.64.0"
 
 [dependencies]
 nom = { version = "7.1.1", optional = true }

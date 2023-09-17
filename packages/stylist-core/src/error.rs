@@ -11,7 +11,7 @@ use thiserror::Error;
 //
 // For crates outside of this workspace, `__proc_macro_workaround` will not be enabled
 // when they use version = "2021" or resolver = "2" as procedural macros can have different feature
-// flags. This should be OK for all downstream crates as stylist requires Rust 1.60 which supports
+// flags. This should be OK for all downstream crates as stylist requires Rust 1.64.0 which supports
 // both.
 #[cfg(not(feature = "__proc_macro_workaround"))]
 type JsValue = wasm_bindgen::JsValue;
