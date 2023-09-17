@@ -1,5 +1,9 @@
 # Changelog
 
+### v0.13.0
+
+- Increase MSRV to 1.64.0.
+
 ### v0.12.1
 
 - Implemented a workaround that mitigates the linker error from Rust compiler (https://github.com/rust-lang/rust/issues/111888).
