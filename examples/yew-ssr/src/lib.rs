@@ -89,7 +89,9 @@ pub fn ServerApp(props: &ServerAppProps) -> Html {
 #[function_component]
 pub fn App() -> Html {
     let fallback = html! { <div>{"Loading..."}</div> };
-    let style_mgr = (*use_memo((),|_| StyleManager::new().expect("failed to create style manager.")))
+    let style_mgr = (*use_memo((), |_| {
+        StyleManager::new().expect("failed to create style manager.")
+    }))
     .to_owned();
 
     html! {
