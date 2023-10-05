@@ -2,7 +2,7 @@
 
 ### v0.13.0
 
-- Increase MSRV to 1.64.0.
+- Increase MSRV to 1.66.0.
 - Update syn to v2.
 - Yew version is bumped to v0.21.
 
