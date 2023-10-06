@@ -51,13 +51,10 @@ pub fn global(props: &GlobalProps) -> Html {
         }
     }
 
-    use_memo(
-        move |(manager, css)| GlobalStyleGuard {
-            inner: GlobalStyle::new_with_manager(css.clone(), manager)
-                .expect_display("Failed to create style."),
-        },
-        (mgr, css),
-    );
+    use_memo((mgr, css), move |(manager, css)| GlobalStyleGuard {
+        inner: GlobalStyle::new_with_manager(css.clone(), manager)
+            .expect_display("Failed to create style."),
+    });
 
     Html::default()
 }

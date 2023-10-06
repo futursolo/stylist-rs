@@ -2,16 +2,17 @@
 
 ### v0.13.0
 
-- Increase MSRV to 1.64.0.
+- Increase MSRV to 1.66.0.
 - Update syn to v2.
+- Yew version is bumped to v0.21.
 
 ### v0.12.1
 
-- Implemented a workaround that mitigates the linker error from Rust compiler (https://github.com/rust-lang/rust/issues/111888).
+- Implemented a workaround that mitigates the linker error from Rust compiler (<https://github.com/rust-lang/rust/issues/111888>).
 
 ## v0.12.0
 
-### Other Changes:
+### Other Changes
 
 - Added Server-side Rendering Support.
 - Fixed a reference cycle between `Style` and `StyleManager`.
@@ -19,7 +20,7 @@
 
 ## v0.11.0
 
-### Breaking Changes:
+### Breaking Changes
 
 - Yew version is bumped to v0.20.
 - Remove `YieldStyle`. This API can be easily reproduced in user code, if need be,
@@ -34,7 +35,7 @@
   macros and interpolation syntax to write styles, if you don't need to parse css at
   runtime.
 
-### Other Changes:
+### Other Changes
 
 - The `Style::new_*` API is more open for accepted types of the `Css` parameter.
 - The name of styled components now defaults to the name of the function, like in
@@ -42,18 +43,18 @@
 
 ## v0.10.1
 
-### Other Changes:
+### Other Changes
 
 - Added an impl of `IntoPropValue<Classes>` for `Style` and `StyleSource` when
   the `yew_integration` feature is active.
 
 ## v0.10.0
 
-### Breaking Changes:
+### Breaking Changes
 
 - Yew version is bumped to 0.19.
 
-### Other Changes:
+### Other Changes
 
 - Added an API to style Yew Function Component.
 - `random` features is now provided with `fastrand`.
@@ -62,19 +63,19 @@
 
 ## v0.9.2
 
-### Other Changes:
+### Other Changes
 
 - Fixed a misconfiguration causing documentation fails to build on `docs.rs`.
 
 ## v0.9.1
 
-### Other Changes:
+### Other Changes
 
 - Removed an unused import.
 
 ## v0.9
 
-### Breaking Changes:
+### Breaking Changes
 
 - `Style` and `GlobalStyle` no longer implements `FromStr`.
 - `Style` and `GlobalStyle` now takes any type that implements
@@ -84,7 +85,7 @@
 - Accepted at-rules are limited to `@keyframe`, `@supports` and
   `@media`.
 
-### Other Changes:
+### Other Changes
 
 - Added a Procedural Macro API that parses the Stylesheet at the compile
   time.
@@ -100,7 +101,7 @@
 
 ## v0.8
 
-### Breaking Changes:
+### Breaking Changes
 
 - `Style::new()` and `Style::create()` now takes a new trait `IntoSheet` for
   Stylesheet which is implemented by default for both
@@ -111,7 +112,7 @@
 - Stylist now treats pseudo class selectors (e.g.:`:hover`) like emotion
   and styled-components.
 
-### Other Changes:
+### Other Changes
 
 - Added a `GlobalStyle` struct to register global styles.
 - Added a `<Global />` Component for global styling for yew applications.
@@ -127,7 +128,7 @@
 
 ## v0.7
 
-### Breaking Changes:
+### Breaking Changes
 
 - `Style::new()` now takes an `Into<Cow<'static, str>>` instead of
   `Into<String>` and returns `stylist::Error` instead of `String` when
@@ -137,7 +138,7 @@
   encountering an error.
 - `Style` no longer implements `ToString`.
 
-### Other Changes:
+### Other Changes
 
 - Added a new API `YieldStyle`.
 - Added theming examples.
@@ -150,13 +151,13 @@
 
 ## v0.6
 
-### Breaking Changes:
+### Breaking Changes
 
 - `style.get_class_name()` no longer consumes the style and returns a `&str`
   instead of an owned string.
 - Seed Integration is Removed.
 
-### Other Changes:
+### Other Changes
 
 - Added `Style::new` which does not require a component name.
 - Aesthetically pleasing Class Name.
