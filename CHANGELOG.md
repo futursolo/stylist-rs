@@ -2,11 +2,18 @@
 
 ### v0.13.0
 
+### Breaking Changes
+
 - Increase MSRV to 1.66.0.
-- Update syn to v2.
 - Yew version is bumped to v0.21.
 
+### Other Changes
+
+- Update syn to v2.
+
 ### v0.12.1
+
+### Other Changes
 
 - Implemented a workaround that mitigates the linker error from Rust compiler (<https://github.com/rust-lang/rust/issues/111888>).
 
