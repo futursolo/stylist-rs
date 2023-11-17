@@ -27,9 +27,10 @@ serde = { version = "1", features = ["derive"] }
 log = "0.4.17"
 env_logger = "0.10.0"
 
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+[target.'cfg(all(target_arch = "wasm32", not(feature = "wasi")))'.dev-dependencies]
 wasm-bindgen-test = "0.3.33"
 
 [features]
 parser = ["dep:nom"]
+wasi = []
 __proc_macro_workaround = []

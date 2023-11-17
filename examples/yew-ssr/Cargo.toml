@@ -19,7 +19,7 @@ console_log = { version = "1.0.0", features = ["color"] }
 yew = { version = "0.21" }
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[target.'cfg(any(not(target_arch = "wasm32"), feature = "wasi"))'.dependencies]
 tokio = { version = "1.22.0", features = ["full"] }
 env_logger = "0.10"
 clap = { version = "4.0.29", features = ["derive"] }

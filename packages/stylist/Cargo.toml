@@ -62,6 +62,7 @@ yew_use_media_query = ["yew", "web-sys/MediaQueryList", "dep:gloo-events"]
 yew_use_style = ["yew"]
 ssr = ["html-escape"]
 hydration = []
+wasi = ["stylist-core/wasi", "stylist-macros?/wasi"]
 
 [package.metadata.docs.rs]
 all-features = true
