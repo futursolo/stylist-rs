@@ -29,19 +29,16 @@ syn = { version = "2", features = ["full", "extra-traits"] }
 itertools = "0.11.0"
 log = "0.4.17"
 
-[target.'cfg(any(not(target_arch = "wasm32"), feature = "wasi"))'.dependencies]
+[target.'cfg(any(not(target_arch = "wasm32"), target_os = "wasi"))'.dependencies]
 stylist-core = { path = "../stylist-core", version = "0.13", features = [
     "parser",
     "__proc_macro_workaround",
 ] }
 
-[target.'cfg(all(target_arch = "wasm32", not(feature = "wasi")))'.dependencies]
+[target.'cfg(all(target_arch = "wasm32", not(target_os = "wasi")))'.dependencies]
 stylist-core = { path = "../stylist-core", version = "0.13", features = [
     "parser",
 ] }
 
 [dev-dependencies]
 env_logger = "0.10.0"
-
-[features]
-wasi = []
