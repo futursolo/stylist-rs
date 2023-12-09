@@ -19,7 +19,7 @@ rust-version = "1.67.0"
 [dependencies]
 nom = { version = "7.1.1", optional = true }
 thiserror = "1.0.37"
-wasm-bindgen = "0.2.83"
+wasm-bindgen = "^0.2.88"
 once_cell = "1.16.0"
 serde = { version = "1", features = ["derive"] }
 
