@@ -308,6 +308,7 @@ mod feat_ssr_hydration {
     pub(super) struct StyleDataContent {
         pub key: StyleKey,
         pub id: StyleId,
+        #[cfg(feature = "ssr")]
         #[serde(skip)]
         pub style_str: String,
     }
