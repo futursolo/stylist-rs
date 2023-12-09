@@ -14,12 +14,12 @@ categories = ["wasm", "web-programming"]
 readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 resolver = "2"
-rust-version = "1.66.0"
+rust-version = "1.67.0"
 
 [dependencies]
 nom = { version = "7.1.1", optional = true }
 thiserror = "1.0.37"
-wasm-bindgen = "0.2.83"
+wasm-bindgen = "^0.2.88"
 once_cell = "1.16.0"
 serde = { version = "1", features = ["derive"] }
 
@@ -27,7 +27,7 @@ serde = { version = "1", features = ["derive"] }
 log = "0.4.17"
 env_logger = "0.10.0"
 
-[target.'cfg(target_arch = "wasm32")'.dev-dependencies]
+[target.'cfg(all(target_arch = "wasm32", not(target_os = "wasi")))'.dev-dependencies]
 wasm-bindgen-test = "0.3.33"
 
 [features]

@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming"]
 readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 resolver = "2"
-rust-version = "1.66.0"
+rust-version = "1.67.0"
 
 [lib]
 proc-macro = true
@@ -29,13 +29,13 @@ syn = { version = "2", features = ["full", "extra-traits"] }
 itertools = "0.11.0"
 log = "0.4.17"
 
-[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+[target.'cfg(any(not(target_arch = "wasm32"), target_os = "wasi"))'.dependencies]
 stylist-core = { path = "../stylist-core", version = "0.13", features = [
     "parser",
     "__proc_macro_workaround",
 ] }
 
-[target.'cfg(target_arch = "wasm32")'.dependencies]
+[target.'cfg(all(target_arch = "wasm32", not(target_os = "wasi")))'.dependencies]
 stylist-core = { path = "../stylist-core", version = "0.13", features = [
     "parser",
 ] }
