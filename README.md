@@ -11,10 +11,22 @@ This is a fork of [css-in-rust](https://github.com/lukidoescode/css-in-rust).
 
 ## Install
 
-Add the following to your `Cargo.toml`:
+Add the following to your `Cargo.toml` if you want to use it in a browser environment:
 
 ```toml
-stylist = "0.13"
+stylist = { version = "0.13", feature = ["browser_env"]}
+```
+
+Maybe you want to use `yew` integration:
+
+```toml
+stylist = { version = "0.13", features = ["browser_env", "yew_integration"]}
+```
+
+If you want to render styles on the server side, use `ssr` and `hydration` features:
+
+```toml
+stylist = { version = "0.13", features = ["yew_integration", "ssr", "hydration"]}
 ```
 
 ## Usage

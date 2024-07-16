@@ -10,7 +10,7 @@ use crate::spacing_iterator::SpacedIterator;
 #[derive(Debug)]
 pub enum CssAtRuleContent {
     Scope(CssScope),
-    Empty(token::Semi),
+    Empty,
 }
 
 #[derive(Debug)]
@@ -44,8 +44,7 @@ impl Parse for CssAtRule {
 
         let contents = loop {
             if input.peek(token::Semi) {
-                let semi = input.parse()?;
-                break CssAtRuleContent::Empty(semi);
+                break CssAtRuleContent::Empty;
             }
             if input.peek(token::Brace) {
                 let scope = input.parse()?;
@@ -92,7 +91,7 @@ impl CssAtRule {
             condition,
             content: match self.contents {
                 CssAtRuleContent::Scope(m) => m.into_rule_output(ctx),
-                CssAtRuleContent::Empty(_) => Vec::new(),
+                CssAtRuleContent::Empty => Vec::new(),
             },
         }
     }
@@ -105,7 +104,7 @@ impl CssAtRule {
             condition,
             content: match self.contents {
                 CssAtRuleContent::Scope(m) => m.into_rule_block_output(ctx),
-                CssAtRuleContent::Empty(_) => Vec::new(),
+                CssAtRuleContent::Empty => Vec::new(),
             },
         }
     }

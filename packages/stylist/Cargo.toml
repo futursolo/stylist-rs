@@ -42,6 +42,7 @@ features = [
     "HtmlHeadElement",
     "HtmlStyleElement",
 ]
+optional = true
 
 [dev-dependencies]
 log = "0.4.17"
@@ -57,9 +58,10 @@ debug_style_locations = []
 macros = ["stylist-macros"]
 random = ["dep:fastrand", "dep:instant"]
 parser = ["stylist-core/parser"]
-yew_integration = ["yew", "yew_use_media_query", "yew_use_style"]
-yew_use_media_query = ["yew", "web-sys/MediaQueryList", "dep:gloo-events"]
-yew_use_style = ["yew"]
+browser_env = ["dep:web-sys"]
+yew_integration = ["dep:yew", "yew_use_media_query", "yew_use_style"]
+yew_use_media_query = ["dep:yew", "dep:gloo-events", "web-sys/MediaQueryList"]
+yew_use_style = ["dep:yew"]
 ssr = ["html-escape"]
 hydration = []
 

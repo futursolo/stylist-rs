@@ -10,6 +10,7 @@ log = "0.4.17"
 console_log = { version = "1.0.0", features = ["color"] }
 yew = { version = "0.21", features = ["csr"] }
 stylist = { path = "../../packages/stylist", default-features = false, features = [
+    "browser_env",
     "yew_integration",
     "macros",
 ] }

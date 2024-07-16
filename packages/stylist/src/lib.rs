@@ -108,7 +108,10 @@
 //! - `ssr`: Disabled by default, this flag enables Server-side Rendering Support.
 //! - `hydration`: Disabled by default, this flag enables Server-side Rendering Hydration Support.
 
-#[cfg(any(feature = "yew_use_media_query", target_arch = "wasm32"))]
+#[cfg(all(feature = "browser_env", target_os = "wasi"))]
+compile_error!("The `browser_env` feature is not supported on WASI.");
+
+#[cfg(feature = "yew_use_media_query")]
 mod arch;
 pub mod ast;
 mod global_style;
@@ -118,7 +121,7 @@ pub mod manager;
 mod style;
 mod style_src;
 mod utils;
-#[cfg(feature = "yew")]
+#[cfg(feature = "yew_integration")]
 pub mod yew;
 
 pub use global_style::GlobalStyle;

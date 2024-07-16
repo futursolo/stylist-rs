@@ -1,6 +1,6 @@
 use crate::ast::Sheet;
 use crate::manager::StyleManager;
-#[cfg(feature = "yew")]
+#[cfg(feature = "yew_integration")]
 use crate::Style;
 
 /// A struct that can be used as a source to create a [`Style`](crate::Style) or
@@ -47,7 +47,7 @@ impl StyleSource {
         self.inner
     }
 
-    #[cfg(feature = "yew")]
+    #[cfg(feature = "yew_integration")]
     pub(crate) fn into_style(mut self) -> Style {
         use stylist_core::ResultDisplay;
         let manager = self.manager.take().unwrap_or_default();
