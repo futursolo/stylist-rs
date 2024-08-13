@@ -94,8 +94,8 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Run cargo build --all --target=wasm32-unknown-unknown
-        run: cargo build --all --target=wasm32-unknown-unknown
+      - name: Build WASM
+        run: cargo build --all --target=wasm32-unknown-unknown --features browser_env
         env:
           RUSTFLAGS: '--cfg releasing'
 
