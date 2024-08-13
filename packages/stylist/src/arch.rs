@@ -1,8 +1,7 @@
 #![cfg(feature = "browser_env")]
 
 use crate::{Error, Result};
-use web_sys::Window;
-use web_sys::{Document, HtmlHeadElement};
+use web_sys::{Document, HtmlHeadElement, Window};
 
 pub(crate) fn window() -> Result<Window> {
     web_sys::window().ok_or(Error::Web(None))
