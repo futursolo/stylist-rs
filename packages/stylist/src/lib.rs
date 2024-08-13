@@ -13,7 +13,7 @@
 //!
 //! To enable yew integration, enable the `yew_integration` feature in `Cargo.toml`.
 //!
-//! For a detailed usage with yew, see the [`yew`](crate::yew) module.
+//! For a detailed usage with yew, see the [`yew`] module.
 //!
 //! ### Syntax
 //!
@@ -94,6 +94,8 @@
 //! - `macros`: Enabled by default, this flag enables procedural macro support.
 //! - `random`: Enabled by default, this flag uses `fastrand` crate to generate a random class name.
 //!   Disabling this flag will opt for a class name that is counter-based.
+//! - `browser_env`: **Disabled by default**, this flag enables browser-specific APIs. Only enable
+//!   this if you are running in a browser environment.
 //! - `parser`: Disabled by default, this flag enables runtime parsing of styles from strings. You
 //!   don't need to enable this to generate styles via the macros.
 //! - `yew_integration`: This flag enables yew integration, which implements
