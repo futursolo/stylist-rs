@@ -3,7 +3,6 @@
 #![deny(non_snake_case)]
 #![deny(missing_debug_implementations)]
 #![deny(clippy::cognitive_complexity)]
-#![cfg_attr(doc, feature(doc_cfg))]
 #![cfg_attr(not(debug_assertions), deny(dead_code, unused_imports))]
 
 use proc_macro::TokenStream;

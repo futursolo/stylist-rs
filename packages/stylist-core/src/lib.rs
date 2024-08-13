@@ -3,7 +3,6 @@
 #![deny(unsafe_code)]
 #![deny(non_snake_case)]
 #![deny(clippy::cognitive_complexity)]
-#![cfg_attr(doc, feature(doc_cfg))]
 #![cfg_attr(any(doc, not(debug_assertions)), deny(dead_code, unused_imports))]
 
 mod error;
