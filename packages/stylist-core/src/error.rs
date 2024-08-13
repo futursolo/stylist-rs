@@ -21,7 +21,7 @@ type JsValue = ();
 #[derive(Debug, Error, PartialEq)]
 pub enum Error {
     /// Failed to parse CSS.
-    #[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+    #[cfg_attr(doc, doc(cfg(feature = "parser")))]
     #[cfg(feature = "parser")]
     #[error("Failed to Parse CSS, due to:\n{}", .reason)]
     Parse {

@@ -3,9 +3,9 @@
 #![deny(non_snake_case)]
 #![deny(clippy::all)]
 #![deny(clippy::cognitive_complexity)]
-#![cfg_attr(documenting, feature(doc_cfg))]
-#![cfg_attr(documenting, feature(doc_auto_cfg))]
-#![cfg_attr(any(releasing, not(debug_assertions)), deny(dead_code, unused_imports))]
+#![cfg_attr(doc, feature(doc_cfg))]
+#![cfg_attr(doc, feature(doc_auto_cfg))]
+#![cfg_attr(not(debug_assertions), deny(dead_code, unused_imports))]
 
 //! Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
 //!

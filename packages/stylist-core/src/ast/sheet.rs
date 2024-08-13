@@ -78,7 +78,7 @@ impl ToStyleStr for Sheet {
     }
 }
 
-#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
+#[cfg_attr(doc, doc(cfg(feature = "parser")))]
 #[cfg(feature = "parser")]
 mod feat_parser {
     use once_cell::sync::Lazy;
