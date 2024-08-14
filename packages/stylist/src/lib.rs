@@ -94,8 +94,8 @@
 //! - `macros`: Enabled by default, this flag enables procedural macro support.
 //! - `random`: Enabled by default, this flag uses `fastrand` crate to generate a random class name.
 //!   Disabling this flag will opt for a class name that is counter-based.
-//! - `browser_env`: **Disabled by default**, this flag enables browser-specific APIs. Only enable
-//!   this if you are running in a browser environment.
+//! - `not_browser_env`: Disabled by default, this flag will avoid using browser-specific APIs. This
+//!   is useful for testing and server-side rendering by WASM.
 //! - `parser`: Disabled by default, this flag enables runtime parsing of styles from strings. You
 //!   don't need to enable this to generate styles via the macros.
 //! - `yew_integration`: This flag enables yew integration, which implements
@@ -107,9 +107,6 @@
 //!   `debug_assertions` are enabled.
 //! - `ssr`: Disabled by default, this flag enables Server-side Rendering Support.
 //! - `hydration`: Disabled by default, this flag enables Server-side Rendering Hydration Support.
-
-#[cfg(all(feature = "browser_env", target_os = "wasi"))]
-compile_error!("The `browser_env` feature is not supported on WASI.");
 
 #[cfg(feature = "yew_use_media_query")]
 mod arch;

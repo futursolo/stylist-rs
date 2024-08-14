@@ -1,4 +1,4 @@
-#![cfg(feature = "browser_env")]
+#![cfg(not(feature = "not_browser_env"))]
 
 use crate::{Error, Result};
 use web_sys::{Document, HtmlHeadElement, Window};

@@ -94,7 +94,7 @@ impl StyleManagerBuilder {
     /// Build the [`StyleManager`].
     #[allow(unused_mut)]
     pub fn build(mut self) -> Result<StyleManager> {
-        #[cfg(feature = "browser_env")]
+        #[cfg(not(feature = "not_browser_env"))]
         if self.container.is_none() {
             use crate::arch::doc_head;
             self.container = Some(doc_head()?.into());
@@ -221,7 +221,7 @@ impl StyleManager {
     #[cfg(all(
         target_arch = "wasm32",
         not(target_os = "wasi"),
-        feature = "browser_env"
+        not(feature = "not_browser_env")
     ))]
     pub(crate) fn mount(&self, content: &StyleContent) -> Result<()> {
         use crate::arch::document;
@@ -252,7 +252,7 @@ impl StyleManager {
     #[cfg(all(
         target_arch = "wasm32",
         not(target_os = "wasi"),
-        feature = "browser_env"
+        not(feature = "not_browser_env")
     ))]
     pub(crate) fn unmount(id: &StyleId) -> Result<()> {
         use crate::arch::document;
@@ -275,7 +275,7 @@ impl StyleManager {
     #[cfg(any(
         not(target_arch = "wasm32"),
         target_os = "wasi",
-        not(feature = "browser_env")
+        feature = "not_browser_env"
     ))]
     #[allow(unused_variables)]
     pub(crate) fn mount(&self, content: &StyleContent) -> Result<()> {
@@ -287,7 +287,7 @@ impl StyleManager {
     #[cfg(any(
         not(target_arch = "wasm32"),
         target_os = "wasi",
-        not(feature = "browser_env")
+        feature = "not_browser_env"
     ))]
     #[allow(unused_variables)]
     pub(crate) fn unmount(id: &StyleId) -> Result<()> {
