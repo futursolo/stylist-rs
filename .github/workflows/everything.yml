@@ -38,13 +38,20 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run cargo clippy
-        run: cargo clippy --all --all-features
+        run: cargo clippy --all --features parser,yew_integration,yew_use_media_query,yew_use_style,ssr,hydration
         env:
           RUSTFLAGS: '--cfg releasing'
 
-  test-native-stable:
-    name: Run Native Tests (Stable)
+  test-native:
+    name: Run Native Tests
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain:
+          - 1.76.0
+          - stable
+          - nightly
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -52,37 +59,17 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
+          toolchain: ${{ matrix.toolchain }}
           components: rustfmt, clippy
 
       - name: Restore Rust Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Run cargo test
-        run: cargo test --all-features --all
-        env:
-          RUSTFLAGS: '--cfg releasing'
-
-  test-native-msrv:
-    name: Run Native Tests (MSRV)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Project
-        uses: actions/checkout@v4
-
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@1.66.0
-        with:
-          components: rustfmt, clippy
-
-      - name: Restore Rust Cache
-        uses: Swatinem/rust-cache@v2
-
-      # We only run tests on core packages, examples can be upgraded to be incompatible of msrv.
       - name: Run cargo test
         run: |
-          cargo test --all-features --package stylist-core
-          cargo test --all-features --package stylist-macros
-          cargo test --all-features --package stylist
+          cargo test -p stylist --all-features
+          cargo test -p stylist-core --all-features
+          cargo test -p stylist-macros --all-features
         env:
           RUSTFLAGS: '--cfg releasing'
 
@@ -107,7 +94,7 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Run cargo build --all --target=wasm32-unknown-unknown
+      - name: Build WASM
         run: cargo build --all --target=wasm32-unknown-unknown
         env:
           RUSTFLAGS: '--cfg releasing'
@@ -126,8 +113,7 @@ jobs:
     needs:
       - lint
       - rustfmt
-      - test-native-stable
-      - test-native-msrv
+      - test-native
       - test-web
     if: github.event_name == 'push' && (github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/'))
     steps:

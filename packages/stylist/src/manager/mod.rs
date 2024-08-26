@@ -94,7 +94,7 @@ impl StyleManagerBuilder {
     /// Build the [`StyleManager`].
     #[allow(unused_mut)]
     pub fn build(mut self) -> Result<StyleManager> {
-        #[cfg(target_arch = "wasm32")]
+        #[cfg(all(not(feature = "not_browser_env"), target_arch = "wasm32"))]
         if self.container.is_none() {
             use crate::arch::doc_head;
             self.container = Some(doc_head()?.into());
@@ -218,7 +218,11 @@ impl StyleManager {
     }
 
     /// Mount the [`Style`](crate::Style) into the DOM tree.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(
+        target_arch = "wasm32",
+        not(target_os = "wasi"),
+        not(feature = "not_browser_env")
+    ))]
     pub(crate) fn mount(&self, content: &StyleContent) -> Result<()> {
         use crate::arch::document;
         use crate::Error;
@@ -245,7 +249,11 @@ impl StyleManager {
     }
 
     /// Unmount the [`Style`](crate::Style) from the DOM tree.
-    #[cfg(target_arch = "wasm32")]
+    #[cfg(all(
+        target_arch = "wasm32",
+        not(target_os = "wasi"),
+        not(feature = "not_browser_env")
+    ))]
     pub(crate) fn unmount(id: &StyleId) -> Result<()> {
         use crate::arch::document;
         use crate::Error;
@@ -264,7 +272,11 @@ impl StyleManager {
     }
 
     /// Mount the [`Style`] in to the DOM tree.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(any(
+        not(target_arch = "wasm32"),
+        target_os = "wasi",
+        feature = "not_browser_env"
+    ))]
     #[allow(unused_variables)]
     pub(crate) fn mount(&self, content: &StyleContent) -> Result<()> {
         // Does nothing on non-wasm targets.
@@ -272,7 +284,11 @@ impl StyleManager {
     }
 
     /// Unmount the [`Style`] from the DOM tree.
-    #[cfg(not(target_arch = "wasm32"))]
+    #[cfg(any(
+        not(target_arch = "wasm32"),
+        target_os = "wasi",
+        feature = "not_browser_env"
+    ))]
     #[allow(unused_variables)]
     pub(crate) fn unmount(id: &StyleId) -> Result<()> {
         // Does nothing on non-wasm targets.
@@ -308,6 +324,7 @@ mod feat_ssr_hydration {
     pub(super) struct StyleDataContent {
         pub key: StyleKey,
         pub id: StyleId,
+        #[cfg(feature = "ssr")]
         #[serde(skip)]
         pub style_str: String,
     }

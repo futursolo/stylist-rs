@@ -3,9 +3,7 @@
 #![deny(non_snake_case)]
 #![deny(clippy::all)]
 #![deny(clippy::cognitive_complexity)]
-#![cfg_attr(documenting, feature(doc_cfg))]
-#![cfg_attr(documenting, feature(doc_auto_cfg))]
-#![cfg_attr(any(releasing, not(debug_assertions)), deny(dead_code, unused_imports))]
+#![cfg_attr(not(debug_assertions), deny(dead_code, unused_imports))]
 
 //! Stylist is a CSS-in-Rust styling solution for WebAssembly Applications.
 //!
@@ -15,7 +13,7 @@
 //!
 //! To enable yew integration, enable the `yew_integration` feature in `Cargo.toml`.
 //!
-//! For a detailed usage with yew, see the [`yew`](crate::yew) module.
+//! For a detailed usage with yew, see the [`yew`] module.
 //!
 //! ### Syntax
 //!
@@ -96,6 +94,8 @@
 //! - `macros`: Enabled by default, this flag enables procedural macro support.
 //! - `random`: Enabled by default, this flag uses `fastrand` crate to generate a random class name.
 //!   Disabling this flag will opt for a class name that is counter-based.
+//! - `not_browser_env`: Disabled by default, this flag will avoid using browser-specific APIs. This
+//!   is useful for testing and server-side rendering by WASM.
 //! - `parser`: Disabled by default, this flag enables runtime parsing of styles from strings. You
 //!   don't need to enable this to generate styles via the macros.
 //! - `yew_integration`: This flag enables yew integration, which implements
@@ -108,7 +108,7 @@
 //! - `ssr`: Disabled by default, this flag enables Server-side Rendering Support.
 //! - `hydration`: Disabled by default, this flag enables Server-side Rendering Hydration Support.
 
-#[cfg(any(feature = "yew_use_media_query", target_arch = "wasm32"))]
+#[cfg(feature = "yew_use_media_query")]
 mod arch;
 pub mod ast;
 mod global_style;
@@ -118,7 +118,7 @@ pub mod manager;
 mod style;
 mod style_src;
 mod utils;
-#[cfg(feature = "yew")]
+#[cfg(feature = "yew_integration")]
 pub mod yew;
 
 pub use global_style::GlobalStyle;

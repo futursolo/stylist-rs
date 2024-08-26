@@ -151,7 +151,6 @@ impl IntoPropValue<StyleSource> for Sheet {
     }
 }
 
-#[cfg_attr(documenting, doc(cfg(feature = "parser")))]
 #[cfg(feature = "parser")]
 mod feat_parser {
     use std::borrow::Cow;
