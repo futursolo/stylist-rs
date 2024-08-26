@@ -94,7 +94,7 @@ impl StyleManagerBuilder {
     /// Build the [`StyleManager`].
     #[allow(unused_mut)]
     pub fn build(mut self) -> Result<StyleManager> {
-        #[cfg(not(feature = "not_browser_env"))]
+        #[cfg(all(not(feature = "not_browser_env"), target_arch = "wasm32"))]
         if self.container.is_none() {
             use crate::arch::doc_head;
             self.container = Some(doc_head()?.into());
