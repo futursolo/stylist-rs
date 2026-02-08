@@ -73,7 +73,7 @@ pub struct ServerAppProps {
     pub manager: StyleManager,
 }
 
-#[function_component]
+#[component]
 pub fn ServerApp(props: &ServerAppProps) -> Html {
     let fallback = html! { <div>{"Loading..."}</div> };
 
@@ -86,7 +86,7 @@ pub fn ServerApp(props: &ServerAppProps) -> Html {
     }
 }
 
-#[function_component]
+#[component]
 pub fn App() -> Html {
     let fallback = html! { <div>{"Loading..."}</div> };
     let style_mgr = (*use_memo((), |_| {

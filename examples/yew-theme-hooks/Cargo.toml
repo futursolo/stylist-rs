@@ -8,7 +8,7 @@ publish = false
 [dependencies]
 log = "0.4.17"
 console_log = { version = "1.0.0", features = ["color"] }
-yew = { version = "0.21", features = ["csr"] }
+yew = { version = "0.22", features = ["csr"] }
 stylist = { path = "../../packages/stylist", features = [
     "yew_integration",
     "yew_use_style",

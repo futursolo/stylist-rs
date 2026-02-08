@@ -16,7 +16,7 @@ required-features = ["ssr"]
 [dependencies]
 log = "0.4.17"
 console_log = { version = "1.0.0", features = ["color"] }
-yew = { version = "0.21" }
+yew = { version = "0.22" }
 stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
@@ -30,7 +30,7 @@ gloo-utils = "0.2.0"
 gloo-timers = { version = "0.3.0", features = ["futures"] }
 wasm-bindgen-test = "0.3.33"
 wasm-bindgen = "0.2.83"
-yew = { version = "0.21", features = ["csr", "ssr", "hydration"] }
+yew = { version = "0.22", features = ["csr", "ssr", "hydration"] }
 stylist = { path = "../../packages/stylist", features = [
     "yew_integration",
     "ssr",

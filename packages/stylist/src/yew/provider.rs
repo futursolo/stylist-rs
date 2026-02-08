@@ -36,7 +36,7 @@ pub struct ManagerProviderProps {
 ///     }
 /// }
 /// ```
-#[function_component(ManagerProvider)]
+#[component(ManagerProvider)]
 pub fn manager_provider(props: &ManagerProviderProps) -> HtmlResult {
     let ManagerProviderProps { manager, children } = props.clone();
 
