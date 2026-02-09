@@ -166,7 +166,7 @@ mod feat_parser {
         }
     }
 
-    impl<'a> IntoPropValue<StyleSource> for &'a str {
+    impl IntoPropValue<StyleSource> for &str {
         fn into_prop_value(self) -> StyleSource {
             self.try_into()
                 .expect_display("couldn't parse style string")
