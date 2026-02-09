@@ -251,47 +251,47 @@ impl Component for Benchmarks {
                     <tbody>
                         <tr>
                             <th>{"Parse Simple (10,000,000 iterations): "}</th>
-                            <th>{self.parse_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.parse_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Macro (Literal) Simple (10,000,000 iterations): "}</th>
-                            <th>{self.macro_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.macro_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Macro (Inline) Simple (10,000,000 iterations): "}</th>
-                            <th>{self.macro_inline_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.macro_inline_simple.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Parse Simple, No Cache (100,000 iterations): "}</th>
-                            <th>{self.parse_simple_no_cache.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.parse_simple_no_cache.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Parse Complex (1,000,000 iterations): "}</th>
-                            <th>{self.parse_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.parse_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Macro (Literal) Complex (1,000,000 iterations): "}</th>
-                            <th>{self.macro_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.macro_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Macro (Inline) Complex (1,000,000 iterations): "}</th>
-                            <th>{self.macro_inline_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.macro_inline_complex.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Parse Complex, No Cache (100,000 iterations): "}</th>
-                            <th>{self.parse_complex_no_cache.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.parse_complex_no_cache.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Cached Lookup (1,000,000 iterations): "}</th>
-                            <th>{self.cached_lookup.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.cached_lookup.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Cached Lookup, Big Sheet (100,000 iterations): "}</th>
-                            <th>{self.cached_lookup_big_sheet.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.cached_lookup_big_sheet.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                         <tr>
                             <th>{"Mounting (2,000 iterations): "}</th>
-                            <th>{self.mounting.map(|m| {format!("{:.0}ms", m)}).unwrap_or_else(|| "".to_string())}</th>
+                            <th>{self.mounting.map(|m| {format!("{:.0}ms", m)}).unwrap_or_default()}</th>
                         </tr>
                     </tbody>
                 </table>
