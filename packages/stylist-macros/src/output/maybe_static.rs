@@ -26,7 +26,8 @@ where
             .collect();
 
         if inner_ctx.is_const() {
-            let name = Ident::new("items", Span::mixed_site());
+            // Span::mixed_site avoid capture of the variable in user-provided parts of #contents
+            let name = Ident::new("ITEMS", Span::mixed_site());
             let content_len = contents.len();
             quote! {
                 ::std::borrow::Cow::<[#typ]>::Borrowed ({
