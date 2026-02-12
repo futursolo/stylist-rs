@@ -109,6 +109,7 @@ impl Reify for OutputFragment {
     }
 }
 
+#[allow(clippy::result_large_err)]
 pub fn fragment_coalesce(
     l: OutputFragment,
     r: OutputFragment,

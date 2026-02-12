@@ -1,5 +1,4 @@
 use crate::{Error, Result};
-pub use wasm_bindgen::JsValue;
 use web_sys::Window;
 #[cfg(target_arch = "wasm32")]
 use web_sys::{Document, HtmlHeadElement};

@@ -11,7 +11,7 @@ mod rule;
 mod scope;
 mod scope_content;
 
-pub use attribute::{CssAttribute, CssAttributeName, CssAttributeValue};
+pub use attribute::CssAttribute;
 pub use block::CssQualifiedRule;
 pub use qualifier::CssBlockQualifier;
 pub use root::CssRootNode;

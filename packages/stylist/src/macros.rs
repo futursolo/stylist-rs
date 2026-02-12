@@ -101,6 +101,7 @@
 //! - `L` is either a closing bracket `)}]`, an identifier `red`, a literal string `"\e600"` or
 //!   number `3px`, or the '*' character.
 //! - `R` is either an identifier, a literal string or number, the '*' or '#' character.
+//!
 //! Spacing around interpolation is ignored regardless.
 //!
 //! Be aware that the above is subject to change once the Span API is stabilized. To avoid future

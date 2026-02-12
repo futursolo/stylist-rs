@@ -8,7 +8,7 @@ mod contexts;
 
 use contexts::{use_theme, ThemeKind, ThemeProvider};
 
-#[function_component(Inside)]
+#[component(Inside)]
 pub fn inside() -> Html {
     let theme = use_theme();
 
@@ -43,7 +43,7 @@ pub fn inside() -> Html {
     }
 }
 
-#[function_component(App)]
+#[component(App)]
 pub fn app() -> Html {
     let theme = use_theme();
 
@@ -105,7 +105,7 @@ pub fn app() -> Html {
     }
 }
 
-#[function_component(Root)]
+#[component(Root)]
 pub fn root() -> Html {
     html! {
         <ThemeProvider>

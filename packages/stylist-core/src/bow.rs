@@ -54,7 +54,7 @@ impl<T: ?Sized> AsRef<T> for Bow<'_, T> {
 
 impl<T> Clone for Bow<'_, T>
 where
-    T: ?Sized + Clone,
+    T: Clone,
 {
     fn clone(&self) -> Self {
         match *self {
