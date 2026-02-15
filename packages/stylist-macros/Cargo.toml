@@ -1,6 +1,6 @@
 [package]
 name = "stylist-macros"
-version = "0.13.0"
+version = "0.14.0"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/futursolo/stylist-rs"
