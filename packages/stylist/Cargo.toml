@@ -20,8 +20,8 @@ rust-version = "1.84.0"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-stylist-core = { path = "../stylist-core", version = "0.13" }
-stylist-macros = { path = "../stylist-macros", version = "0.13", optional = true }
+stylist-core = { path = "../stylist-core", version = "0.14" }
+stylist-macros = { path = "../stylist-macros", version = "0.14", optional = true }
 
 once_cell = "1.16.0"
 wasm-bindgen = "0.2.83"

@@ -30,13 +30,13 @@ itertools = "0.12.0"
 log = "0.4.17"
 
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-stylist-core = { path = "../stylist-core", version = "0.13", features = [
+stylist-core = { path = "../stylist-core", version = "0.14", features = [
     "parser",
     "__proc_macro_workaround",
 ] }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
-stylist-core = { path = "../stylist-core", version = "0.13", features = [
+stylist-core = { path = "../stylist-core", version = "0.14", features = [
     "parser",
 ] }
 
