@@ -14,7 +14,7 @@ categories = ["wasm", "web-programming"]
 readme = "README.md"
 homepage = "https://github.com/futursolo/stylist-rs"
 resolver = "2"
-rust-version = "1.66.0"
+rust-version = "1.84.0"
 
 [dependencies]
 nom = { version = "7.1.1", optional = true }
