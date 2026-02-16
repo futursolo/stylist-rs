@@ -23,7 +23,7 @@ stylist = { path = "../../packages/stylist", features = ["yew_integration"] }
 tokio = { version = "1.22.0", features = ["full"] }
 env_logger = "0.10"
 clap = { version = "4.0.29", features = ["derive"] }
-warp = "0.3"
+warp = "0.4"
 
 [dev-dependencies]
 gloo-utils = "0.2.0"
