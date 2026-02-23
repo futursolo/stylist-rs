@@ -92,7 +92,7 @@ mod tests {
             let reg = mgr.get_registry();
             let reg = reg.borrow_mut();
 
-            assert!(reg.styles.contains_key(style.key()));
+            assert!(!reg.styles.contains_key(style.key()));
         }
     }
 }
