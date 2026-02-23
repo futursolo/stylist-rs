@@ -82,7 +82,7 @@ mod tests {
             let reg = mgr.get_registry();
             let reg = reg.borrow_mut();
 
-            assert!(reg.styles.get(style.key()).is_some());
+            assert!(reg.styles.contains_key(style.key()));
         }
 
         style.unregister();
@@ -92,7 +92,7 @@ mod tests {
             let reg = mgr.get_registry();
             let reg = reg.borrow_mut();
 
-            assert!(reg.styles.get(style.key()).is_none());
+            assert!(!reg.styles.contains_key(style.key()));
         }
     }
 }

@@ -42,3 +42,9 @@ stylist-core = { path = "../stylist-core", version = "0.14", features = [
 
 [dev-dependencies]
 env_logger = "0.10.0"
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(releasing)',
+    'cfg(documenting)',
+] }
