@@ -66,3 +66,9 @@ hydration = []
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "documenting"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+    'cfg(releasing)',
+    'cfg(documenting)',
+] }
