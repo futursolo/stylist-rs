@@ -1,5 +1,11 @@
 # Changelog
 
+### v0.15.0
+
+### Breaking Changes
+
+- Yew version is bumped to v0.23.
+
 ### v0.14.0
 
 ### Breaking Changes
