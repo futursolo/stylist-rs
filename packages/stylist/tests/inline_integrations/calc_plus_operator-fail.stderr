@@ -1,0 +1,5 @@
+error: expected a valid part of an attribute
+ --> tests/inline_integrations/calc_plus_operator-fail.rs:3:32
+  |
+3 |         top: calc(100vh - 60px + 1rem);
+  |                                ^

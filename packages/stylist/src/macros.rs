@@ -88,6 +88,14 @@
 //! `m`. To work around this issue, use string interpolation as in `${"4em"}`. Similarly, some color
 //! hash-tokens like `#44444e` as misinterpreted, use the same workaround here: `${"#44444e"}`.
 //!
+//! ### Arithmetic operators in `calc()`
+//!
+//! The `+` operator inside `calc()` expressions is not supported in the inline syntax.
+//! For example, `top: calc(100vh - 60px + 1rem);` will fail to compile. Use the string literal
+//! syntax instead: `css!("top: calc(100vh - 60px + 1rem);")`.
+//!
+//! Note that `-` works.
+//!
 //! ### Descendant Selectors
 //!
 //! The stable Rust tokenizer also currently offers no way to inspect whitespace between tokens, as
