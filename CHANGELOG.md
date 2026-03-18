@@ -1,5 +1,12 @@
 # Changelog
 
+### v0.15.1
+
+### Other Changes
+
+- Document calc() + operator limitation in inline css! syntax.
+- Merge doc_auto_cfg into doc_cfg.
+
 ### v0.15.0
 
 ### Breaking Changes
