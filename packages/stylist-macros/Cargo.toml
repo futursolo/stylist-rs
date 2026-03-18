@@ -24,7 +24,7 @@ litrs = "0.4.0"
 proc-macro-error = "1.0.4"
 proc-macro2 = "1.0.47"
 quote = "1.0.21"
-nom = "7.1.1"
+nom = "8.0.0"
 syn = { version = "2", features = ["full", "extra-traits"] }
 itertools = "0.12.0"
 log = "0.4.17"
